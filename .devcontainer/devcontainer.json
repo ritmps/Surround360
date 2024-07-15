@@ -1,0 +1,54 @@
+// {
+//     "name": "Ubuntu 18.04 Dev Container",
+
+//     "customizations": {
+//         "vscode": {
+//             "settings": {   
+//                 "terminal.integrated.shell.linux": "/usr/bin/zsh"
+//             },
+//             "extensions": [
+//                 "ms-vscode.cpptools",
+
+//                 "ms-azuretools.vscode-docker"
+//             ]
+//         }
+//     },
+
+//     "postCreateCommand": "echo 'Container ready!'",
+//     "remoteUser": "root"
+// }
+
+{
+    "name": "Ubuntu 16.04",
+    // "image": "ubuntu:16.04",
+    "runArgs": ["--privileged"],
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            "BUILDKIT_INLINE_CACHE": "1"
+          }        
+    },    
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash"
+            },
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-azuretools.vscode-docker",
+                "twxs.cmake",
+                "ms-vscode.cmake-tools"
+            ]
+        }
+    },
+    // "postCreateCommand": "apt-get update && apt-get install -y build-essential cmake git",
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+    ],
+    "forwardPorts": [
+        // List any ports you want to forward
+    ],    
+    "workspaceFolder": "/workspace",
+    "remoteUser": "root"
+}
+  
