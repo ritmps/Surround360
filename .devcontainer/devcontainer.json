@@ -1,13 +1,14 @@
 {
-    "name": "Ubuntu 16.04",
-    // "image": "ubuntu:16.04",
-    "runArgs": ["--privileged"],
+    "name": "CUDA 10.x Container",
     "build": {
         "dockerfile": "Dockerfile",
-        "args": {
-            "BUILDKIT_INLINE_CACHE": "1"
-          }        
-    },    
+        // "args": {
+        //     "BUILDKIT_INLINE_CACHE": "1"
+        //   }
+        "context": ".."
+    },
+    "runArgs": ["--privileged", "--gpus", "all"],
+
     "customizations": {
         "vscode": {
             "settings": {
@@ -17,10 +18,12 @@
                 "ms-vscode.cpptools",
                 "ms-azuretools.vscode-docker",
                 "twxs.cmake",
-                "ms-vscode.cmake-tools"
+                "ms-vscode.cmake-tools",
+                "ms-python.python"
             ]
         }
     },
+
     // "postCreateCommand": "apt-get update && apt-get install -y build-essential cmake git",
     "mounts": [
         "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
@@ -31,4 +34,3 @@
     "workspaceFolder": "/workspace",
     "remoteUser": "root"
 }
-  
