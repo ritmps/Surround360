@@ -1,5 +1,7 @@
 # Stage 1: Build environment
-FROM ubuntu:16.04 AS builder
+# FROM ubuntu:16.04
+FROM local/ubuntu16cuda10:latest
+
 
 # Set non-interactive mode for debconf
 ARG DEBIAN_FRONTEND=noninteractive
@@ -21,6 +23,8 @@ RUN apt-get update && \
     python \
     python-dev \
     python-pip \
+    python-numpy \
+    python-pil \
     libgflags2v5 \
     libgflags-dev \
     libgoogle-glog-dev \
@@ -40,7 +44,7 @@ RUN wget --progress=dot:giga "https://www.openssl.org/source/openssl-1.1.1g.tar.
   make install && \
   ldconfig && \
   cd .. && rm -rf openssl-1.1.1g*
-  
+
 # Install cmake 3.18
 WORKDIR /work
 RUN wget --progress=dot:giga "https://cmake.org/files/v3.18/cmake-3.18.4.tar.gz" && \
@@ -121,8 +125,6 @@ RUN git clone "https://ceres-solver.googlesource.com/ceres-solver" /ceres && \
 # Install dependencies for OpenCV
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
-    python-numpy \
-    python-pil \
     zlib1g-dev \
     libhdf5-dev \
     libprotobuf-dev \
@@ -134,16 +136,93 @@ RUN apt-get update && \
   && rm -rf /var/lib/apt/lists/*
 
 # Clone and build OpenCV as per provided instructions
+# WORKDIR /opencv
+# RUN git clone "https://github.com/Itseez/opencv.git" /opencv && \
+#     cd /opencv && \
+#     git checkout f109c01 && \
+#     mkdir build && cd build && \
+#     cmake -D WITH_IPP=OFF .. && \
+#     make -j $(nproc) && \
+#     make install && \
+#     cd / && rm -rf /opencv
+
+# # Install CUDA dependencies
+# RUN apt-get update && \
+#   apt-get install -y --no-install-recommends \
+#     cuda-toolkit-10-2 \
+#   && apt-get clean \
+#   && rm -rf /var/lib/apt/lists/*
+
+# # Set CUDA environment variables
+# ENV CUDA_HOME=/usr/local/cuda-10.2
+# ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
+# ENV PATH=${CUDA_HOME}/bin:${PATH}
+
+# # Clone and build OpenCV with CUDA
+# WORKDIR /opencv
+# RUN git clone "https://github.com/Itseez/opencv.git" /opencv && \
+#     cd /opencv && \
+#     git checkout f109c01 && \
+#     mkdir build && cd build && \
+#     cmake -D WITH_IPP=OFF \
+#           -D WITH_CUDA=ON \
+#           -D BUILD_opencv_cudacodec=ON \
+#           -D CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.2 \
+#           -D CUDA_CUDART_LIBRARY=/usr/local/cuda-10.2/lib64/libcudart.so \
+#           -D CUDA_CUDA_LIBRARY=/usr/local/cuda-10.2/lib64/stubs/libcuda.so \
+#           -D CUDA_NVCC_EXECUTABLE=/usr/local/cuda-10.2/bin/nvcc \
+#           -D CUDA_npp_LIBRARY=/usr/local/cuda-10.2/lib64/libnppif.so \
+#           -D CUDA_nppi_LIBRARY=/usr/local/cuda-10.2/lib64/libnppig.so \
+#           -D CUDA_npps_LIBRARY=/usr/local/cuda-10.2/lib64/libnppisu.so \
+#           -D CUDA_cufft_LIBRARY=/usr/local/cuda-10.2/lib64/libcufft.so \
+#           .. && \
+#     make -j $(nproc) && \
+#     make install && \
+#     cd / && rm -rf /opencv
+
+# Install the CUDA GPG key and update the package lists
+RUN apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub && \
+    apt-get update
+
+# Install CUDA dependencies with the necessary flags
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+    cuda-toolkit-10-2 \
+    libcuda1-418 \
+    --allow-unauthenticated \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Set CUDA environment variables
+ENV CUDA_HOME=/usr/local/cuda-10.2
+ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
+ENV PATH=${CUDA_HOME}/bin:${PATH}
+
+# Clone and build OpenCV with CUDA
 WORKDIR /opencv
-RUN git clone "https://github.com/Itseez/opencv.git" /opencv && \
+RUN git clone "https://github.com/opencv/opencv.git" /opencv && \
     cd /opencv && \
     git checkout f109c01 && \
     mkdir build && cd build && \
-    cmake -D WITH_IPP=OFF .. && \
+    cmake -D WITH_IPP=OFF \
+          -D WITH_CUDA=OFF \
+          -D BUILD_opencv_cudacodec=OFF \
+          -D CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.2 \
+          -D CUDA_CUDART_LIBRARY=/usr/local/cuda-10.2/lib64/libcudart.so \
+          -D CUDA_CUDA_LIBRARY=/usr/local/cuda-10.2/lib64/stubs/libcuda.so \
+          -D CUDA_NVCC_EXECUTABLE=/usr/local/cuda-10.2/bin/nvcc \
+          -D CUDA_npp_LIBRARY=/usr/local/cuda-10.2/lib64/libnppif.so \
+          -D CUDA_nppi_LIBRARY=/usr/local/cuda-10.2/lib64/libnppig.so \
+          -D CUDA_npps_LIBRARY=/usr/local/cuda-10.2/lib64/libnppisu.so \
+          -D CUDA_cufft_LIBRARY=/usr/local/cuda-10.2/lib64/libcufft.so \
+          -D CUDA_VERSION_MAJOR=10 \
+          -D CUDA_VERSION_MINOR=2 \
+          -D CUDA_VERSION=10.2 \
+          .. && \
     make -j $(nproc) && \
     make install && \
     cd / && rm -rf /opencv
-
+  
 # COLMAP dependencies
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
@@ -171,7 +250,7 @@ RUN git clone https://github.com/colmap/colmap.git /colmap && \
     cd /colmap && \
     git checkout tags/2.1 -b 2.1 && \
     mkdir build && cd build && \
-    cmake .. -GNinja -DBUILD_TESTING=OFF && \
+    cmake .. -GNinja -DBUILD_TESTING=OFF -DCUDA_ENABLED=OFF && \
     ninja && \
     ninja install && \
     cd / && rm -rf /colmap
@@ -203,9 +282,12 @@ RUN apt-get update && \
   && rm -rf /var/lib/apt/lists/*
 
 # Pre-install wxPython before Gooey
-RUN wget https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-16.04/wxPython-4.0.0-cp27-cp27mu-linux_x86_64.whl && \
-  pip install wxPython-4.0.0-cp27-cp27mu-linux_x86_64.whl && \
-  rm wxPython-4.0.0-cp27-cp27mu-linux_x86_64.whl
+RUN wget https://bootstrap.pypa.io/pip/2.7/get-pip.py && \
+  python2.7 get-pip.py && \
+  wget https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-16.04/wxPython-4.0.0-cp27-cp27mu-linux_x86_64.whl && \
+  pip2 install wxPython-4.0.0-cp27-cp27mu-linux_x86_64.whl && \
+  rm wxPython-4.0.0-cp27-cp27mu-linux_x86_64.whl && \
+  rm get-pip.py
 
 # Gooey
 RUN pip install --no-cache-dir setuptools==44.1.1 && \
@@ -220,15 +302,52 @@ RUN add-apt-repository ppa:nilarimogard/webupd8 && \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-# Other useful things-
-RUN  apt-get update && \
-  apt-get install -y --no-install-recommends \
-    libncurses5-dev \
-    libjpeg-dev \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+# Install dependencies for OpenGL and GTK
+RUN apt-get update && \
+apt-get install -y --no-install-recommends \
+  libncurses5-dev \
+  libjpeg-dev \
+  libgtkmm-3.0-dev \
+  libglibmm-2.4-dev \
+  libgl1-mesa-dev \
+  libglew-dev \
+  libglu1-mesa-dev \
+  x11-apps \
+&& apt-get clean \
+&& rm -rf /var/lib/apt/lists/*
+# Install LLVM 3.7
+WORKDIR /llvm
+RUN wget https://releases.llvm.org/3.7.1/llvm-3.7.1.src.tar.xz && \
+  tar -xvf llvm-3.7.1.src.tar.xz && \
+  mkdir llvm-3.7.1.src/build && \
+  cd llvm-3.7.1.src/build && \
+  cmake -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD="X86" .. && \
+  make -j$(nproc) && \
+  make install && \
+  cd / && rm -rf /llvm
 
-# For now, we'll leave out the halide acceleration stuff, but will add it once we get things to build
+# Install Clang tools for LLVM 3.7
+WORKDIR /llvm
+RUN wget https://releases.llvm.org/3.7.1/cfe-3.7.1.src.tar.xz && \
+  tar -xvf cfe-3.7.1.src.tar.xz && \
+  mkdir cfe-3.7.1.src/build && \
+  cd cfe-3.7.1.src/build && \
+  cmake -DCMAKE_BUILD_TYPE=Release -DLLVM_CONFIG=/usr/local/bin/llvm-config .. && \
+  make -j$(nproc) && \
+  make install && \
+  cd / && rm -rf /llvm
+
+  # Install Halide from source with GPU features disabled
+WORKDIR /halide
+RUN git clone https://github.com/halide/Halide.git && \
+    cd Halide && \
+    # git checkout 970f749 && \
+    git checkout d395f6932 && \
+    mkdir build && cd build && \
+    cmake -DLLVM_DIR=/usr/local/share/llvm/cmake -DCMAKE_BUILD_TYPE=Release -DCUDA_ENABLED=OFF -DWARNINGS_AS_ERRORS=OFF .. && \
+    make -j$(nproc) && \
+    make install && \
+    cd / && rm -rf /halide
 
 # Copy the project code
 WORKDIR /workspaces
@@ -236,6 +355,41 @@ COPY . /workspaces
 
 # Stage 2: Build renderer
 RUN cd /workspaces/surround360_render && \
+  cmake -DCMAKE_BUILD_TYPE=Release . && \
+  make -j $(nproc)
+
+# Stage 3: Build viewer
+
+# install flycapture
+# Install dependencies for FlyCapture
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+    libgtkmm-2.4-1v5 \
+    libglademm-2.4-1v5 \
+    libgtkmm-2.4-dev \
+    libglademm-2.4-dev \
+    libgtkglextmm-x11-1.2-dev \
+    expect \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Create a dummy sudo script
+RUN echo -e '#!/bin/sh\n"$@"' > /usr/local/bin/sudo && \
+  chmod +x /usr/local/bin/sudo
+
+# Copy the FlyCapture package and expect script into the container
+
+RUN  cd /workspaces/surround360_camera_ctl_ui/flycapture && \
+  tar -xvzf ./flycapture2-2.13.3.31-amd64-pkg_Ubuntu16.04.tgz && \
+  chmod +x ./install_flycaptureFP.sh && \
+  cp ./install_flycaptureFP.sh ./flycapture2-2.13.3.31-amd64/ && \
+  cd ./flycapture2-2.13.3.31-amd64 && \
+  # yes | ./install_flycapture.sh && \
+  ./install_flycaptureFP.sh && \
+  cd /workspaces/surround360_camera_ctl_ui/ && \
+  rm -rf ./flycapture/flycapture2-2.13.3.31-amd64/
+
+RUN cd /workspaces/surround360_camera_ctl_ui && \
   cmake -DCMAKE_BUILD_TYPE=Release . && \
   make -j $(nproc)
 
