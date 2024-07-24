@@ -76,6 +76,12 @@ RUN git clone "https://github.com/facebook/folly.git" /folly && \
 RUN apt-get update --no-install-recommends && \
   apt-get install -y --no-install-recommends \
     libatlas-base-dev \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Add Eigen3
+RUN apt-get update --no-install-recommends && \
+  apt-get install -y --no-install-recommends \
     libeigen3-dev \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
@@ -201,52 +207,58 @@ RUN  apt-get update && \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
+
 # For now, we'll leave out the halide acceleration stuff, but will add it once we get things to build
 
+WORKDIR /workdir  
+COPY . /workdir
 
+# RUN cd /workdir/surround360_render && \
+#   cmake -DCMAKE_BUILD_TYPE=Release . && \
+#   make -j $(nproc)
 
-# Stage 2: Final runtime environment
-FROM ubuntu:16.04
+# # Stage 2: Final runtime environment
+# FROM ubuntu:16.04
 
-# Set non-interactive mode for debconf
-ARG DEBIAN_FRONTEND=noninteractive
+# # Set non-interactive mode for debconf
+# ARG DEBIAN_FRONTEND=noninteractive
 
-# Install runtime dependencies
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends \
-    python \
-    python-pip \
-    libgflags2v5 \
-    libgoogle-glog-dev \
-    openssh-server \
-    ffmpeg \
-    python-numpy \
-    python-pil \
-    zlib1g-dev \
-    libhdf5-dev \
-    libprotobuf-dev \
-    protobuf-compiler \
-    libjemalloc-dev \
-    libunwind8-dev \
-    libsodium-dev \
-    software-properties-common \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+# # Install runtime dependencies
+# RUN apt-get update && \
+#   apt-get install -y --no-install-recommends \
+#     python \
+#     python-pip \
+#     libgflags2v5 \
+#     libgoogle-glog-dev \
+#     openssh-server \
+#     ffmpeg \
+#     python-numpy \
+#     python-pil \
+#     zlib1g-dev \
+#     libhdf5-dev \
+#     libprotobuf-dev \
+#     protobuf-compiler \
+#     libjemalloc-dev \
+#     libunwind8-dev \
+#     libsodium-dev \
+#     software-properties-common \
+#   && apt-get clean \
+#   && rm -rf /var/lib/apt/lists/*
 
-# Add PPA and install python-wxgtk2.8
-RUN add-apt-repository ppa:nilarimogard/webupd8 && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends \
-    python-wxgtk2.8 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+# # Add PPA and install python-wxgtk2.8
+# RUN add-apt-repository ppa:nilarimogard/webupd8 && \
+#   apt-get update && \
+#   apt-get install -y --no-install-recommends \
+#     python-wxgtk2.8 \
+#   && apt-get clean \
+#   && rm -rf /var/lib/apt/lists/*
 
-# Copy built dependencies from the builder stage
-COPY --from=builder /usr/local /usr/local
+# # Copy built dependencies from the builder stage
+# COPY --from=builder /usr/local /usr/local
 
-# Install Python packages
-RUN pip install --no-cache-dir setuptools==44.1.1 && \
-  pip install --no-cache-dir --upgrade pip==20.3.4
+# # Install Python packages
+# RUN pip install --no-cache-dir setuptools==44.1.1 && \
+#   pip install --no-cache-dir --upgrade pip==20.3.4
 
 # Copy the project code
 WORKDIR /workspaces

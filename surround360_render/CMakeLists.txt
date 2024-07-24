@@ -1,10 +1,22 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
 
-PROJECT(Surround360Render CXX)
+PROJECT(Surround360Render LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 14)
 
 FIND_PACKAGE(OpenCV)
 FIND_PACKAGE(Ceres REQUIRED)
+
+## FP
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+
+# Find and include double-conversion
+find_package(double-conversion REQUIRED)
+include_directories(${double-conversion_INCLUDE_DIRS})
+
+# Find and include Folly
+find_package(folly REQUIRED)
+include_directories(${folly_INCLUDE_DIRS})
 
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/source)
