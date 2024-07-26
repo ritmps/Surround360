@@ -8,6 +8,7 @@ It's pretty nutty. But here you go
 
 cuda10/libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
 cuda10/libcudnn7-dev_7.6.5.32-1+cuda10.2_amd64.deb
+libcudnn6_6.0.21-1+cuda8.0_amd64.deb
 
 which are from 
 

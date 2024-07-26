@@ -4,23 +4,35 @@ FROM ubuntu:16.04
 # Set non-interactive mode for debconf
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Preconfigure the keyboard settings
-RUN echo 'keyboard-configuration keyboard-configuration/layout select "English (US)"' | debconf-set-selections
-RUN echo 'keyboard-configuration keyboard-configuration/variant select "English (US)"' | debconf-set-selections
-
-
-# Install basic dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install the required starting packages
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+    keyboard-configuration \
+    debconf-utils \
+    software-properties-common \
+    binutils-dev \
     build-essential \
-    cmake \
     git \
     wget \
     curl \
+    python \
+    python-dev \
+    python-pip \
+    python-numpy \
+    libgflags2v5 \
+    libgflags-dev \
+    libgoogle-glog-dev \
+    openssh-server \
+    apt-transport-https \
     ca-certificates \
-    libjpeg-dev \
-    libpng-dev \
-    gnupg2 && \
-    rm -rf /var/lib/apt/lists/*
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Preconfigure the keyboard settings
+# SHELL ["/bin/bash", "-o", "pipefail"]
+# RUN echo 'keyboard-configuration keyboard-configuration/layout select "English (US)"' | debconf-set-selections
+# RUN echo 'keyboard-configuration keyboard-configuration/variant select "English (US)"' | debconf-set-selections
+
 
 # Install Python and pip
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -32,7 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python3 -m pip install --upgrade pip
 
 # Add NVIDIA package repositories
-RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_10.2.89-1_amd64.deb && \
+RUN wget --progress=dot:giga https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_10.2.89-1_amd64.deb && \
     dpkg -i cuda-repo-ubuntu1604_10.2.89-1_amd64.deb && \
     apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub && \
     apt-get update && apt-get install -y --no-install-recommends --allow-unauthenticated cuda-10-2 && \
