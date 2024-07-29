@@ -82,9 +82,21 @@ CameraController& CameraController::get() {
   }
 }
 
+pair<float, float> CameraController::getPropertyMinMax(
+    PointGreyCamera::CameraProperty property) {
+
+  const unsigned int ncameras = PointGreyCamera::findCameras();
+
+  if (ncameras > 0) {
+    PointGreyCameraPtr c = PointGreyCamera::getCamera(0);
+    return c->getPropertyMinMax(property);
+  }
+}
+
 bool CameraController::configureCameras(
   const float shutter,
   const float framerate,
+  const int frameInterval,
   const float gain,
   const int bitsPerPixel) {
 
@@ -93,6 +105,7 @@ bool CameraController::configureCameras(
 
   m_shutter = shutter;
   m_framerate = framerate;
+  m_frameInterval = frameInterval;
   m_gain = gain;
   m_bitsPerPixel = bitsPerPixel;
 
@@ -113,7 +126,6 @@ bool CameraController::configureCameras(
   for (int k = 0; k < m_camera.size(); ++k) {
     try {
       bool master = k == m_masterCameraIndex;
-
       m_camera[k]->powerCamera(true);
       if (-1 == m_camera[k]->init(
         master,
@@ -139,6 +151,7 @@ bool CameraController::configureCameras(
 bool CameraController::updateCameraParams(
   const float shutter,
   const float fps,
+  const int frameInterval,
   const float gain,
   const int bits) {
 
@@ -148,6 +161,10 @@ bool CameraController::updateCameraParams(
 
   if (fps != m_framerate) {
     m_framerate = fps;
+  }
+
+  if (frameInterval != m_frameInterval) {
+    m_frameInterval = frameInterval;
   }
 
   if (gain != m_gain) {
@@ -240,9 +257,9 @@ void CameraController::cameraProducer(const uint32_t id) {
   const size_t camerasPerProducer = m_camera.size() / m_producerCount;
   const size_t cameraOffset = id * camerasPerProducer;
   const int lastCamera = std::min(cameraOffset + camerasPerProducer, m_camera.size());
-  uint32_t frameCount = 0;
   uint32_t frameNumber = 0;
   vector<fc::Image> frame(m_camera.size());
+  vector<uint32_t> frameCount(m_camera.size());
   vector<uint32_t> frameCounter(m_camera.size());
   vector<uint32_t> prevFrameCounter(m_camera.size());
   fc::Image previewFrame;
@@ -266,7 +283,7 @@ void CameraController::cameraProducer(const uint32_t id) {
   m_camera[m_masterCameraIndex]->toggleStrobeOut(m_pinStrobe, true);
 
   m_running = true;
-  m_paramUpdatePending = false;
+  m_paramUpdatePending = true;
   pthread_barrier_wait(&startBarrier);
 
   while (m_keepRunning) {
@@ -304,7 +321,7 @@ void CameraController::cameraProducer(const uint32_t id) {
     }
 
     // The main frame grab loop
-    for (auto i = cameraOffset; i < lastCamera; ++i, ++frameCount) {
+    for (auto i = cameraOffset; i < lastCamera; ++i) {
       const int cid = i % m_consumerCount; // ping-pong between output threads
 
       FramePacket* nextFrame = nullptr;
@@ -321,6 +338,10 @@ void CameraController::cameraProducer(const uint32_t id) {
 
         if (prevFrameCounter[i] != 0 && (frameCounter[i] - prevFrameCounter[i]) != 1) {
           cerr << "camera " << i << " dropped " << (frameCounter[i] - prevFrameCounter[i]) << " frames" << endl;
+        }
+
+        if ((++frameCount[i]) % m_frameInterval > 0) {
+          continue;
         }
 
         if (m_recording) {

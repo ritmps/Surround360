@@ -1,3 +1,12 @@
+/**
+* Copyright (c) 2016-present, Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD-style license found in the
+* LICENSE_render file in the root directory of this subproject. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 #include <iostream>
 #include <unordered_map>
 #include <random>
@@ -41,6 +50,14 @@ DEFINE_int64(experiments,             1,        "calibrate multiple times");
 DEFINE_bool(discard_outside_fov,      true,     "discard matches outside fov");
 DEFINE_bool(save_debug_images,        false,  "save intermediate images");
 
+// is the stem expected to be the camera id? i.e. the path is of the form:
+//   <frame index>/ ... /<camera id>.<extension>
+//   e.g. 1/cam2.bmp or 000000/isp_out/cam14.png
+// or is the stem expected to be the frame index? i.e. the path is of the form:
+//   .../<camera id>/<frame index>.<extension>
+//   e.g. 1/cam2/000123.bmp or rgb/cam14/000123.png
+const bool kStemIsCameraId = false; // stem is frame index
+
 std::unordered_map<std::string, int> cameraIdToIndex;
 std::unordered_map<std::string, int> cameraGroupToIndex;
 
@@ -51,14 +68,17 @@ void buildCameraIndexMaps(const Camera::Rig& rig) {
   }
 }
 
-// an image path is assumed to be of the form:
-// .../<camera id>/<frame index>.<extension>
-// e.g. 1/cam2/000123.bmp or rgb/cam14/000123.png
 std::string getCameraIdFromPath(const boost::filesystem::path& image) {
+  if (kStemIsCameraId) {
+    return image.stem().native();
+  }
   return image.parent_path().filename().native();
 }
 
 int getFrameIndexFromPath(const boost::filesystem::path& image) {
+  if (kStemIsCameraId) {
+    return std::stoi(image.begin()->native());
+  }
   return std::stoi(image.stem().native());
 }
 
@@ -881,12 +901,12 @@ int main(int argc, char* argv[]) {
 
   std::string outputDir =
     FLAGS_output_json.substr(0, FLAGS_output_json.find_last_of('/'));
-  system(std::string("mkdir -p " + outputDir).c_str());
+  system(std::string("mkdir -p \"" + outputDir + "\"").c_str());
 
   std::string debugDir = "";
   if (FLAGS_save_debug_images) {
     debugDir = outputDir + "/debug";
-    system(std::string("mkdir -p " + debugDir).c_str());
+    system(std::string("mkdir -p \"" + debugDir + "\"").c_str());
   }
 
   if (FLAGS_unit_test) {

@@ -1,6 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
 
 PROJECT(Surround360Render CXX)
+set(CMAKE_CXX_STANDARD 14)
 
 FIND_PACKAGE(OpenCV)
 FIND_PACKAGE(Ceres REQUIRED)
@@ -101,6 +102,7 @@ ADD_LIBRARY(
 TARGET_COMPILE_FEATURES(LibVrCamera PRIVATE cxx_range_for)
 
 ### Raw2Rgb ###
+
 IF (DEFINED HALIDE_DIR)
    halide_gen_app(CameraIspGen "apps" source/camera_isp/CameraIspGen.cpp)
 
@@ -120,7 +122,6 @@ IF (DEFINED HALIDE_DIR)
   ADD_DEPENDENCIES(Raw2Rgb CameraIspGen)
 ENDIF()
 
-### Raw2Rgb ###
 IF (DEFINED HALIDE_DIR)
   IF(NOT APPLE AND NOT MSVC)
     TARGET_LINK_LIBRARIES(
@@ -200,22 +201,6 @@ TARGET_LINK_LIBRARIES(
   gflags
 )
 
-### TestIntrinsicCalibration ###
-
-ADD_EXECUTABLE(
-  TestIntrinsicCalibration
-  source/test/TestIntrinsicCalibration.cpp
-)
-TARGET_COMPILE_FEATURES(TestIntrinsicCalibration PRIVATE cxx_range_for)
-TARGET_LINK_LIBRARIES(
-  TestIntrinsicCalibration
-  LibVrCamera
-  LibJSON
-  glog
-  gflags
-  ${OpenCV_LIBS}
-)
-
 ### TestOpticalFlow ###
 
 ADD_EXECUTABLE(
@@ -227,24 +212,6 @@ TARGET_LINK_LIBRARIES(
   TestOpticalFlow
   LibVrCamera
   LibJSON
-  glog
-  gflags
-  ${OpenCV_LIBS}
-  ${PLATFORM_SPECIFIC_LIBS}
-)
-
-### TestImageWarper ###
-
-ADD_EXECUTABLE(
-  TestImageWarper
-  source/test/TestImageWarper.cpp
-)
-TARGET_COMPILE_FEATURES(TestImageWarper PRIVATE cxx_range_for)
-TARGET_LINK_LIBRARIES(
-  TestImageWarper
-  LibVrCamera
-  LibJSON
-  folly
   glog
   gflags
   ${OpenCV_LIBS}
@@ -266,37 +233,21 @@ TARGET_LINK_LIBRARIES(
   ${OpenCV_LIBS}
 )
 
-### UnpackImageBundle ###
-
-ADD_EXECUTABLE(
-  UnpackImageBundle
-  source/camera_isp/UnpackImageBundle.cpp
-)
-TARGET_COMPILE_FEATURES(UnpackImageBundle PRIVATE cxx_range_for)
-TARGET_LINK_LIBRARIES(
-  UnpackImageBundle
-  LibVrCamera
-  LibJSON
-  glog
-  gflags
-  ${OpenCV_LIBS}
-  ${PLATFORM_SPECIFIC_LIBS}
-)
-
-### NewUnpacker ###
+### Unpacker ###
 
 IF (DEFINED HALIDE_DIR)
   ADD_EXECUTABLE(
-    NewUnpacker
+    Unpacker
     source/camera_isp/BinaryFootageFile.cpp
-    source/camera_isp/NewUnpacker.cpp
-    source/camera_isp/Raw12Converter.cpp
+    source/camera_isp/Unpacker.cpp
+    source/camera_isp/RawConverter.cpp
     "${CMAKE_BINARY_DIR}/CameraIspGen8.h"
-    "${CMAKE_BINARY_DIR}/CameraIspGen16.h")
+    "${CMAKE_BINARY_DIR}/CameraIspGen16.h"
+  )
 
   IF(NOT APPLE AND NOT MSVC)
     TARGET_LINK_LIBRARIES(
-      NewUnpacker
+      Unpacker
       LibVrCamera
       LibJSON
       glog
@@ -315,7 +266,7 @@ IF (DEFINED HALIDE_DIR)
     )
   ELSE()
     TARGET_LINK_LIBRARIES(
-      NewUnpacker
+      Unpacker
       LibVrCamera
       LibJSON
       glog
@@ -332,8 +283,8 @@ IF (DEFINED HALIDE_DIR)
       ${PLATFORM_SPECIFIC_LIBS}
   )
   ENDIF()
-  ADD_DEPENDENCIES(NewUnpacker CameraIspGen)
-ENDIF()
+  ADD_DEPENDENCIES(Unpacker CameraIspGen)
+ENDIF() # HALIDE_DIR
 
 ### TestHyperPreview ###
 
@@ -353,23 +304,6 @@ TARGET_LINK_LIBRARIES(
   ${PLATFORM_SPECIFIC_LIBS}
 )
 
-### TestRingRectification ###
-
-ADD_EXECUTABLE(
-  TestRingRectification
-  source/test/TestRingRectification.cpp
-)
-TARGET_COMPILE_FEATURES(TestRingRectification PRIVATE cxx_range_for)
-TARGET_LINK_LIBRARIES(
-  TestRingRectification
-  LibVrCamera
-  LibJSON
-  glog
-  gflags
-  ${OpenCV_LIBS}
-  ${PLATFORM_SPECIFIC_LIBS}
-)
-
 ### TestPoleRemoval ###
 
 ADD_EXECUTABLE(
@@ -379,40 +313,6 @@ ADD_EXECUTABLE(
 TARGET_COMPILE_FEATURES(TestPoleRemoval PRIVATE cxx_range_for)
 TARGET_LINK_LIBRARIES(
   TestPoleRemoval
-  LibVrCamera
-  LibJSON
-  gflags
-  glog
-  ${OpenCV_LIBS}
-  ${PLATFORM_SPECIFIC_LIBS}
-)
-
-### TestOpticalCenterVisualization ###
-
-ADD_EXECUTABLE(
-  TestOpticalCenterVisualization
-  source/test/TestOpticalCenterVisualization.cpp
-)
-TARGET_COMPILE_FEATURES(TestOpticalCenterVisualization PRIVATE cxx_range_for)
-TARGET_LINK_LIBRARIES(
-  TestOpticalCenterVisualization
-  LibVrCamera
-  LibJSON
-  glog
-  gflags
-  ${OpenCV_LIBS}
-  ${PLATFORM_SPECIFIC_LIBS}
-)
-
-### TestRenderWithoutSides ###
-
-ADD_EXECUTABLE(
-  TestRenderWithoutSides
-  source/test/TestRenderWithoutSides.cpp
-)
-TARGET_COMPILE_FEATURES(TestRenderWithoutSides PRIVATE cxx_range_for)
-TARGET_LINK_LIBRARIES(
-  TestRenderWithoutSides
   LibVrCamera
   LibJSON
   folly

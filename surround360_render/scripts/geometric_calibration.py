@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 # Copyright (c) 2016-present, Facebook, Inc.
 # All rights reserved.
 #
@@ -16,7 +17,6 @@ import datetime
 import json
 import numpy as np
 import os
-import re
 import sqlite3
 import subprocess
 import sys
@@ -34,22 +34,22 @@ TITLE = "Surround 360 - Geometric Calibration"
 
 COLMAP_EXTRACT_TEMPLATE = """
 {COLMAP_DIR}/feature_extractor
---General.image_path {IMAGE_PATH}
---General.database_path {COLMAP_DB_PATH}
+--General.image_path "{IMAGE_PATH}"
+--General.database_path "{COLMAP_DB_PATH}"
 """
 
 COLMAP_MATCH_TEMPLATE = """
 {COLMAP_DIR}/exhaustive_matcher
---General.database_path {COLMAP_DB_PATH}
+--General.database_path "{COLMAP_DB_PATH}"
 """
 
 GEOMETRIC_CALIBRATION_COMMAND_TEMPLATE = """
 {SURROUND360_RENDER_DIR}/bin/GeometricCalibration
---json {RIG_JSON}
---output_json {OUTPUT_JSON}
---matches {MATCHES_JSON}
+--json "{RIG_JSON}"
+--output_json "{OUTPUT_JSON}"
+--matches "{MATCHES_JSON}"
 --pass_count {PASS_COUNT}
---log_dir {LOG_DIR}
+--log_dir "{LOG_DIR}"
 --logbuflevel -1
 --stderrthreshold 0
 {FLAGS_EXTRA}
@@ -181,17 +181,17 @@ if __name__ == "__main__":
   print "Extracting features via COLMAP..."
   colmap_db_path = data_dir + "/colmap.db"
   feature_extraction_params = {
-    "COLMAP_DIR": re.escape(colmap_dir),
-    "IMAGE_PATH": re.escape(data_dir),
-    "COLMAP_DB_PATH": re.escape(colmap_db_path),
+    "COLMAP_DIR": colmap_dir,
+    "IMAGE_PATH": data_dir,
+    "COLMAP_DB_PATH": colmap_db_path,
   }
   feature_extraction_command = COLMAP_EXTRACT_TEMPLATE.replace("\n", " ").format(**feature_extraction_params)
   run_step("feature extraction", feature_extraction_command, file_runtimes)
 
   print "Matching features via COLMAP..."
   feature_matching_params = {
-    "COLMAP_DIR": re.escape(colmap_dir),
-    "COLMAP_DB_PATH": re.escape(colmap_db_path),
+    "COLMAP_DIR": colmap_dir,
+    "COLMAP_DB_PATH": colmap_db_path,
   }
   feature_matching_command = COLMAP_MATCH_TEMPLATE.replace("\n", " ").format(**feature_matching_params)
   run_step("feature matching", feature_matching_command, file_runtimes)
@@ -200,8 +200,8 @@ if __name__ == "__main__":
   matches_json = data_dir + "/matches.json"
   features_db_to_json(colmap_db_path, matches_json)
 
-  log_dir = re.escape(data_dir + "/logs")
-  os.system("mkdir -p " + log_dir)
+  log_dir = data_dir + "/logs"
+  os.system("mkdir -p \"" + log_dir + "\"")
 
   os.chdir(data_dir)
 
@@ -211,9 +211,9 @@ if __name__ == "__main__":
     flags_extra += " --debug_matches_overlap 0.2 --save_debug_images"
   calibration_params = {
     "SURROUND360_RENDER_DIR": surround360_render_dir,
-    "RIG_JSON": re.escape(rig_json),
-    "OUTPUT_JSON": re.escape(output_json),
-    "MATCHES_JSON": re.escape(matches_json),
+    "RIG_JSON": rig_json,
+    "OUTPUT_JSON": output_json,
+    "MATCHES_JSON": matches_json,
     "PASS_COUNT": pass_count,
     "LOG_DIR": log_dir,
     "FLAGS_EXTRA": flags_extra,

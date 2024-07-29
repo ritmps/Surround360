@@ -1,4 +1,13 @@
-#include "BinaryFootageFile.hpp"
+/**
+* Copyright (c) 2016-present, Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD-style license found in the
+* LICENSE_render file in the root directory of this subproject. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
+#include "BinaryFootageFile.h"
 
 extern "C" {
 #include <fcntl.h>
@@ -148,8 +157,13 @@ const size_t BinaryFootageFile::getNumberOfCameras() const {
 }
 
 const size_t BinaryFootageFile::getNumberOfFrames() const {
-  const size_t kSingleFrameSize = getFrameSize();
   const size_t kNumCameras = getNumberOfCameras();
+
+  if (kNumCameras == 0) {
+    return 0;
+  }
+
+  const size_t kSingleFrameSize = getFrameSize();
   const size_t kPageSize = 4096;
   return (mappingSize - kPageSize) / kSingleFrameSize / kNumCameras;
 }

@@ -100,9 +100,9 @@ Surround 360 is a hardware and software system for capturing and rendering 3d (s
   see https://github.com/facebook/folly
 
 * Install folly (method 2 - OS X only):
-<pre>
+```
   brew install folly
-</pre>
+```
 
 * Install Ceres (method 1 - Linux only):
   see http://ceres-solver.org/installation.html
@@ -112,6 +112,7 @@ Surround 360 is a hardware and software system for capturing and rendering 3d (s
   cd ~
   git clone https://ceres-solver.googlesource.com/ceres-solver
   cd ceres-solver
+  git checkout 85c6b5c
   mkdir ceres-bin
   cd ceres-bin
   cmake ..
@@ -145,6 +146,7 @@ Surround 360 is a hardware and software system for capturing and rendering 3d (s
   cd ~
   git clone https://github.com/Itseez/opencv.git
   cd opencv
+  git checkout f109c01
   cmake -DWITH_IPP=OFF
   make
   sudo make install
@@ -155,6 +157,7 @@ Surround 360 is a hardware and software system for capturing and rendering 3d (s
   cd ~
   git clone https://github.com/Itseez/opencv.git
   cd opencv
+  git checkout f109c01
   cmake -DWITH_IPP=OFF \
   -DPYTHON2_PACKAGES_PATH=/usr/local/lib/python2.7/site-packages \
   -DPYTHON2_LIBRARIES=/usr/local/Cellar/python/2.7.13/Frameworks/Python.framework/Versions/2.7/bin \
@@ -219,12 +222,30 @@ If python-wxgtk2.8 not available (e.g. Ubuntu 16.04):
   sudo apt-get install libtinfo-dev libjpeg-dev
 ```
 
-* (to use accelerated ISP) Install Halide
+* (to use accelerated ISP) Install LLVM
+```
+  cd ~
+  svn co https://llvm.org/svn/llvm-project/llvm/branches/release_37 llvm3.7
+  svn co https://llvm.org/svn/llvm-project/cfe/branches/release_37 llvm3.7/tools/clang
+  cd llvm3.7
+  mkdir build
+  cd build
+  cmake -DLLVM_ENABLE_TERMINFO=OFF -DLLVM_TARGETS_TO_BUILD="X86;ARM;NVPTX;AArch64;Mips;PowerPC" -DLLVM_ENABLE_ASSERTIONS=ON -DCMAKE_BUILD_TYPE=Release ..
+  make -j8
+  export LLVM_CONFIG=$HOME/llvm3.7/build/bin/llvm-config
+  export CLANG=$HOME/llvm3.7/build/bin/clang
+```
+
+* (to use accelerated ISP) Install Halide (last known version to work from Mar 15 2017)
 ```
   cd ~
   git clone https://github.com/halide/Halide.git
+  cd Halide
+  git checkout 970f749
+  mkdir cmake_build
+  cd cmake_build
+  cmake -DLLVM_DIR=$HOME/llvm3.7/build/share/llvm/cmake -DCMAKE_BUILD_TYPE=Release -DLLVM_VERSION=37 -DWARNINGS_AS_ERRORS=OFF ..
 ```
-  see README file inside Halide directory for installation instructions, including LLVM dependency. Follow steps in use "Building Halide with cmake". If the make step throws errors about unused variables, add the option ```-DWARNINGS_AS_ERRORS=OFF``` to the cmake command
 
 ## Compiling the Surround 360 Rendering Software
 
@@ -267,12 +288,6 @@ If python-wxgtk2.8 not available (e.g. Ubuntu 16.04):
 Check out our blog post about how rendering for Surround 360 works here:
 https://code.facebook.com/posts/265413023819735
 
-
-## Join the Surround 360 community
-
-* Website: https://facebook360.fb.com/facebook-surround-360/
-
-See the CONTRIBUTING file for how to help out.
 
 ## License
 

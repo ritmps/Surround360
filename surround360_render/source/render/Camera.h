@@ -1,9 +1,74 @@
+/**
+* Copyright (c) 2016-present, Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD-style license found in the
+* LICENSE_render file in the root directory of this subproject. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 #pragma once
 
+#include <vector>
+
 #include <Eigen/Geometry>
+
+#include <glog/logging.h>
+
+#ifndef WIN32
+
 #include <folly/dynamic.h>
 #include <folly/FileUtil.h>
 #include <folly/json.h>
+
+using folly::dynamic;
+
+#else // WIN32
+
+#ifndef M_PI
+#define M_PI EIGEN_PI
+#endif
+
+// windows doesn't need the full rig i/o functionality
+#define SUPPRESS_RIG_IO
+
+// dynamic is an interposer that mimics folly::dynamic
+
+#include <boost/property_tree/json_parser.hpp>
+
+struct dynamic : public boost::property_tree::ptree {
+  dynamic(const boost::property_tree::ptree& tree) : boost::property_tree::ptree(tree) {}
+
+  dynamic operator[](const char* key) const {
+    return get_child(key);
+  }
+
+  dynamic operator[](const std::size_t index) const {
+    auto it = begin();
+    for (int i = 0; i < index; ++i) {
+      CHECK(it != end());
+      ++it;
+    }
+    return it->second;
+  }
+
+  std::string getString() const {
+    return get_value<std::string>();
+  }
+
+  double asDouble() const {
+    return get_value<double>();
+  }
+
+  friend std::ostream& operator<<(std::ostream& s, const dynamic& dyn) {
+    for (const auto& pair : dyn) {
+      s << pair.first << "->" << pair.second.get_value<std::string>() << ", ";
+    }
+    return s;
+  }
+};
+
+#endif // WIN32
 
 namespace surround360 {
 
@@ -14,7 +79,7 @@ struct Camera {
   using Matrix3 = Eigen::Matrix<Real, 3, 3>;
   using Ray = Eigen::ParametrizedLine<Real, 3>;
   using Rig = std::vector<Camera>;
-  static const int kNearInfinity = 1e6;
+  static const Camera::Real kNearInfinity;
 
   // member variables
   enum struct Type { FTHETA, RECTILINEAR } type;
@@ -34,10 +99,11 @@ struct Camera {
 
   // construction and de/serialization
   Camera(const Type type, const Vector2& resolution, const Vector2& focal);
-  Camera(const folly::dynamic& json);
-  folly::dynamic serialize() const;
+  Camera(const dynamic& json);
+  dynamic serialize() const;
   static Rig loadRig(const std::string& filename);
   static void saveRig(const std::string& filename, const Rig& rig);
+  static Camera createRescaledCamera(const Camera& cam, const float scale);
 
   // access rotation as forward/up/right vectors
   Vector3 forward() const { return -backward(); }
@@ -131,6 +197,20 @@ struct Camera {
     return inside / Real(kProbeCount * kProbeCount);
   }
 
+  // sample the camera's fov cone to find the closest point to the image center
+  static float approximateUsablePixelsRadius(const Camera& camera) {
+    const Camera::Real fov = camera.getFov();
+    const Camera::Real kStep = 2 * M_PI / 10.0;
+    Camera::Real result = camera.resolution.norm();
+    for (Camera::Real a = 0; a < 2 * M_PI; a += kStep) {
+      Camera::Vector3 ortho = cos(a) * camera.right() + sin(a) * camera.up();
+      Camera::Vector3 direction = cos(fov) * camera.forward() + sin(fov) * ortho;
+      Camera::Vector2 pixel = camera.pixel(camera.position + direction);
+      result = std::min(result, (pixel - camera.resolution / 2.0).norm());
+    }
+    return result;
+  }
+
   static void unitTest();
 
  private:
@@ -211,13 +291,13 @@ struct Camera {
   }
 
   template <typename V>
-  static folly::dynamic serializeVector(const V& v) {
-    return folly::dynamic(v.data(), v.data() + v.size());
+  static dynamic serializeVector(const V& v) {
+    return dynamic(v.data(), v.data() + v.size());
   }
 
   template <int kSize>
   static Eigen::Matrix<Real, kSize, 1> deserializeVector(
-      const folly::dynamic& json) {
+      const dynamic& json) {
     CHECK_EQ(kSize, json.size()) << "bad vector" << json;
     Eigen::Matrix<Real, kSize, 1> result;
     for (int i = 0; i < kSize; ++i) {
@@ -235,7 +315,7 @@ struct Camera {
     }
   }
 
-  static Type deserializeType(const folly::dynamic& json) {
+  static Type deserializeType(const dynamic& json) {
     for (int i = 0; ; ++i) {
       if (serializeType(Type(i)) == json.getString()) {
         return Type(i);
