@@ -1532,7 +1532,7 @@ _ZN6Halide7Runtime8Internal13default_traceEPvPK20halide_trace_event_t: # @_ZN6Ha
 	movq	%r12, %rbx
 	movq	%r15, %rsi
 	callq	halide_string_to_string@PLT
-	leaq	.L.str.20.123(%rip), %rdx
+	leaq	.L.str.20.122(%rip), %rdx
 	movq	%rax, %rdi
 	movq	%r15, %rsi
 	callq	halide_string_to_string@PLT
@@ -1549,7 +1549,7 @@ _ZN6Halide7Runtime8Internal13default_traceEPvPK20halide_trace_event_t: # @_ZN6Ha
 	movq	%rax, %rdi
 	movq	%r15, %rsi
 	callq	halide_int64_to_string@PLT
-	leaq	.L.str.22.125(%rip), %rdx
+	leaq	.L.str.22.124(%rip), %rdx
 	movq	%rax, %rdi
 	movq	%r15, %rsi
 	callq	halide_string_to_string@PLT
@@ -1885,7 +1885,7 @@ _ZN6Halide7Runtime8Internal13default_traceEPvPK20halide_trace_event_t: # @_ZN6Ha
 	callq	halide_string_to_string@PLT
 	movq	%rax, %rdi
 .LBB51_42:                              # %if.end.243
-	leaq	.L.str.7.110(%rip), %rdx
+	leaq	.L.str.7.109(%rip), %rdx
 	movq	%r15, %rsi
 	callq	halide_string_to_string@PLT
 	movl	$1, %r15d
@@ -4886,13 +4886,13 @@ halide_copy_to_device:                  # @halide_copy_to_device
 	cmpb	$0, 68(%r12)
 	je	.LBB89_17
 # BB#14:                                # %if.then.75
-	movl	$-15, %ebx
 	cmpb	$0, 69(%r12)
 	jne	.LBB89_17
 # BB#15:                                # %if.else
 	movq	%r14, %rdi
 	movq	%r12, %rsi
 	callq	*56(%r15)
+	movl	$-15, %ebx
 	testl	%eax, %eax
 	jne	.LBB89_17
 # BB#16:                                # %if.then.89
@@ -5137,30 +5137,57 @@ halide_device_and_host_malloc:          # @halide_device_and_host_malloc
 	movq	(%r15), %rdi
 	callq	halide_get_device_interface@PLT
 	testq	%rax, %rax
-	je	.LBB95_3
+	je	.LBB95_6
 # BB#1:                                 # %entry
 	cmpq	%rbx, %rax
-	je	.LBB95_3
+	je	.LBB95_6
 # BB#2:                                 # %if.then
-	leaq	.L.str.42(%rip), %rsi
+	movl	$1024, %esi             # imm = 0x400
+	movq	%r14, %rdi
+	callq	halide_malloc@PLT
+	movq	%rax, %rbx
+	testq	%rbx, %rbx
+	je	.LBB95_3
+# BB#4:                                 # %if.else.i
+	leaq	1023(%rbx), %rsi
+	movb	$0, 1023(%rbx)
+	leaq	.L.str.42(%rip), %rdx
+	movq	%rbx, %rdi
+	callq	halide_string_to_string@PLT
+	movl	$1, %edx
+	subq	%rbx, %rdx
+	addq	%rax, %rdx
+	movq	%r14, %rdi
+	movq	%rbx, %rsi
+	callq	halide_msan_annotate_memory_is_initialized@PLT
+	movq	%r14, %rdi
+	movq	%rbx, %rsi
 	jmp	.LBB95_5
-.LBB95_3:                               # %if.end
+.LBB95_6:                               # %if.end
 	callq	*(%rbx)
 	movq	%r14, %rdi
 	movq	%r15, %rsi
 	callq	*64(%rbx)
-	movl	%eax, %r15d
+	movl	%eax, %r14d
 	callq	*8(%rbx)
-	xorl	%eax, %eax
-	testl	%r15d, %r15d
-	je	.LBB95_6
-# BB#4:                                 # %if.then.21
-	leaq	.L.str.43(%rip), %rsi
-.LBB95_5:                               # %cleanup.22
-	movq	%r14, %rdi
-	callq	halide_error@PLT
+	testl	%r14d, %r14d
 	movl	$-16, %eax
-.LBB95_6:                               # %cleanup.22
+	cmovel	%r14d, %eax
+	jmp	.LBB95_7
+.LBB95_3:                               # %if.then.i
+	leaq	.L.str.42(%rip), %rdx
+	xorl	%edi, %edi
+	xorl	%esi, %esi
+	callq	halide_string_to_string@PLT
+	leaq	.L.str.53(%rip), %rsi
+	movq	%r14, %rdi
+.LBB95_5:                               # %_ZN6Halide7Runtime8Internal12_GLOBAL__N_17PrinterILi1ELy1024EED2Ev.exit
+	callq	halide_error@PLT
+	movq	%r14, %rdi
+	movq	%rbx, %rsi
+	callq	halide_free@PLT
+	movl	$-16, %eax
+.LBB95_7:                               # %cleanup.23
 	addq	$8, %rsp
 	popq	%rbx
 	popq	%r14
@@ -5180,58 +5207,53 @@ halide_device_and_host_free:            # @halide_device_and_host_free
 	movq	%rsp, %rbp
 	pushq	%r15
 	pushq	%r14
+	pushq	%r13
 	pushq	%r12
 	pushq	%rbx
-	movq	%rsi, %r12
+	pushq	%rax
+	movq	%rsi, %r13
 	movq	%rdi, %r14
-	testq	%r12, %r12
+	testq	%r13, %r13
 	je	.LBB96_1
-# BB#2:                                 # %if.then.8
-	movq	(%r12), %rbx
+# BB#3:                                 # %if.then.8
+	movq	(%r13), %rbx
 	movq	%rbx, %rdi
 	callq	halide_get_device_interface@PLT
 	movq	%rbx, %rdi
 	callq	halide_get_device_interface@PLT
-	movq	%rax, %rbx
-	testq	%rbx, %rbx
-	je	.LBB96_6
-# BB#3:                                 # %if.then.12
-	callq	*(%rbx)
+	movq	%rax, %r12
+	testq	%r12, %r12
+	je	.LBB96_2
+# BB#4:                                 # %if.then.12
+	callq	*(%r12)
 	movq	%r14, %rdi
-	movq	%r12, %rsi
-	callq	*72(%rbx)
+	movq	%r13, %rsi
+	callq	*72(%r12)
 	movl	%eax, %r15d
-	callq	*8(%rbx)
-	cmpq	$0, (%r12)
-	je	.LBB96_5
-# BB#4:                                 # %if.then.17
-	leaq	.L.str.45.65(%rip), %rsi
+	callq	*8(%r12)
+	cmpq	$0, (%r13)
+	je	.LBB96_6
+# BB#5:                                 # %if.then.17
+	leaq	.L.str.44(%rip), %rsi
 	movq	%r14, %rdi
 	callq	halide_print@PLT
 	callq	abort@PLT
-.LBB96_5:                               # %cleanup.28
+.LBB96_6:                               # %cleanup.22
 	testl	%r15d, %r15d
 	movl	$-18, %eax
 	cmovel	%r15d, %eax
-	jmp	.LBB96_9
+	jmp	.LBB96_7
 .LBB96_1:                               # %if.end
 	xorl	%edi, %edi
 	callq	halide_get_device_interface@PLT
-	jmp	.LBB96_8
-.LBB96_6:                               # %if.else.21
-	movq	8(%r12), %rsi
-	testq	%rsi, %rsi
-	je	.LBB96_8
-# BB#7:                                 # %if.then.23
-	movq	%r14, %rdi
-	callq	halide_free@PLT
-	movq	$0, 8(%r12)
-.LBB96_8:                               # %if.end.29
-	movb	$0, 69(%r12)
+.LBB96_2:                               # %if.end.23
+	movb	$0, 69(%r13)
 	xorl	%eax, %eax
-.LBB96_9:                               # %cleanup.30
+.LBB96_7:                               # %cleanup.24
+	addq	$8, %rsp
 	popq	%rbx
 	popq	%r12
+	popq	%r13
 	popq	%r14
 	popq	%r15
 	popq	%rbp
@@ -5302,19 +5324,15 @@ halide_default_device_and_host_free:    # @halide_default_device_and_host_free
 	pushq	%rbx
 	pushq	%rax
 	movq	%rsi, %rbx
-	movq	%rdi, %r15
+	movq	%rdi, %r14
 	callq	halide_device_free@PLT
-	movl	%eax, %r14d
+	movl	%eax, %r15d
 	movq	8(%rbx), %rsi
-	testq	%rsi, %rsi
-	je	.LBB98_2
-# BB#1:                                 # %if.then
-	movq	%r15, %rdi
+	movq	%r14, %rdi
 	callq	halide_free@PLT
 	movq	$0, 8(%rbx)
-.LBB98_2:                               # %if.end
 	movw	$0, 68(%rbx)
-	movl	%r14d, %eax
+	movl	%r15d, %eax
 	addq	$8, %rsp
 	popq	%rbx
 	popq	%r14
@@ -7131,7 +7149,7 @@ halide_error_unaligned_host_ptr:        # @halide_error_unaligned_host_ptr
 	movq	%rax, %rdi
 	movq	%rbx, %rsi
 	callq	halide_int64_to_string@PLT
-	leaq	.L.str.43.99(%rip), %rdx
+	leaq	.L.str.43(%rip), %rdx
 	movq	%rax, %rdi
 	movq	%rbx, %rsi
 	callq	halide_string_to_string@PLT
@@ -7195,7 +7213,7 @@ halide_error_bad_fold:                  # @halide_error_bad_fold
 	leaq	1023(%r12), %rbx
 	movb	$0, 1023(%r12)
 .LBB123_2:                              # %_ZN6Halide7Runtime8Internal12_GLOBAL__N_17PrinterILi1ELy1024EEC2EPvPc.exit
-	leaq	.L.str.44(%rip), %rdx
+	leaq	.L.str.44.99(%rip), %rdx
 	movq	%r12, %rdi
 	movq	%rbx, %rsi
 	callq	halide_string_to_string@PLT
@@ -7211,7 +7229,7 @@ halide_error_bad_fold:                  # @halide_error_bad_fold
 	movq	%rbx, %rsi
 	movq	%r13, %rdx
 	callq	halide_string_to_string@PLT
-	leaq	.L.str.46.101(%rip), %rdx
+	leaq	.L.str.46(%rip), %rdx
 	movq	%rax, %rdi
 	movq	%rbx, %rsi
 	callq	halide_string_to_string@PLT
@@ -7906,7 +7924,7 @@ halide_profiler_stack_peak_update:      # @halide_profiler_stack_peak_update
 	testq	%rbx, %rbx
 	jne	.LBB132_2
 # BB#1:                                 # %if.then
-	leaq	.L.str.103(%rip), %rsi
+	leaq	.L.str.102(%rip), %rsi
 	callq	halide_print@PLT
 	callq	abort@PLT
 .LBB132_2:                              # %for.cond.preheader
@@ -7980,7 +7998,7 @@ halide_profiler_memory_allocate:        # @halide_profiler_memory_allocate
 	testq	%rbx, %rbx
 	jne	.LBB133_3
 # BB#2:                                 # %if.then.2
-	leaq	.L.str.1.104(%rip), %rsi
+	leaq	.L.str.1.103(%rip), %rsi
 	movq	%r12, %rdi
 	callq	halide_print@PLT
 	callq	abort@PLT
@@ -7988,7 +8006,7 @@ halide_profiler_memory_allocate:        # @halide_profiler_memory_allocate
 	testl	%r15d, %r15d
 	jns	.LBB133_5
 # BB#4:                                 # %if.then.5
-	leaq	.L.str.2.105(%rip), %rsi
+	leaq	.L.str.2.104(%rip), %rsi
 	movq	%r12, %rdi
 	callq	halide_print@PLT
 	callq	abort@PLT
@@ -7996,7 +8014,7 @@ halide_profiler_memory_allocate:        # @halide_profiler_memory_allocate
 	cmpl	%r15d, 72(%rbx)
 	jg	.LBB133_7
 # BB#6:                                 # %if.then.8
-	leaq	.L.str.3.106(%rip), %rsi
+	leaq	.L.str.3.105(%rip), %rsi
 	movq	%r12, %rdi
 	callq	halide_print@PLT
 	callq	abort@PLT
@@ -8075,7 +8093,7 @@ halide_profiler_memory_free:            # @halide_profiler_memory_free
 	testq	%r15, %r15
 	jne	.LBB134_3
 # BB#2:                                 # %if.then.2
-	leaq	.L.str.4.107(%rip), %rsi
+	leaq	.L.str.4.106(%rip), %rsi
 	movq	%r12, %rdi
 	callq	halide_print@PLT
 	callq	abort@PLT
@@ -8083,7 +8101,7 @@ halide_profiler_memory_free:            # @halide_profiler_memory_free
 	testl	%r14d, %r14d
 	jns	.LBB134_5
 # BB#4:                                 # %if.then.5
-	leaq	.L.str.5.108(%rip), %rsi
+	leaq	.L.str.5.107(%rip), %rsi
 	movq	%r12, %rdi
 	callq	halide_print@PLT
 	callq	abort@PLT
@@ -8091,7 +8109,7 @@ halide_profiler_memory_free:            # @halide_profiler_memory_free
 	cmpl	%r14d, 72(%r15)
 	jg	.LBB134_7
 # BB#6:                                 # %if.then.8
-	leaq	.L.str.6.109(%rip), %rsi
+	leaq	.L.str.6.108(%rip), %rsi
 	movq	%r12, %rdi
 	callq	halide_print@PLT
 	callq	abort@PLT
@@ -8153,7 +8171,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 # BB#1:
 	leaq	-41(%rbp), %r15
 	leaq	-1064(%rbp), %r12
-	leaq	.L.str.20.123(%rip), %r14
+	leaq	.L.str.20.122(%rip), %r14
 	leaq	-1064(%rbp), %rbx
 	.align	16, 0x90
 .LBB135_2:                              # %for.body
@@ -8201,12 +8219,12 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	callq	halide_string_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.7.110(%rip), %rbx
+	leaq	.L.str.7.109(%rip), %rbx
 	movq	%rbx, %rdx
 	callq	halide_string_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.8.111(%rip), %rdx
+	leaq	.L.str.8.110(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	vmovss	-1080(%rbp), %xmm0      # 4-byte Reload
                                         # xmm0 = mem[0],zero,zero,zero
@@ -8217,11 +8235,11 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	callq	halide_double_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.9.112(%rip), %rdx
+	leaq	.L.str.9.111(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.10.113(%rip), %rdx
+	leaq	.L.str.10.112(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movslq	84(%r13), %rdx
 	movl	$1, %ecx
@@ -8230,7 +8248,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	callq	halide_int64_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.11.114(%rip), %rdx
+	leaq	.L.str.11.113(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movslq	80(%r13), %rdx
 	movl	$1, %ecx
@@ -8239,7 +8257,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	callq	halide_int64_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.12.115(%rip), %rdx
+	leaq	.L.str.12.114(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	vcvtsi2ssl	80(%r13), %xmm0, %xmm0
 	vmovss	-1080(%rbp), %xmm1      # 4-byte Reload
@@ -8252,7 +8270,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	callq	halide_double_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.13.116(%rip), %rdx
+	leaq	.L.str.13.115(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	-1128(%rbp), %rdx       # 8-byte Reload
 	movq	-1120(%rbp), %rcx       # 8-byte Reload
@@ -8278,7 +8296,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	vmovss	%xmm0, -1080(%rbp)      # 4-byte Spill
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.14.117(%rip), %rdx
+	leaq	.L.str.14.116(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	vmovss	-1080(%rbp), %xmm0      # 4-byte Reload
                                         # xmm0 = mem[0],zero,zero,zero
@@ -8295,7 +8313,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
                                         #   in Loop: Header=BB135_2 Depth=1
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.15.118(%rip), %rdx
+	leaq	.L.str.15.117(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movslq	88(%r13), %rdx
 	movl	$1, %ecx
@@ -8304,7 +8322,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	callq	halide_int64_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.16.119(%rip), %rdx
+	leaq	.L.str.16.118(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	16(%r13), %rdx
 	movl	$1, %ecx
@@ -8313,7 +8331,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	callq	halide_uint64_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.17.120(%rip), %rdx
+	leaq	.L.str.17.119(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	%rax, %rbx
 	movq	-1136(%rbp), %rdi       # 8-byte Reload
@@ -8384,7 +8402,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	movq	%rax, %r13
 	movq	%r12, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.18.121(%rip), %rdx
+	leaq	.L.str.18.120(%rip), %rdx
 	movq	%r8, %rbx
 	movq	%rbx, -1080(%rbp)       # 8-byte Spill
 	callq	halide_string_to_string@PLT
@@ -8394,7 +8412,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	callq	halide_string_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.19.122(%rip), %rdx
+	leaq	.L.str.19.121(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	%rax, %rcx
 	subq	%r12, %rcx
@@ -8455,7 +8473,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 .LBB135_25:                             # %_ZN6Halide7Runtime8Internal12_GLOBAL__N_17PrinterILi2ELy1024EE5eraseEi.exit
                                         #   in Loop: Header=BB135_16 Depth=2
 	movq	%r15, %rsi
-	leaq	.L.str.21.124(%rip), %rdx
+	leaq	.L.str.21.123(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	%rax, %rcx
 	subq	%r12, %rax
@@ -8492,7 +8510,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
                                         #   in Loop: Header=BB135_16 Depth=2
 	movq	%rcx, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.22.125(%rip), %rdx
+	leaq	.L.str.22.124(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movslq	%ebx, %rdx
 	movl	$1, %ecx
@@ -8501,7 +8519,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	callq	halide_int64_to_string@PLT
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.23.126(%rip), %rdx
+	leaq	.L.str.23.125(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	%rax, %rcx
 	subq	%r12, %rax
@@ -8547,7 +8565,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	vmovss	%xmm0, -1088(%rbp)      # 4-byte Spill
 	movq	%rcx, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.24.127(%rip), %rdx
+	leaq	.L.str.24.126(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	vmovss	-1088(%rbp), %xmm0      # 4-byte Reload
                                         # xmm0 = mem[0],zero,zero,zero
@@ -8614,7 +8632,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	movq	%rdi, -1088(%rbp)       # 8-byte Spill
 	movq	%rcx, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.25.128(%rip), %rdx
+	leaq	.L.str.25.127(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	(%r13), %rdx
 	movl	$1, %ecx
@@ -8639,7 +8657,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	jb	.LBB135_40
 # BB#42:                                # %while.end.159
                                         #   in Loop: Header=BB135_16 Depth=2
-	leaq	.L.str.26.129(%rip), %rdx
+	leaq	.L.str.26.128(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	-1112(%rbp), %rcx       # 8-byte Reload
 	movslq	(%rcx), %rdx
@@ -8670,7 +8688,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
                                         #   in Loop: Header=BB135_16 Depth=2
 	movq	%rax, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.27.130(%rip), %rdx
+	leaq	.L.str.27.129(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	-1104(%rbp), %rcx       # 8-byte Reload
 	movslq	%ecx, %rdx
@@ -8690,7 +8708,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	leaq	32(%rdi,%rsi,8), %rbx
 	movq	%rcx, %rdi
 	movq	%r15, %rsi
-	leaq	.L.str.28.131(%rip), %rdx
+	leaq	.L.str.28.130(%rip), %rdx
 	callq	halide_string_to_string@PLT
 	movq	(%rbx), %rdx
 	movl	$1, %ecx
@@ -8700,7 +8718,7 @@ halide_profiler_report_unlocked:        # @halide_profiler_report_unlocked
 	movq	%rax, %rcx
 .LBB135_47:                             # %if.end.179
                                         #   in Loop: Header=BB135_16 Depth=2
-	leaq	.L.str.7.110(%rip), %rdx
+	leaq	.L.str.7.109(%rip), %rdx
 	movq	%rcx, %rdi
 	movq	%r15, %rsi
 	callq	halide_string_to_string@PLT
@@ -9066,177 +9084,6 @@ _ZN6Halide7Runtime8Internal23halide_get_cpu_featuresEv: # @_ZN6Halide7Runtime8In
 	.long	0                       # 0x0
 	.long	0                       # 0x0
 .LCPI147_1:
-	.long	0                       # 0x0
-	.long	4294967294              # 0xfffffffe
-	.long	4294967292              # 0xfffffffc
-	.long	4294967290              # 0xfffffffa
-	.long	4294967288              # 0xfffffff8
-	.long	4294967286              # 0xfffffff6
-	.long	4294967284              # 0xfffffff4
-	.long	4294967282              # 0xfffffff2
-.LCPI147_2:
-	.long	4294967280              # 0xfffffff0
-	.long	4294967278              # 0xffffffee
-	.long	4294967276              # 0xffffffec
-	.long	4294967274              # 0xffffffea
-	.long	4294967272              # 0xffffffe8
-	.long	4294967270              # 0xffffffe6
-	.long	4294967268              # 0xffffffe4
-	.long	4294967266              # 0xffffffe2
-.LCPI147_5:
-	.byte	0                       # 0x0
-	.byte	1                       # 0x1
-	.byte	4                       # 0x4
-	.byte	5                       # 0x5
-	.byte	8                       # 0x8
-	.byte	9                       # 0x9
-	.byte	12                      # 0xc
-	.byte	13                      # 0xd
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	0                       # 0x0
-	.byte	1                       # 0x1
-	.byte	4                       # 0x4
-	.byte	5                       # 0x5
-	.byte	8                       # 0x8
-	.byte	9                       # 0x9
-	.byte	12                      # 0xc
-	.byte	13                      # 0xd
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-	.byte	128                     # 0x80
-.LCPI147_8:
-	.long	16                      # 0x10
-	.long	18                      # 0x12
-	.long	20                      # 0x14
-	.long	22                      # 0x16
-	.long	24                      # 0x18
-	.long	26                      # 0x1a
-	.long	28                      # 0x1c
-	.long	30                      # 0x1e
-.LCPI147_9:
-	.long	0                       # 0x0
-	.long	2                       # 0x2
-	.long	4                       # 0x4
-	.long	6                       # 0x6
-	.long	8                       # 0x8
-	.long	10                      # 0xa
-	.long	12                      # 0xc
-	.long	14                      # 0xe
-.LCPI147_10:
-	.zero	4
-	.long	4                       # 0x4
-	.zero	4
-	.long	5                       # 0x5
-	.zero	4
-	.long	6                       # 0x6
-	.zero	4
-	.long	7                       # 0x7
-.LCPI147_11:
-	.long	4                       # 0x4
-	.zero	4
-	.long	5                       # 0x5
-	.zero	4
-	.long	6                       # 0x6
-	.zero	4
-	.long	7                       # 0x7
-	.zero	4
-.LCPI147_12:
-	.zero	4
-	.long	0                       # 0x0
-	.zero	4
-	.long	1                       # 0x1
-	.zero	4
-	.long	2                       # 0x2
-	.zero	4
-	.long	3                       # 0x3
-.LCPI147_13:
-	.long	0                       # 0x0
-	.zero	4
-	.long	1                       # 0x1
-	.zero	4
-	.long	2                       # 0x2
-	.zero	4
-	.long	3                       # 0x3
-	.zero	4
-.LCPI147_18:
-	.byte	0                       # 0x0
-	.byte	1                       # 0x1
-	.byte	4                       # 0x4
-	.byte	5                       # 0x5
-	.byte	8                       # 0x8
-	.byte	9                       # 0x9
-	.byte	12                      # 0xc
-	.byte	13                      # 0xd
-	.byte	2                       # 0x2
-	.byte	3                       # 0x3
-	.byte	6                       # 0x6
-	.byte	7                       # 0x7
-	.byte	10                      # 0xa
-	.byte	11                      # 0xb
-	.byte	14                      # 0xe
-	.byte	15                      # 0xf
-	.byte	16                      # 0x10
-	.byte	17                      # 0x11
-	.byte	20                      # 0x14
-	.byte	21                      # 0x15
-	.byte	24                      # 0x18
-	.byte	25                      # 0x19
-	.byte	28                      # 0x1c
-	.byte	29                      # 0x1d
-	.byte	18                      # 0x12
-	.byte	19                      # 0x13
-	.byte	22                      # 0x16
-	.byte	23                      # 0x17
-	.byte	26                      # 0x1a
-	.byte	27                      # 0x1b
-	.byte	30                      # 0x1e
-	.byte	31                      # 0x1f
-.LCPI147_19:
-	.byte	2                       # 0x2
-	.byte	3                       # 0x3
-	.byte	6                       # 0x6
-	.byte	7                       # 0x7
-	.byte	10                      # 0xa
-	.byte	11                      # 0xb
-	.byte	14                      # 0xe
-	.byte	15                      # 0xf
-	.byte	0                       # 0x0
-	.byte	1                       # 0x1
-	.byte	4                       # 0x4
-	.byte	5                       # 0x5
-	.byte	8                       # 0x8
-	.byte	9                       # 0x9
-	.byte	12                      # 0xc
-	.byte	13                      # 0xd
-	.byte	18                      # 0x12
-	.byte	19                      # 0x13
-	.byte	22                      # 0x16
-	.byte	23                      # 0x17
-	.byte	26                      # 0x1a
-	.byte	27                      # 0x1b
-	.byte	30                      # 0x1e
-	.byte	31                      # 0x1f
-	.byte	16                      # 0x10
-	.byte	17                      # 0x11
-	.byte	20                      # 0x14
-	.byte	21                      # 0x15
-	.byte	24                      # 0x18
-	.byte	25                      # 0x19
-	.byte	28                      # 0x1c
-	.byte	29                      # 0x1d
-.LCPI147_20:
 	.long	3                       # 0x3
 	.long	4096                    # 0x1000
 	.long	0                       # 0x0
@@ -9245,41 +9092,6 @@ _ZN6Halide7Runtime8Internal23halide_get_cpu_featuresEv: # @_ZN6Halide7Runtime8In
 	.long	3                       # 0x3
 	.long	0                       # 0x0
 	.long	0                       # 0x0
-	.section	.rodata.cst4,"aM",@progbits,4
-	.align	4
-.LCPI147_3:
-	.long	1                       # 0x1
-.LCPI147_4:
-	.long	1199570688              # float 65535
-.LCPI147_14:
-	.long	1065353216              # float 1
-.LCPI147_15:
-	.long	1048576000              # float 0.25
-.LCPI147_16:
-	.long	1056964608              # float 0.5
-.LCPI147_17:
-	.long	1166012416              # float 4095
-	.section	.rodata.cst16,"aM",@progbits,16
-	.align	16
-.LCPI147_6:
-	.byte	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	4                       # 0x4
-	.byte	6                       # 0x6
-	.byte	8                       # 0x8
-	.byte	10                      # 0xa
-	.byte	12                      # 0xc
-	.byte	14                      # 0xe
-	.zero	1
-	.zero	1
-	.zero	1
-	.zero	1
-	.zero	1
-	.zero	1
-	.zero	1
-	.zero	1
-.LCPI147_7:
-	.zero	16,1
 	.section	.text.__f3,"ax",@progbits
 	.globl	__f3
 	.align	16, 0x90
@@ -9287,527 +9099,532 @@ _ZN6Halide7Runtime8Internal23halide_get_cpu_featuresEv: # @_ZN6Halide7Runtime8In
 __f3:                                   # @__f3
 # BB#0:                                 # %entry
 	pushq	%rbp
-	movq	%rsp, %rbp
 	pushq	%r15
 	pushq	%r14
 	pushq	%r13
 	pushq	%r12
 	pushq	%rbx
-	andq	$-32, %rsp
-	subq	$3616, %rsp             # imm = 0xE20
+	subq	$472, %rsp              # imm = 0x1D8
 	testq	%rdi, %rdi
 	je	.LBB147_1
-# BB#8:                                 # %assert succeeded
+# BB#7:                                 # %assert succeeded
 	testq	%rcx, %rcx
-	je	.LBB147_9
-# BB#10:                                # %assert succeeded11
+	je	.LBB147_8
+# BB#9:                                 # %assert succeeded11
 	testq	%r8, %r8
-	je	.LBB147_11
-# BB#12:                                # %assert succeeded30
+	je	.LBB147_10
+# BB#11:                                # %assert succeeded30
 	testq	%r9, %r9
-	je	.LBB147_13
-# BB#14:                                # %assert succeeded49
-	cmpq	$0, 88(%rbp)
-	je	.LBB147_15
-# BB#16:                                # %assert succeeded68
-	movq	112(%rbp), %r15
-	testq	%r15, %r15
-	je	.LBB147_17
-# BB#18:                                # %assert succeeded87
-	movslq	16(%rdi), %r13
-	movq	%r13, 2656(%rsp)        # 8-byte Spill
-	movslq	20(%rdi), %r12
-	movq	%r12, 760(%rsp)         # 8-byte Spill
-	movl	48(%rdi), %r14d
-	movq	%r14, 2688(%rsp)        # 8-byte Spill
-	movslq	52(%rdi), %r11
-	movq	%r11, 808(%rsp)         # 8-byte Spill
-	movl	16(%r15), %eax
-	movq	%rax, 272(%rsp)         # 8-byte Spill
-	movl	48(%r15), %esi
-	movq	%rsi, 2392(%rsp)        # 8-byte Spill
-	movl	52(%r15), %eax
-	movq	%rax, 432(%rsp)         # 8-byte Spill
-	leal	(%r14,%r13), %r8d
-	movl	%r8d, %eax
-	subl	%esi, %eax
-	movq	%rax, 2376(%rsp)        # 8-byte Spill
-	movl	%r8d, %edx
-	cmovgl	%esi, %edx
-	addl	$-1, %edx
-	cmpl	%r14d, %edx
-	cmovll	%r14d, %edx
-	leal	-1(%r13), %ebx
-	leal	(%r13,%r13), %eax
-	leal	-2(%r13,%r13), %r10d
-	movl	%r10d, 2352(%rsp)       # 4-byte Spill
-	movl	$2, %ecx
-	subl	%eax, %ecx
-	cmpl	$1, %eax
-	cmovgl	%r10d, %ecx
-	subl	%r13d, %ecx
-	cmpl	%ecx, %ebx
-	cmoval	%ebx, %ecx
-	leal	-1(%r13,%r14), %eax
-	subl	%ecx, %eax
-	cmpl	%edx, %eax
-	cmovgl	%edx, %eax
-	movl	%eax, 2808(%rsp)        # 4-byte Spill
-	movq	272(%rsp), %rax         # 8-byte Reload
-	leal	1(%rax), %eax
+	je	.LBB147_12
+# BB#13:                                # %assert succeeded49
+	movq	%r9, 248(%rsp)          # 8-byte Spill
+	movq	600(%rsp), %rax
+	movq	%rax, 224(%rsp)         # 8-byte Spill
+	testq	%rax, %rax
+	je	.LBB147_14
+# BB#15:                                # %assert succeeded68
+	movq	616(%rsp), %rbp
+	testq	%rbp, %rbp
+	je	.LBB147_16
+# BB#17:                                # %assert succeeded87
+	movl	16(%rdi), %ecx
+	movq	%rcx, 192(%rsp)         # 8-byte Spill
+	movq	%rdi, 256(%rsp)         # 8-byte Spill
+	movq	256(%rsp), %rax         # 8-byte Reload
+	movl	20(%rax), %r12d
+	movq	%r12, 168(%rsp)         # 8-byte Spill
+	movq	256(%rsp), %rax         # 8-byte Reload
+	movl	48(%rax), %r14d
+	movq	%r14, 176(%rsp)         # 8-byte Spill
+	movq	256(%rsp), %rax         # 8-byte Reload
+	movl	52(%rax), %r13d
+	movq	%r13, 184(%rsp)         # 8-byte Spill
+	movl	16(%rbp), %r15d
+	movl	48(%rbp), %r8d
+	movq	%r8, 280(%rsp)          # 8-byte Spill
+	movl	52(%rbp), %r11d
+	movq	%r11, 232(%rsp)         # 8-byte Spill
+	leal	(%r14,%rcx), %r10d
+	cmpl	%r8d, %r10d
+	movl	%r10d, %eax
+	cmovgl	%r8d, %eax
+	addl	$-1, %eax
+	cmpl	%r14d, %eax
+	cmovll	%r14d, %eax
+	leal	-1(%rcx), %esi
+	leal	(%rcx,%rcx), %edi
+	leal	-2(%rcx,%rcx), %r9d
+	movl	$2, %edx
+	movl	$2, %ebx
+	subl	%edi, %ebx
+	cmpl	$1, %edi
+	cmovgl	%r9d, %ebx
+	subl	%ecx, %ebx
+	cmpl	%ebx, %esi
+	cmoval	%esi, %ebx
+	leal	-1(%rcx,%r14), %esi
+	subl	%ebx, %esi
+	cmpl	%eax, %esi
+	cmovgl	%eax, %esi
+	movl	%esi, 244(%rsp)         # 4-byte Spill
+	leal	1(%r15), %eax
 	andl	$-32, %eax
-	leal	30(%rax,%rsi), %eax
-	leal	-1(%r14,%r13), %ecx
-	movl	%ecx, 2064(%rsp)        # 4-byte Spill
+	leal	30(%rax,%r8), %eax
+	leal	-1(%r14,%rcx), %ecx
+	movl	%ecx, 20(%rsp)          # 4-byte Spill
 	cmpl	%eax, %ecx
 	cmovlel	%ecx, %eax
 	cmpl	%r14d, %eax
 	cmovll	%r14d, %eax
 	leal	1(%rax), %ecx
-	cmpl	%r8d, %eax
-	cmovll	%r8d, %ecx
-	movl	%ecx, 2744(%rsp)        # 4-byte Spill
-	leal	(%r11,%r12), %ebx
-	movl	%ebx, 804(%rsp)         # 4-byte Spill
-	movq	432(%rsp), %rcx         # 8-byte Reload
-	cmpl	%ecx, %ebx
-	movl	%ebx, %eax
-	cmovgl	%ecx, %eax
-	movq	%rcx, %rsi
+	cmpl	%r10d, %eax
+	cmovll	%r10d, %ecx
+	movl	%ecx, 216(%rsp)         # 4-byte Spill
+	leal	(%r13,%r12), %esi
+	cmpl	%r11d, %esi
+	movl	%esi, %eax
+	cmovgl	%r11d, %eax
 	addl	$-1, %eax
-	cmpl	%r11d, %eax
-	cmovll	%r11d, %eax
-	movl	$2, %edx
+	cmpl	%r13d, %eax
+	cmovll	%r13d, %eax
 	leal	(%r12,%r12), %ecx
 	subl	%ecx, %edx
 	cmpl	$1, %ecx
 	leal	-2(%r12,%r12), %ecx
-	movl	%ecx, 752(%rsp)         # 4-byte Spill
 	cmovgl	%ecx, %edx
-	movl	%edx, 756(%rsp)         # 4-byte Spill
-	subl	%r12d, %edx
 	leal	-1(%r12), %ecx
+	subl	%r12d, %edx
 	cmpl	%edx, %ecx
 	cmoval	%ecx, %edx
-	leal	-1(%r12,%r11), %ecx
-	movl	%ecx, 748(%rsp)         # 4-byte Spill
+	leal	-1(%r12,%r13), %ecx
 	subl	%edx, %ecx
+	movl	20(%rbp), %edi
 	cmpl	%eax, %ecx
 	cmovgl	%eax, %ecx
-	movl	20(%r15), %eax
-	movq	%rax, 264(%rsp)         # 8-byte Spill
-	leal	(%rsi,%rax), %edx
-	movq	%rdx, 416(%rsp)         # 8-byte Spill
-	leal	-1(%r11,%r12), %eax
-	movl	%eax, 744(%rsp)         # 4-byte Spill
+	leal	(%r11,%rdi), %edx
+	movq	%rdx, 264(%rsp)         # 8-byte Spill
+	leal	-1(%r13,%r12), %eax
+	movl	%eax, 16(%rsp)          # 4-byte Spill
+	movq	256(%rsp), %r8          # 8-byte Reload
 	cmpl	%edx, %eax
 	cmovgl	%edx, %eax
-	cmpl	%r11d, %eax
-	cmovll	%r11d, %eax
-	cmpl	%ebx, %eax
-	leal	1(%rax), %r8d
-	cmovll	%ebx, %r8d
-	movq	8(%r9), %rdx
-	movq	%rdx, 520(%rsp)         # 8-byte Spill
-	movq	(%r9), %rax
+	cmpl	%r13d, %eax
+	cmovll	%r13d, %eax
+	cmpl	%esi, %eax
+	leal	1(%rax), %r14d
+	cmovll	%esi, %r14d
+	movq	248(%rsp), %rsi         # 8-byte Reload
+	movq	8(%rsi), %rdx
+	movq	%rdx, 24(%rsp)          # 8-byte Spill
+	movq	(%rsi), %rax
 	orq	%rdx, %rax
-	sete	%r14b
-	movq	(%rdi), %r11
-	movq	8(%rdi), %rax
-	movq	%rax, 2384(%rsp)        # 8-byte Spill
-	movl	32(%rdi), %eax
-	movl	%eax, 2304(%rsp)        # 4-byte Spill
-	movslq	36(%rdi), %rax
-	movq	%rax, 912(%rsp)         # 8-byte Spill
-	movl	64(%rdi), %eax
-	movl	%eax, 2480(%rsp)        # 4-byte Spill
+	vmovss	552(%rsp), %xmm12       # xmm12 = mem[0],zero,zero,zero
+	vmovss	544(%rsp), %xmm11       # xmm11 = mem[0],zero,zero,zero
+	vmovss	536(%rsp), %xmm10       # xmm10 = mem[0],zero,zero,zero
+	vmovss	528(%rsp), %xmm9        # xmm9 = mem[0],zero,zero,zero
+	movb	608(%rsp), %al
+	movb	%al, 111(%rsp)          # 1-byte Spill
+	sete	%r13b
+	movq	%rsi, %r9
+	movq	(%r8), %r10
+	movq	8(%r8), %rax
+	movq	%rax, 208(%rsp)         # 8-byte Spill
+	movl	32(%r8), %eax
+	movl	%eax, 76(%rsp)          # 4-byte Spill
+	movl	36(%r8), %eax
+	movl	%eax, 116(%rsp)         # 4-byte Spill
+	movl	64(%r8), %eax
+	movl	%eax, 48(%rsp)          # 4-byte Spill
 	movslq	16(%r9), %rax
-	movq	%rax, 2528(%rsp)        # 8-byte Spill
+	movq	%rax, 80(%rsp)          # 8-byte Spill
 	movslq	20(%r9), %rax
-	movq	%rax, 2488(%rsp)        # 8-byte Spill
+	movq	%rax, 40(%rsp)          # 8-byte Spill
 	movl	32(%r9), %eax
-	movl	%eax, 2176(%rsp)        # 4-byte Spill
-	movslq	36(%r9), %rax
-	movq	%rax, 528(%rsp)         # 8-byte Spill
+	movl	%eax, 60(%rsp)          # 4-byte Spill
+	movl	36(%r9), %eax
+	movl	%eax, 132(%rsp)         # 4-byte Spill
 	movl	48(%r9), %eax
-	movq	%rax, 2560(%rsp)        # 8-byte Spill
+	movq	%rax, 136(%rsp)         # 8-byte Spill
 	movl	52(%r9), %eax
-	movq	%rax, 2592(%rsp)        # 8-byte Spill
+	movq	%rax, 120(%rsp)         # 8-byte Spill
 	movl	64(%r9), %eax
-	movl	%eax, 2432(%rsp)        # 4-byte Spill
-	movq	88(%rbp), %r13
-	movq	(%r13), %r12
-	movq	8(%r13), %r10
-	movslq	16(%r13), %rax
-	movq	%rax, 2360(%rsp)        # 8-byte Spill
-	movslq	20(%r13), %rax
-	movq	%rax, 2368(%rsp)        # 8-byte Spill
-	movl	32(%r13), %eax
-	movl	%eax, 2240(%rsp)        # 4-byte Spill
-	movslq	36(%r13), %rax
-	movq	%rax, 2624(%rsp)        # 8-byte Spill
-	movl	48(%r13), %eax
-	movq	%rax, 2496(%rsp)        # 8-byte Spill
-	movl	52(%r13), %eax
-	movq	%rax, 2752(%rsp)        # 8-byte Spill
-	movl	64(%r13), %eax
-	movl	%eax, 2080(%rsp)        # 4-byte Spill
-	movq	(%r15), %rbx
-	movq	8(%r15), %rdx
-	movl	24(%r15), %eax
-	movq	%rax, 2272(%rsp)        # 8-byte Spill
-	movl	32(%r15), %eax
-	movl	%eax, 2136(%rsp)        # 4-byte Spill
-	movslq	36(%r15), %rax
-	movq	%rax, 424(%rsp)         # 8-byte Spill
-	movl	40(%r15), %eax
-	movl	%eax, 2144(%rsp)        # 4-byte Spill
-	movl	56(%r15), %eax
-	movq	%rax, 2208(%rsp)        # 8-byte Spill
-	movl	64(%r15), %eax
-	movl	%eax, 2400(%rsp)        # 4-byte Spill
-	jne	.LBB147_20
-# BB#19:                                # %true_bb
+	movl	%eax, 32(%rsp)          # 4-byte Spill
+	movq	224(%rsp), %rax         # 8-byte Reload
+	movq	(%rax), %r9
+	movq	8(%rax), %rdx
+	movq	%rdx, 200(%rsp)         # 8-byte Spill
+	movslq	16(%rax), %rdx
+	movq	%rdx, 88(%rsp)          # 8-byte Spill
+	movslq	20(%rax), %rdx
+	movq	%rdx, 96(%rsp)          # 8-byte Spill
+	movl	32(%rax), %edx
+	movl	%edx, 72(%rsp)          # 4-byte Spill
+	movl	36(%rax), %edx
+	movl	%edx, 112(%rsp)         # 4-byte Spill
+	movl	48(%rax), %edx
+	movq	%rdx, 144(%rsp)         # 8-byte Spill
+	movl	52(%rax), %esi
+	movq	%rsi, 160(%rsp)         # 8-byte Spill
+	movl	64(%rax), %eax
+	movl	%eax, 36(%rsp)          # 4-byte Spill
+	movq	(%rbp), %rax
+	movq	8(%rbp), %rsi
+	movl	24(%rbp), %edx
+	movl	32(%rbp), %ebx
+	movl	%ebx, 52(%rsp)          # 4-byte Spill
+	movslq	36(%rbp), %rbx
+	movq	%rbx, 272(%rsp)         # 8-byte Spill
+	movl	40(%rbp), %ebx
+	movl	%ebx, 56(%rsp)          # 4-byte Spill
+	movl	56(%rbp), %ebx
+	movq	%rbx, 64(%rsp)          # 8-byte Spill
+	movl	64(%rbp), %r12d
+	jne	.LBB147_19
+# BB#18:                                # %true_bb
 	vxorps	%xmm8, %xmm8, %xmm8
-	vmovups	%xmm8, (%r9)
-	movl	$4, 64(%r9)
-	movb	$0, 68(%r9)
-	movb	$0, 69(%r9)
-	movl	$0, 48(%r9)
-	movl	$0, 52(%r9)
-	movl	$0, 56(%r9)
-	movl	$0, 60(%r9)
+	movq	248(%rsp), %rbx         # 8-byte Reload
+	vmovups	%xmm8, (%rbx)
+	movl	$4, 64(%rbx)
+	movb	$0, 68(%rbx)
+	movb	$0, 69(%rbx)
+	movl	$0, 48(%rbx)
+	movl	$0, 52(%rbx)
+	movl	$0, 56(%rbx)
+	movl	$0, 60(%rbx)
 	vmovaps	.LCPI147_0(%rip), %ymm8 # ymm8 = [3,3,0,0,1,3,0,0]
-	vmovups	%ymm8, 16(%r9)
-.LBB147_20:                             # %after_bb
-	orq	%rdx, %rbx
-	movq	%rdx, 256(%rsp)         # 8-byte Spill
-	sete	%r9b
-	jne	.LBB147_22
-# BB#21:                                # %true_bb105
+	vmovups	%ymm8, 16(%rbx)
+.LBB147_19:                             # %after_bb
+	orq	%rsi, %rax
+	movq	%rsi, 152(%rsp)         # 8-byte Spill
+	sete	%r11b
+	jne	.LBB147_21
+# BB#20:                                # %true_bb105
 	vxorps	%xmm8, %xmm8, %xmm8
-	vmovups	%xmm8, (%r15)
-	movl	$2, 64(%r15)
-	movb	$0, 68(%r15)
-	movb	$0, 69(%r15)
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	movl	%eax, 48(%r15)
-	movq	272(%rsp), %rsi         # 8-byte Reload
-	movl	%esi, 16(%r15)
-	movl	$3, 32(%r15)
-	movq	432(%rsp), %rax         # 8-byte Reload
-	movl	%eax, 52(%r15)
-	movq	264(%rsp), %rax         # 8-byte Reload
-	movl	%eax, 20(%r15)
-	movl	%esi, 36(%r15)
-	movl	$0, 56(%r15)
-	movl	$3, 24(%r15)
-	movl	$1, 40(%r15)
-	movl	$0, 60(%r15)
-	movl	$0, 28(%r15)
-	movl	$0, 44(%r15)
-.LBB147_22:                             # %after_bb107
-	orq	2384(%rsp), %r11        # 8-byte Folded Reload
+	vmovups	%xmm8, (%rbp)
+	movl	$2, 64(%rbp)
+	movb	$0, 68(%rbp)
+	movb	$0, 69(%rbp)
+	movq	280(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 48(%rbp)
+	movl	%r15d, 16(%rbp)
+	movl	$3, 32(%rbp)
+	movq	232(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 52(%rbp)
+	movl	%edi, 20(%rbp)
+	movl	%r15d, 36(%rbp)
+	movl	$0, 56(%rbp)
+	movl	$3, 24(%rbp)
+	movl	$1, 40(%rbp)
+	movl	$0, 60(%rbp)
+	movl	$0, 28(%rbp)
+	movl	$0, 44(%rbp)
+.LBB147_21:                             # %after_bb107
+	orq	208(%rsp), %r10         # 8-byte Folded Reload
 	sete	%al
-	jne	.LBB147_24
-# BB#23:                                # %true_bb108
-	movl	2744(%rsp), %ebx        # 4-byte Reload
-	movl	2808(%rsp), %edx        # 4-byte Reload
-	subl	%edx, %ebx
-	movl	%r8d, %esi
-	subl	%ecx, %esi
+	jne	.LBB147_23
+# BB#22:                                # %true_bb108
+	movl	216(%rsp), %esi         # 4-byte Reload
+	movl	244(%rsp), %ebp         # 4-byte Reload
+	subl	%ebp, %esi
+	movl	%r14d, %ebx
+	subl	%ecx, %ebx
 	vxorps	%xmm8, %xmm8, %xmm8
-	vmovups	%xmm8, (%rdi)
-	movl	$2, 64(%rdi)
-	movb	$0, 68(%rdi)
-	movb	$0, 69(%rdi)
-	movl	%edx, 48(%rdi)
-	movl	%ebx, 16(%rdi)
-	movl	$1, 32(%rdi)
-	movl	%ecx, 52(%rdi)
-	movl	%esi, 20(%rdi)
-	movl	%ebx, 36(%rdi)
-	movl	$0, 56(%rdi)
-	movl	$0, 24(%rdi)
-	movl	$0, 40(%rdi)
-	movl	$0, 60(%rdi)
-	movl	$0, 28(%rdi)
-	movl	$0, 44(%rdi)
-.LBB147_24:                             # %after_bb110
-	orq	%r10, %r12
+	vmovups	%xmm8, (%r8)
+	movl	$2, 64(%r8)
+	movb	$0, 68(%r8)
+	movb	$0, 69(%r8)
+	movl	%ebp, 48(%r8)
+	movl	%esi, 16(%r8)
+	movl	$1, 32(%r8)
+	movl	%ecx, 52(%r8)
+	movl	%ebx, 20(%r8)
+	movl	%esi, 36(%r8)
+	movl	$0, 56(%r8)
+	movl	$0, 24(%r8)
+	movl	$0, 40(%r8)
+	movl	$0, 60(%r8)
+	movl	$0, 28(%r8)
+	movl	$0, 44(%r8)
+.LBB147_23:                             # %after_bb110
+	orq	200(%rsp), %r9          # 8-byte Folded Reload
 	sete	%bl
-	jne	.LBB147_26
-# BB#25:                                # %after_bb113.thread
+	jne	.LBB147_25
+# BB#24:                                # %after_bb113.thread
 	vxorps	%xmm0, %xmm0, %xmm0
-	vmovups	%xmm0, (%r13)
-	movl	$2, 64(%r13)
-	movb	$0, 68(%r13)
-	movb	$0, 69(%r13)
-	movl	$0, 48(%r13)
-	movl	$0, 52(%r13)
-	movl	$0, 56(%r13)
-	movl	$0, 60(%r13)
-	vmovaps	.LCPI147_20(%rip), %ymm0 # ymm0 = [3,4096,0,0,1,3,0,0]
-	vmovups	%ymm0, 16(%r13)
-	xorl	%r14d, %r14d
-	jmp	.LBB147_6
-.LBB147_26:                             # %after_bb113
-	orb	%r9b, %r14b
-	orb	%r14b, %al
-	xorl	%r14d, %r14d
+	movq	224(%rsp), %rax         # 8-byte Reload
+	vmovups	%xmm0, (%rax)
+	movl	$2, 64(%rax)
+	movb	$0, 68(%rax)
+	movb	$0, 69(%rax)
+	movl	$0, 48(%rax)
+	movl	$0, 52(%rax)
+	movl	$0, 56(%rax)
+	movl	$0, 60(%rax)
+	vmovaps	.LCPI147_1(%rip), %ymm0 # ymm0 = [3,4096,0,0,1,3,0,0]
+	vmovups	%ymm0, 16(%rax)
+	xorl	%ebp, %ebp
+	jmp	.LBB147_5
+.LBB147_25:                             # %after_bb113
+	orb	%r11b, %r13b
+	orb	%r13b, %al
+	xorl	%ebp, %ebp
 	orb	%al, %bl
-	jne	.LBB147_6
-# BB#27:                                # %true_bb114
-	movq	%r10, 1048(%rsp)        # 8-byte Spill
-	movl	2432(%rsp), %eax        # 4-byte Reload
+	movq	%r15, %r13
+	jne	.LBB147_5
+# BB#26:                                # %true_bb114
+	movl	32(%rsp), %eax          # 4-byte Reload
 	cmpl	$4, %eax
-	jne	.LBB147_28
-# BB#29:                                # %assert succeeded118
-	movl	2400(%rsp), %ebx        # 4-byte Reload
-	cmpl	$2, %ebx
-	movq	264(%rsp), %r11         # 8-byte Reload
-	movq	2688(%rsp), %r9         # 8-byte Reload
-	movq	2656(%rsp), %rsi        # 8-byte Reload
-	movq	2592(%rsp), %rdx        # 8-byte Reload
-	movq	2488(%rsp), %r13        # 8-byte Reload
-	movq	2528(%rsp), %r14        # 8-byte Reload
-	movl	2480(%rsp), %eax        # 4-byte Reload
-	jne	.LBB147_30
-# BB#31:                                # %assert succeeded120
+	jne	.LBB147_27
+# BB#28:                                # %assert succeeded118
+	cmpl	$2, %r12d
+	movq	%rdi, %r8
+	movq	176(%rsp), %r9          # 8-byte Reload
+	movq	192(%rsp), %rsi         # 8-byte Reload
+	movq	40(%rsp), %r10          # 8-byte Reload
+	movq	%rdx, %r11
+	movl	48(%rsp), %eax          # 4-byte Reload
+	jne	.LBB147_29
+# BB#30:                                # %assert succeeded120
 	cmpl	$2, %eax
-	movq	272(%rsp), %r10         # 8-byte Reload
-	movq	2560(%rsp), %r15        # 8-byte Reload
-	jne	.LBB147_32
-# BB#36:                                # %assert succeeded122
-	movl	2080(%rsp), %eax        # 4-byte Reload
+	movq	120(%rsp), %rdx         # 8-byte Reload
+	movq	80(%rsp), %rdi          # 8-byte Reload
+	jne	.LBB147_31
+# BB#35:                                # %assert succeeded122
+	movl	36(%rsp), %eax          # 4-byte Reload
 	cmpl	$2, %eax
-	jne	.LBB147_37
+	movq	136(%rsp), %rbx         # 8-byte Reload
+	jne	.LBB147_36
+# BB#37:                                # %assert succeeded124
+	testl	%ebx, %ebx
+	jg	.LBB147_39
 # BB#38:                                # %assert succeeded124
-	testl	%r15d, %r15d
-	jg	.LBB147_40
-# BB#39:                                # %assert succeeded124
 	movl	$3, %eax
-	subl	%r14d, %eax
-	cmpl	%r15d, %eax
-	jg	.LBB147_40
-# BB#42:                                # %assert succeeded126
-	testl	%r14d, %r14d
-	js	.LBB147_43
-# BB#44:                                # %assert succeeded128
+	subl	%edi, %eax
+	cmpl	%ebx, %eax
+	jg	.LBB147_39
+# BB#40:                                # %assert succeeded126
+	testl	%edi, %edi
+	js	.LBB147_41
+# BB#42:                                # %assert succeeded128
 	testl	%edx, %edx
-	movq	2272(%rsp), %rbx        # 8-byte Reload
-	movq	2208(%rsp), %r15        # 8-byte Reload
-	jg	.LBB147_46
-# BB#45:                                # %assert succeeded128
+	movq	64(%rsp), %rbp          # 8-byte Reload
+	jg	.LBB147_44
+# BB#43:                                # %assert succeeded128
 	movl	$3, %eax
-	subl	%r13d, %eax
+	subl	%r10d, %eax
 	cmpl	%edx, %eax
-	jg	.LBB147_46
-# BB#47:                                # %assert succeeded130
+	jg	.LBB147_44
+# BB#45:                                # %assert succeeded130
+	testl	%r10d, %r10d
+	js	.LBB147_46
+# BB#47:                                # %assert succeeded132
 	testl	%r13d, %r13d
 	js	.LBB147_48
-# BB#49:                                # %assert succeeded132
-	testl	%r10d, %r10d
+# BB#49:                                # %assert succeeded134
+	testl	%r8d, %r8d
 	js	.LBB147_50
-# BB#51:                                # %assert succeeded134
-	testl	%r11d, %r11d
-	js	.LBB147_52
-# BB#53:                                # %assert succeeded136
-	testl	%r15d, %r15d
-	jg	.LBB147_55
-# BB#54:                                # %assert succeeded136
+# BB#51:                                # %assert succeeded136
+	testl	%ebp, %ebp
+	jg	.LBB147_53
+# BB#52:                                # %assert succeeded136
 	movl	$3, %eax
-	subl	%ebx, %eax
-	cmpl	%r15d, %eax
-	jg	.LBB147_55
-# BB#56:                                # %assert succeeded138
-	testl	%ebx, %ebx
-	js	.LBB147_57
-# BB#60:                                # %assert succeeded140
-	cmpl	2808(%rsp), %r9d        # 4-byte Folded Reload
-	jg	.LBB147_62
-# BB#61:                                # %assert succeeded140
-	movl	2744(%rsp), %eax        # 4-byte Reload
+	subl	%r11d, %eax
+	cmpl	%ebp, %eax
+	jg	.LBB147_53
+# BB#54:                                # %assert succeeded138
+	testl	%r11d, %r11d
+	js	.LBB147_55
+# BB#56:                                # %assert succeeded140
+	cmpl	244(%rsp), %r9d         # 4-byte Folded Reload
+	jg	.LBB147_58
+# BB#57:                                # %assert succeeded140
+	movl	216(%rsp), %eax         # 4-byte Reload
 	subl	%esi, %eax
 	cmpl	%r9d, %eax
-	jg	.LBB147_62
-# BB#63:                                # %assert succeeded142
-	movq	%rbx, %rdi
+	jg	.LBB147_58
+# BB#59:                                # %assert succeeded142
 	testl	%esi, %esi
-	js	.LBB147_64
-# BB#65:                                # %assert succeeded144
-	movq	808(%rsp), %r9          # 8-byte Reload
+	js	.LBB147_60
+# BB#61:                                # %assert succeeded144
+	movq	184(%rsp), %r9          # 8-byte Reload
 	cmpl	%ecx, %r9d
-	movq	2392(%rsp), %r14        # 8-byte Reload
-	movq	760(%rsp), %r12         # 8-byte Reload
-	jg	.LBB147_67
-# BB#66:                                # %assert succeeded144
-	movl	%r8d, %eax
-	subl	%r12d, %eax
+	movq	168(%rsp), %r15         # 8-byte Reload
+	jg	.LBB147_63
+# BB#62:                                # %assert succeeded144
+	movl	%r14d, %eax
+	subl	%r15d, %eax
 	cmpl	%r9d, %eax
-	jg	.LBB147_67
-# BB#68:                                # %assert succeeded146
-	testl	%r12d, %r12d
-	js	.LBB147_69
-# BB#70:                                # %assert succeeded148
-	movq	2496(%rsp), %r9         # 8-byte Reload
+	jg	.LBB147_63
+# BB#64:                                # %assert succeeded146
+	movq	%rbp, %rbx
+	movq	%r11, %rsi
+	testl	%r15d, %r15d
+	js	.LBB147_65
+# BB#66:                                # %assert succeeded148
+	movq	144(%rsp), %r9          # 8-byte Reload
 	testl	%r9d, %r9d
-	movq	2752(%rsp), %r8         # 8-byte Reload
-	movq	2360(%rsp), %rcx        # 8-byte Reload
-	jg	.LBB147_72
-# BB#71:                                # %assert succeeded148
+	movq	160(%rsp), %r11         # 8-byte Reload
+	movq	96(%rsp), %r14          # 8-byte Reload
+	movq	88(%rsp), %rcx          # 8-byte Reload
+	jg	.LBB147_68
+# BB#67:                                # %assert succeeded148
 	movl	$3, %eax
 	subl	%ecx, %eax
 	cmpl	%r9d, %eax
-	jg	.LBB147_72
-# BB#75:                                # %assert succeeded150
+	jg	.LBB147_68
+# BB#71:                                # %assert succeeded150
 	testl	%ecx, %ecx
-	js	.LBB147_76
-# BB#77:                                # %assert succeeded152
-	testl	%r8d, %r8d
-	movq	2368(%rsp), %rbx        # 8-byte Reload
-	jg	.LBB147_79
-# BB#78:                                # %assert succeeded152
+	js	.LBB147_72
+# BB#75:                                # %assert succeeded152
+	testl	%r11d, %r11d
+	jg	.LBB147_77
+# BB#76:                                # %assert succeeded152
 	movl	$4096, %eax             # imm = 0x1000
-	subl	%ebx, %eax
-	cmpl	%r8d, %eax
-	jg	.LBB147_79
-# BB#80:                                # %assert succeeded154
-	testl	%ebx, %ebx
-	js	.LBB147_81
-# BB#82:                                # %assert succeeded156
-	movl	2176(%rsp), %eax        # 4-byte Reload
-	cmpl	$1, %eax
-	movl	2304(%rsp), %edx        # 4-byte Reload
-	jne	.LBB147_83
-# BB#87:                                # %assert succeeded158
-	movl	2136(%rsp), %eax        # 4-byte Reload
-	cmpl	$3, %eax
+	subl	%r14d, %eax
+	cmpl	%r11d, %eax
+	jg	.LBB147_77
+# BB#78:                                # %assert succeeded154
+	testl	%r14d, %r14d
+	js	.LBB147_79
+# BB#80:                                # %assert succeeded156
+	movl	60(%rsp), %ebp          # 4-byte Reload
+	cmpl	$1, %ebp
+	movl	76(%rsp), %edx          # 4-byte Reload
+	movq	%rsi, %rax
+	jne	.LBB147_81
+# BB#85:                                # %assert succeeded158
+	movl	52(%rsp), %ebp          # 4-byte Reload
+	cmpl	$3, %ebp
+	jne	.LBB147_86
+# BB#87:                                # %assert succeeded160
+	movl	56(%rsp), %ebp          # 4-byte Reload
+	cmpl	$1, %ebp
 	jne	.LBB147_88
-# BB#89:                                # %assert succeeded160
-	movl	2144(%rsp), %eax        # 4-byte Reload
-	cmpl	$1, %eax
+# BB#89:                                # %assert succeeded162
+	testl	%ebx, %ebx
 	jne	.LBB147_90
-# BB#91:                                # %assert succeeded162
-	testl	%r15d, %r15d
-	jne	.LBB147_92
-# BB#93:                                # %assert succeeded164
-	movq	%rdi, %rax
+# BB#91:                                # %assert succeeded164
 	cmpl	$3, %eax
+	jne	.LBB147_92
+# BB#93:                                # %assert succeeded166
+	cmpl	$1, %edx
 	jne	.LBB147_94
-# BB#95:                                # %assert succeeded166
+# BB#96:                                # %assert succeeded168
+	movl	72(%rsp), %edx          # 4-byte Reload
 	cmpl	$1, %edx
-	jne	.LBB147_96
-# BB#98:                                # %assert succeeded168
-	movq	%rcx, %rdi
-	movl	2240(%rsp), %edx        # 4-byte Reload
-	cmpl	$1, %edx
-	jne	.LBB147_99
-# BB#100:                               # %assert succeeded172
-	movq	528(%rsp), %rax         # 8-byte Reload
-	imulq	%r13, %rax
+	jne	.LBB147_97
+# BB#98:                                # %assert succeeded172
+	movslq	132(%rsp), %rax         # 4-byte Folded Reload
+	imulq	%r10, %rax
 	movq	%rax, %rdx
 	negq	%rdx
 	cmovlq	%rax, %rdx
 	testq	$-2147483648, %rdx      # imm = 0xFFFFFFFF80000000
-	jne	.LBB147_101
-# BB#104:                               # %assert succeeded174
-	imulq	2528(%rsp), %r13        # 8-byte Folded Reload
+	jne	.LBB147_99
+# BB#102:                               # %assert succeeded174
+	imulq	%rdi, %r10
 	movl	$2147483648, %eax       # imm = 0x80000000
-	cmpq	%rax, %r13
-	jge	.LBB147_105
-# BB#106:                               # %assert succeeded176
-	movslq	%r10d, %rcx
-	leaq	(%rcx,%rcx,2), %rdx
+	cmpq	%rax, %r10
+	jge	.LBB147_103
+# BB#104:                               # %assert succeeded176
+	movslq	%r13d, %rdi
+	leaq	(%rdi,%rdi,2), %rdx
 	testq	$-2147483648, %rdx      # imm = 0xFFFFFFFF80000000
-	jne	.LBB147_107
-# BB#108:                               # %assert succeeded178
-	movslq	%r11d, %rdx
-	movq	424(%rsp), %rsi         # 8-byte Reload
+	jne	.LBB147_105
+# BB#106:                               # %assert succeeded178
+	movslq	%r8d, %rdx
+	movq	272(%rsp), %rsi         # 8-byte Reload
 	imulq	%rdx, %rsi
 	movq	%rsi, %rax
 	negq	%rax
 	cmovlq	%rsi, %rax
 	testq	$-2147483648, %rax      # imm = 0xFFFFFFFF80000000
-	jne	.LBB147_109
-# BB#110:                               # %assert succeeded180
-	imulq	%rcx, %rdx
+	jne	.LBB147_107
+# BB#109:                               # %assert succeeded180
+	imulq	%rdi, %rdx
 	movl	$2147483648, %eax       # imm = 0x80000000
 	cmpq	%rax, %rdx
-	jge	.LBB147_111
-# BB#114:                               # %assert succeeded182
+	jge	.LBB147_110
+# BB#113:                               # %assert succeeded182
 	cmpq	$715827883, %rdx        # imm = 0x2AAAAAAB
-	jge	.LBB147_115
-# BB#116:                               # %assert succeeded186
-	movq	912(%rsp), %rax         # 8-byte Reload
-	imulq	%r12, %rax
-	movq	%rax, %rdx
-	negq	%rdx
-	cmovlq	%rax, %rdx
-	testq	$-2147483648, %rdx      # imm = 0xFFFFFFFF80000000
-	jne	.LBB147_117
-# BB#118:                               # %assert succeeded188
-	movq	%r12, %rdx
-	imulq	2656(%rsp), %rdx        # 8-byte Folded Reload
+	jge	.LBB147_114
+# BB#115:                               # %assert succeeded186
+	movslq	%r15d, %rdx
+	movslq	116(%rsp), %rsi         # 4-byte Folded Reload
+	imulq	%rdx, %rsi
+	movq	%rsi, %rax
+	negq	%rax
+	cmovlq	%rsi, %rax
+	testq	$-2147483648, %rax      # imm = 0xFFFFFFFF80000000
+	jne	.LBB147_116
+# BB#117:                               # %assert succeeded188
+	movq	192(%rsp), %rax         # 8-byte Reload
+	cltq
+	imulq	%rax, %rdx
 	movl	$2147483648, %eax       # imm = 0x80000000
 	cmpq	%rax, %rdx
-	jge	.LBB147_119
-# BB#120:                               # %assert succeeded192
-	movq	2624(%rsp), %rax        # 8-byte Reload
-	imulq	%rbx, %rax
+	jge	.LBB147_118
+# BB#119:                               # %assert succeeded192
+	movslq	112(%rsp), %rax         # 4-byte Folded Reload
+	imulq	%r14, %rax
 	movq	%rax, %rdx
 	negq	%rdx
 	cmovlq	%rax, %rdx
 	testq	$-2147483648, %rdx      # imm = 0xFFFFFFFF80000000
-	jne	.LBB147_121
-# BB#122:                               # %assert succeeded194
-	imulq	%rdi, %rbx
+	jne	.LBB147_120
+# BB#121:                               # %assert succeeded194
+	imulq	%rcx, %r14
 	movl	$2147483648, %eax       # imm = 0x80000000
-	cmpq	%rax, %rbx
-	jge	.LBB147_123
-# BB#124:                               # %assert succeeded196
-	vmovss	%xmm0, 2360(%rsp)       # 4-byte Spill
-	vmovss	%xmm3, 2368(%rsp)       # 4-byte Spill
-	vmovss	%xmm6, 2400(%rsp)       # 4-byte Spill
-	vmovss	%xmm1, 2432(%rsp)       # 4-byte Spill
-	vmovss	%xmm4, 2480(%rsp)       # 4-byte Spill
-	vmovss	%xmm7, 2488(%rsp)       # 4-byte Spill
-	vmovss	%xmm2, 2528(%rsp)       # 4-byte Spill
-	vmovss	%xmm5, 2744(%rsp)       # 4-byte Spill
-	movq	416(%rsp), %rax         # 8-byte Reload
+	cmpq	%rax, %r14
+	jge	.LBB147_122
+# BB#123:                               # %assert succeeded196
+	vmovss	%xmm12, 32(%rsp)        # 4-byte Spill
+	vmovss	%xmm11, 36(%rsp)        # 4-byte Spill
+	vmovss	%xmm10, 40(%rsp)        # 4-byte Spill
+	vmovss	%xmm9, 48(%rsp)         # 4-byte Spill
+	vmovss	%xmm2, 52(%rsp)         # 4-byte Spill
+	vmovss	%xmm1, 56(%rsp)         # 4-byte Spill
+	vmovss	%xmm0, 60(%rsp)         # 4-byte Spill
+	vmovss	%xmm7, 64(%rsp)         # 4-byte Spill
+	vmovss	%xmm6, 72(%rsp)         # 4-byte Spill
+	vmovss	%xmm5, 76(%rsp)         # 4-byte Spill
+	vmovss	%xmm4, 80(%rsp)         # 4-byte Spill
+	vmovss	%xmm3, 88(%rsp)         # 4-byte Spill
+	movq	264(%rsp), %rax         # 8-byte Reload
 	leal	-32(%rax), %ecx
-	movl	%ecx, 356(%rsp)         # 4-byte Spill
-	movq	432(%rsp), %rax         # 8-byte Reload
+	movq	232(%rsp), %rax         # 8-byte Reload
 	cmpl	%eax, %ecx
 	cmovgl	%eax, %ecx
-	movl	%ecx, 2040(%rsp)        # 4-byte Spill
-	leal	-1(%r14,%r10), %ecx
-	leal	-1(%r10), %eax
-	movl	%eax, 396(%rsp)         # 4-byte Spill
-	movl	%eax, %ebx
-	orl	$31, %ebx
-	addl	%r14d, %ebx
-	cmpl	%ebx, %ecx
-	cmovll	%ebx, %ecx
-	movl	%ecx, 2032(%rsp)        # 4-byte Spill
-	cmpl	$31, %r11d
+	movl	%ecx, 20(%rsp)          # 4-byte Spill
+	movq	280(%rsp), %rax         # 8-byte Reload
+	leal	-1(%rax,%r13), %r14d
+	leal	-1(%r13), %ecx
+	movl	%ecx, 244(%rsp)         # 4-byte Spill
+	orl	$31, %ecx
+	addl	%eax, %ecx
+	movl	%ecx, 96(%rsp)          # 4-byte Spill
+	cmpl	%ecx, %r14d
+	cmovll	%ecx, %r14d
+	cmpl	$31, %r8d
 	movl	$32, %r12d
-	cmovgl	%r11d, %r12d
-	movl	%ecx, %edi
-	subl	%r14d, %edi
-	addl	$1, %edi
+	cmovgl	%r8d, %r12d
+	movq	%r8, 8(%rsp)            # 8-byte Spill
+	movl	%r14d, %r15d
+	subl	%eax, %r15d
+	movq	%rax, %rbx
+	addl	$1, %r15d
 	movl	%r12d, %eax
-	leaq	(%rdi,%rdi), %rdx
+	leaq	(%r15,%r15), %rdx
 	movl	%edx, %ecx
 	imulq	%rax, %rdx
-	leaq	(%rdx,%rdx,2), %r13
+	leaq	(%rdx,%rdx,2), %rbp
 	movl	%edx, %edx
-	cmpq	$2147483647, %r13       # imm = 0x7FFFFFFF
-	ja	.LBB147_126
-# BB#125:                               # %assert succeeded196
+	cmpq	$2147483647, %rbp       # imm = 0x7FFFFFFF
+	ja	.LBB147_125
+# BB#124:                               # %assert succeeded196
 	imulq	%rax, %rcx
 	shrq	$32, %rcx
-	movq	%rdi, %rsi
+	movq	%r15, %rsi
 	shrq	$31, %rsi
 	negq	%rsi
 	andq	%rax, %rsi
@@ -9818,8326 +9635,596 @@ __f3:                                   # @__f3
 	addq	%rax, %rcx
 	orq	%rsi, %rcx
 	shrq	$32, %rcx
-	jne	.LBB147_126
+	jne	.LBB147_125
+# BB#126:                               # %assert succeeded198
+	leaq	2(%rbp), %rsi
+	xorl	%edi, %edi
+	vzeroupper
+	callq	halide_malloc@PLT
+	movq	%rax, %rcx
+	addq	$2, %rbp
+	je	.LBB147_128
 # BB#127:                               # %assert succeeded198
-	movl	%ebx, 2080(%rsp)        # 4-byte Spill
-	movq	%rdi, %r15
-	leaq	2(%r13), %rsi
-	xorl	%edi, %edi
-	vzeroupper
-	callq	halide_malloc@PLT
-	movq	%rax, 440(%rsp)         # 8-byte Spill
-	addq	$2, %r13
-	je	.LBB147_130
-# BB#128:                               # %assert succeeded198
-	cmpq	$0, 440(%rsp)           # 8-byte Folded Reload
-	je	.LBB147_129
-.LBB147_130:                            # %assert succeeded200
+	testq	%rcx, %rcx
+	je	.LBB147_156
+.LBB147_128:                            # %assert succeeded200
 	imull	%r12d, %r15d
-	movq	%r15, 1880(%rsp)        # 8-byte Spill
-	movq	%r14, %r12
-	movslq	%r12d, %rax
-	movq	%rax, 408(%rsp)         # 8-byte Spill
-	movq	264(%rsp), %rax         # 8-byte Reload
-	leal	31(%rax), %eax
-	sarl	$5, %eax
-	movl	%eax, 352(%rsp)         # 4-byte Spill
-	testl	%eax, %eax
-	vmovss	2400(%rsp), %xmm6       # 4-byte Reload
-                                        # xmm6 = mem[0],zero,zero,zero
-	vmovss	2360(%rsp), %xmm7       # 4-byte Reload
-                                        # xmm7 = mem[0],zero,zero,zero
-	jle	.LBB147_131
-# BB#132:                               # %for f2.s0.v16.v19.preheader
-	movq	2376(%rsp), %r9         # 8-byte Reload
-	leal	1(%r9), %eax
-	vmovd	%eax, %xmm0
-	movq	272(%rsp), %r14         # 8-byte Reload
-	leal	31(%r14), %r10d
-	movl	%r10d, %eax
-	sarl	$5, %eax
-	movl	%eax, 708(%rsp)         # 4-byte Spill
-	movl	%r10d, %eax
-	andl	$-32, %eax
-	leal	(%r12,%rax), %ecx
-	leal	-32(%rax,%rcx), %edx
-	leal	30(%r12,%rax), %r8d
-	cmpl	%r8d, %edx
-	cmovll	%r8d, %edx
-	subl	%r12d, %edx
-	leal	2(%rdx), %eax
-	movq	%rax, 2808(%rsp)        # 8-byte Spill
-	shlq	$4, %rax
-	leaq	(%rax,%rax,2), %r15
-	movq	%r15, 240(%rsp)         # 8-byte Spill
-	testq	$-2147483648, %r15      # imm = 0xFFFFFFFF80000000
-	sete	351(%rsp)               # 1-byte Folded Spill
-	movq	2688(%rsp), %r13        # 8-byte Reload
-	movl	%r13d, %ebx
-	subl	%r12d, %ebx
-	leal	1(%rbx), %eax
-	vmovd	%eax, %xmm1
-	vpbroadcastd	%xmm0, %ymm0
-	vmovdqa	.LCPI147_1(%rip), %ymm2 # ymm2 = [0,4294967294,4294967292,4294967290,4294967288,4294967286,4294967284,4294967282]
-	vpaddd	%ymm2, %ymm0, %ymm3
-	vmovdqa	%ymm3, 2304(%rsp)       # 32-byte Spill
-	vmovdqa	.LCPI147_2(%rip), %ymm3 # ymm3 = [4294967280,4294967278,4294967276,4294967274,4294967272,4294967270,4294967268,4294967266]
-	vpaddd	%ymm3, %ymm0, %ymm0
-	vmovdqa	%ymm0, 2272(%rsp)       # 32-byte Spill
-	vpbroadcastd	%xmm1, %ymm0
-	vmovd	%r13d, %xmm1
-	vpbroadcastd	%xmm1, %ymm1
-	movq	2656(%rsp), %r11        # 8-byte Reload
-	vmovd	%r11d, %xmm4
-	vpbroadcastd	%xmm4, %ymm4
-	vpbroadcastd	.LCPI147_3(%rip), %ymm5
-	vpsubd	%ymm4, %ymm5, %ymm5
-	vmovdqa	%ymm5, 2240(%rsp)       # 32-byte Spill
-	vpaddd	%ymm1, %ymm4, %ymm1
-	vpcmpeqd	%ymm4, %ymm4, %ymm4
-	vpaddd	%ymm4, %ymm1, %ymm1
-	vmovdqa	%ymm1, 2208(%rsp)       # 32-byte Spill
-	vpaddd	%ymm2, %ymm0, %ymm1
-	vmovdqa	%ymm1, 1984(%rsp)       # 32-byte Spill
-	vpaddd	%ymm3, %ymm0, %ymm0
-	vmovdqa	%ymm0, 1952(%rsp)       # 32-byte Spill
-	vmovd	%r9d, %xmm0
-	vpbroadcastd	%xmm0, %ymm0
-	vpaddd	%ymm2, %ymm0, %ymm1
-	vmovdqa	%ymm1, 2176(%rsp)       # 32-byte Spill
-	vpaddd	%ymm3, %ymm0, %ymm0
-	vmovdqa	%ymm0, 2144(%rsp)       # 32-byte Spill
-	vmovd	%ebx, %xmm0
-	vpbroadcastd	%xmm0, %ymm0
-	vpaddd	%ymm2, %ymm0, %ymm1
-	vmovdqa	%ymm1, 1920(%rsp)       # 32-byte Spill
-	vpaddd	%ymm3, %ymm0, %ymm0
-	vmovdqa	%ymm0, 1888(%rsp)       # 32-byte Spill
-	vmovss	.LCPI147_4(%rip), %xmm4 # xmm4 = mem[0],zero,zero,zero
-	vsubss	%xmm7, %xmm4, %xmm1
-	vmulss	%xmm6, %xmm1, %xmm0
-	vmovss	2368(%rsp), %xmm3       # 4-byte Reload
-                                        # xmm3 = mem[0],zero,zero,zero
-	vdivss	%xmm3, %xmm0, %xmm0
-	vaddss	%xmm7, %xmm0, %xmm8
-	vmovss	24(%rbp), %xmm2         # xmm2 = mem[0],zero,zero,zero
-	vsubss	%xmm6, %xmm2, %xmm2
-	vmulss	%xmm2, %xmm1, %xmm1
-	vdivss	%xmm1, %xmm3, %xmm1
-	vmovss	2432(%rsp), %xmm5       # 4-byte Reload
-                                        # xmm5 = mem[0],zero,zero,zero
-	vsubss	%xmm5, %xmm4, %xmm3
-	vmovss	2488(%rsp), %xmm0       # 4-byte Reload
+	vmovss	52(%rsp), %xmm0         # 4-byte Reload
                                         # xmm0 = mem[0],zero,zero,zero
-	vmulss	%xmm0, %xmm3, %xmm2
-	vmovss	2480(%rsp), %xmm6       # 4-byte Reload
-                                        # xmm6 = mem[0],zero,zero,zero
-	vdivss	%xmm6, %xmm2, %xmm2
-	vaddss	%xmm5, %xmm2, %xmm2
-	vmovss	32(%rbp), %xmm5         # xmm5 = mem[0],zero,zero,zero
-	vsubss	%xmm0, %xmm5, %xmm5
-	vmulss	%xmm5, %xmm3, %xmm3
-	vdivss	%xmm3, %xmm6, %xmm3
-	vmovss	2528(%rsp), %xmm7       # 4-byte Reload
-                                        # xmm7 = mem[0],zero,zero,zero
-	vsubss	%xmm7, %xmm4, %xmm5
-	vmovss	16(%rbp), %xmm6         # xmm6 = mem[0],zero,zero,zero
-	vmulss	%xmm6, %xmm5, %xmm4
-	vmovss	2744(%rsp), %xmm0       # 4-byte Reload
+	vmovss	%xmm0, 288(%rsp)
+	vmovss	56(%rsp), %xmm0         # 4-byte Reload
                                         # xmm0 = mem[0],zero,zero,zero
-	vdivss	%xmm0, %xmm4, %xmm4
-	vaddss	%xmm7, %xmm4, %xmm4
-	vmovss	40(%rbp), %xmm7         # xmm7 = mem[0],zero,zero,zero
-	vsubss	%xmm6, %xmm7, %xmm6
-	vmulss	%xmm6, %xmm5, %xmm5
-	vdivss	%xmm5, %xmm0, %xmm5
-	movq	528(%rsp), %rdi         # 8-byte Reload
-	movq	2592(%rsp), %rcx        # 8-byte Reload
-	imull	%edi, %ecx
-	movq	2560(%rsp), %rax        # 8-byte Reload
-	addl	%eax, %ecx
-	movq	2752(%rsp), %rsi        # 8-byte Reload
-	movq	2624(%rsp), %rax        # 8-byte Reload
-	imull	%eax, %esi
-	movq	2496(%rsp), %rax        # 8-byte Reload
-	addl	%eax, %esi
-	movq	%rsi, 2752(%rsp)        # 8-byte Spill
-	movq	%r15, %rsi
-	orq	$4, %rsi
-	movq	%rsi, 336(%rsp)         # 8-byte Spill
-	leal	63(%r14), %r15d
-	sarl	$5, %r15d
-	movl	%r15d, 908(%rsp)        # 4-byte Spill
-	movq	808(%rsp), %rax         # 8-byte Reload
-	movq	912(%rsp), %rsi         # 8-byte Reload
-	imull	%esi, %eax
-	addl	%r13d, %eax
-	movl	%eax, 2744(%rsp)        # 4-byte Spill
-	movl	%r12d, %esi
-	andl	$1, %esi
-	movl	%esi, 904(%rsp)         # 4-byte Spill
-	leal	(,%rdx,4), %esi
-	movl	%esi, 1036(%rsp)        # 4-byte Spill
-	shll	$3, %edx
-	movq	%rdx, 1040(%rsp)        # 8-byte Spill
-	movslq	%ecx, %rdx
-	leaq	(%rdi,%rdi), %rsi
-	subq	%rdx, %rsi
-	movq	%rsi, 504(%rsp)         # 8-byte Spill
-	subq	%rdx, %rdi
-	movq	%rdi, 528(%rsp)         # 8-byte Spill
-	movl	$2, %esi
-	subq	%rdx, %rsi
-	movq	%rsi, 496(%rsp)         # 8-byte Spill
-	movl	$1, %esi
-	subq	%rdx, %rsi
-	movq	%rsi, 488(%rsp)         # 8-byte Spill
-	negq	%rdx
-	movq	%rdx, 512(%rsp)         # 8-byte Spill
-	movl	%ebx, %esi
-	sarl	$5, %esi
-	addl	$31, %ebx
-	sarl	$5, %ebx
-	cmpl	%ebx, %esi
-	leal	1(%rsi), %esi
-	cmovgel	%esi, %ebx
+	vmovss	%xmm0, 292(%rsp)
+	vmovss	60(%rsp), %xmm0         # 4-byte Reload
+                                        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 296(%rsp)
+	movq	136(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 300(%rsp)
+	movq	120(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 304(%rsp)
+	movl	132(%rsp), %eax         # 4-byte Reload
+	movl	%eax, 308(%rsp)
+	vmovss	32(%rsp), %xmm0         # 4-byte Reload
+                                        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 312(%rsp)
+	vmovss	36(%rsp), %xmm0         # 4-byte Reload
+                                        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 316(%rsp)
+	vmovss	40(%rsp), %xmm0         # 4-byte Reload
+                                        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 320(%rsp)
+	vmovss	48(%rsp), %xmm0         # 4-byte Reload
+                                        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 324(%rsp)
+	vmovss	64(%rsp), %xmm0         # 4-byte Reload
+                                        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 328(%rsp)
+	vmovss	72(%rsp), %xmm0         # 4-byte Reload
+                                        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 332(%rsp)
+	movl	%r15d, 336(%rsp)
+	movl	%r14d, 340(%rsp)
+	movl	20(%rsp), %eax          # 4-byte Reload
+	movl	%eax, 344(%rsp)
+	movl	%r13d, 348(%rsp)
+	movq	8(%rsp), %r15           # 8-byte Reload
+	movl	%r15d, 352(%rsp)
+	movl	%ebx, 356(%rsp)
+	movq	232(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 360(%rsp)
+	movq	192(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 364(%rsp)
+	movq	168(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 368(%rsp)
+	movq	176(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 372(%rsp)
+	movq	184(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 376(%rsp)
+	movl	116(%rsp), %eax         # 4-byte Reload
+	movl	%eax, 380(%rsp)
+	movq	144(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 384(%rsp)
+	movq	160(%rsp), %rax         # 8-byte Reload
+	movl	%eax, 388(%rsp)
+	movl	112(%rsp), %eax         # 4-byte Reload
+	movl	%eax, 392(%rsp)
+	vmovss	76(%rsp), %xmm0         # 4-byte Reload
+                                        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 396(%rsp)
+	vmovss	80(%rsp), %xmm0         # 4-byte Reload
+                                        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 400(%rsp)
+	vmovss	88(%rsp), %xmm0         # 4-byte Reload
+                                        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 404(%rsp)
+	movq	24(%rsp), %rax          # 8-byte Reload
+	movq	%rax, 408(%rsp)
+	movq	248(%rsp), %rax         # 8-byte Reload
+	movq	%rax, 416(%rsp)
+	movq	%rcx, 424(%rsp)
+	movq	%rcx, 216(%rsp)         # 8-byte Spill
+	movq	$0, 432(%rsp)
+	movq	208(%rsp), %rax         # 8-byte Reload
+	movq	%rax, 440(%rsp)
+	movq	256(%rsp), %rax         # 8-byte Reload
+	movq	%rax, 448(%rsp)
+	movq	200(%rsp), %rax         # 8-byte Reload
+	movq	%rax, 456(%rsp)
+	movq	224(%rsp), %rax         # 8-byte Reload
+	movq	%rax, 464(%rsp)
+	leal	31(%r15), %ecx
+	sarl	$5, %ecx
+	leaq	par_for___f3_f2.s0.v16.v19(%rip), %rsi
+	leaq	288(%rsp), %r8
 	xorl	%edi, %edi
-	testl	%ebx, %ebx
-	cmovsl	%edi, %ebx
-	subl	%r12d, %r11d
-	addl	%r13d, %r11d
-	cmpl	%r11d, %r9d
-	cmovlel	%r9d, %r11d
-	addl	$-31, %r11d
-	leal	-30(%r9), %esi
-	cmpl	%r11d, %esi
-	cmovlel	%esi, %r11d
-	leal	-1(%r9), %esi
-	cmpl	%r11d, %esi
-	cmovlel	%esi, %r11d
-	cmpl	%r11d, %r9d
-	cmovlel	%r9d, %r11d
-	cmpl	%r11d, %r10d
-	cmovlel	%r10d, %r11d
-	sarl	$5, %r11d
-	addl	$1, %r11d
-	movl	$31, %eax
-	movq	432(%rsp), %r9          # 8-byte Reload
-	subl	%r9d, %eax
-	movq	264(%rsp), %r14         # 8-byte Reload
-	subl	%r14d, %eax
-	movl	%eax, 332(%rsp)         # 4-byte Spill
-	cmpl	%ebx, %r15d
-	movl	%r15d, %edx
-	cmovgl	%ebx, %edx
-	movl	%edx, 724(%rsp)         # 4-byte Spill
-	cmpl	%r11d, %edx
-	movl	%r11d, %ecx
-	cmovgel	%edx, %ecx
-	movl	%ecx, 720(%rsp)         # 4-byte Spill
-	movl	%r12d, %r10d
-	subl	%r13d, %r10d
-	movq	%r10, 2136(%rsp)        # 8-byte Spill
-	movl	708(%rsp), %ecx         # 4-byte Reload
-	movl	%ecx, %edx
-	shll	$6, %edx
-	leal	-32(%r12,%rdx), %edx
-	cmpl	%r8d, %edx
-	cmovgel	%edx, %r8d
-	movslq	%r8d, %rdx
-	movq	%rdx, %r8
-	shlq	$5, %r8
-	movq	408(%rsp), %r13         # 8-byte Reload
-	movq	%r13, %rcx
-	shlq	$5, %rcx
-	leaq	160(%r8), %rsi
-	subq	%rcx, %rsi
-	movq	%rsi, 2360(%rsp)        # 8-byte Spill
-	subq	%rcx, %r8
-	movq	%r8, 2368(%rsp)         # 8-byte Spill
-	leaq	2(%rdx), %rsi
-	shlq	$4, %rdx
-	movq	%r13, %rcx
-	shlq	$4, %rcx
-	subq	%rcx, %rdx
-	movq	%rdx, 2376(%rsp)        # 8-byte Spill
-	subq	%r13, %rsi
-	shlq	$2, %rsi
-	movq	%rsi, 816(%rsp)         # 8-byte Spill
-	movq	%r13, %rcx
-	negq	%rcx
-	movq	%rcx, 320(%rsp)         # 8-byte Spill
-	movl	$64, %ecx
-	subq	%r13, %rcx
-	movq	%rcx, 312(%rsp)         # 8-byte Spill
-	movl	$128, %ecx
-	subq	%r13, %rcx
-	movq	%rcx, 304(%rsp)         # 8-byte Spill
-	movq	272(%rsp), %rcx         # 8-byte Reload
-	leal	-1(%r12,%rcx), %ecx
-	movl	2080(%rsp), %edx        # 4-byte Reload
-	cmpl	%edx, %ecx
-	cmovgel	%ecx, %edx
-	movl	%r9d, %esi
-	notl	%esi
-	movslq	%edx, %rcx
-	leaq	1(%rcx), %r9
-	subq	%r13, %r9
-	cmpl	%esi, %eax
-	movl	%esi, %edx
-	cmovgel	%eax, %edx
-	notl	%edx
-	movslq	%edx, %rax
-	negq	%rax
-	movq	%rax, 296(%rsp)         # 8-byte Spill
-	cmpl	$31, %r14d
-	movl	$32, %edx
-	cmovgl	%r14d, %edx
-	addl	$1, %ecx
-	subl	%r12d, %ecx
-	imull	%edx, %ecx
-	movslq	%ecx, %rax
+	xorl	%edx, %edx
+	callq	halide_do_par_for@PLT
+	movl	%eax, %ebp
+	testl	%ebp, %ebp
+	jne	.LBB147_3
+# BB#129:                               # %for f3.s0.v17.preheader
+	testl	%r15d, %r15d
+	movq	152(%rsp), %r8          # 8-byte Reload
+	jle	.LBB147_138
+# BB#130:                               # %for f3.s0.v16.preheader.us
+	movzbl	111(%rsp), %eax         # 1-byte Folded Reload
+	andl	$1, %eax
+	testl	%r13d, %r13d
+	jle	.LBB147_138
+# BB#131:                               # %for f3.s0.v15.preheader.us.us.preheader
+	movslq	%ebx, %r10
+	movq	%r10, 256(%rsp)         # 8-byte Spill
+	movq	232(%rsp), %r14         # 8-byte Reload
+	movslq	%r14d, %rdi
+	movq	%rdi, 136(%rsp)         # 8-byte Spill
 	addq	%rax, %rax
-	movq	%rax, 1024(%rsp)        # 8-byte Spill
-	movl	%r15d, %ecx
-	notl	%ecx
-	notl	%ebx
-	cmpl	%ebx, %ecx
-	cmovgel	%ecx, %ebx
-	movq	%rbx, 616(%rsp)         # 8-byte Spill
-	movl	%ebx, %ecx
-	shll	$5, %ecx
-	leal	-32(%r12), %eax
-	movl	%eax, %edx
-	subl	%ecx, %edx
-	movl	%edx, 612(%rsp)         # 4-byte Spill
-	movl	2744(%rsp), %r14d       # 4-byte Reload
-	subl	%r14d, %eax
-	subl	%ecx, %eax
-	movq	%rax, 472(%rsp)         # 8-byte Spill
-	movl	%ebx, %ecx
-	notl	%ecx
-	movslq	%ecx, %rdx
-	movq	%rdx, %rax
-	shlq	$7, %rax
-	movq	%rax, 288(%rsp)         # 8-byte Spill
-	cmpl	%r11d, %edx
-	cmovll	%r11d, %edx
-	movl	2352(%rsp), %eax        # 4-byte Reload
-	vmovd	%eax, %xmm6
-	vbroadcastss	%xmm6, %ymm6
-	vmovaps	%ymm6, 2080(%rsp)       # 32-byte Spill
-	vmovd	%eax, %xmm6
-	vbroadcastss	%xmm6, %xmm6
-	vmovaps	%xmm6, 880(%rsp)        # 16-byte Spill
-	vmovd	2064(%rsp), %xmm6       # 4-byte Folded Reload
-                                        # xmm6 = mem[0],zero,zero,zero
-	vbroadcastss	%xmm6, %xmm6
-	vmovaps	%xmm6, 2064(%rsp)       # 16-byte Spill
-	movq	2688(%rsp), %rax        # 8-byte Reload
-	vmovd	%eax, %xmm6
-	vbroadcastss	%xmm6, %xmm6
-	vmovaps	%xmm6, 2048(%rsp)       # 16-byte Spill
-	vbroadcastss	%xmm1, %xmm1
-	vmovaps	%xmm1, 688(%rsp)        # 16-byte Spill
-	vbroadcastss	%xmm8, %xmm0
-	vmovaps	%xmm0, 672(%rsp)        # 16-byte Spill
-	vbroadcastss	%xmm3, %xmm0
-	vmovaps	%xmm0, 656(%rsp)        # 16-byte Spill
-	vbroadcastss	%xmm2, %xmm0
-	vmovaps	%xmm0, 640(%rsp)        # 16-byte Spill
-	vbroadcastss	%xmm5, %xmm0
-	vmovaps	%xmm0, 784(%rsp)        # 16-byte Spill
-	vbroadcastss	%xmm4, %xmm0
-	vmovaps	%xmm0, 768(%rsp)        # 16-byte Spill
-	movq	2624(%rsp), %rax        # 8-byte Reload
-	vmovd	%eax, %xmm0
-	vbroadcastss	%xmm0, %ymm0
-	vmovaps	%ymm0, 992(%rsp)        # 32-byte Spill
-	movq	1880(%rsp), %rax        # 8-byte Reload
-	movslq	%eax, %rcx
-	movq	%rcx, 248(%rsp)         # 8-byte Spill
-	movslq	2032(%rsp), %rcx        # 4-byte Folded Reload
-	movq	%rcx, 400(%rsp)         # 8-byte Spill
-	movslq	2040(%rsp), %rax        # 4-byte Folded Reload
-	movq	%rax, 360(%rsp)         # 8-byte Spill
-	leal	1(%rbx,%rdx), %eax
-	movl	%eax, 596(%rsp)         # 4-byte Spill
-	movslq	%edx, %rcx
-	shll	$5, %edx
-	movq	%rdx, 600(%rsp)         # 8-byte Spill
-	subl	%ecx, %r15d
-	movl	%r15d, 592(%rsp)        # 4-byte Spill
-	shlq	$7, %rcx
-	movq	%rcx, 280(%rsp)         # 8-byte Spill
-	movq	%r13, %rax
-	negq	%rax
-	movq	%rax, 464(%rsp)         # 8-byte Spill
-	movl	$64, %eax
-	subq	%r13, %rax
-	movq	%rax, 456(%rsp)         # 8-byte Spill
-	movl	$128, %eax
-	subq	%r13, %rax
-	movq	%rax, 448(%rsp)         # 8-byte Spill
-	leaq	(%r9,%r9), %rax
-	movq	%rax, 728(%rsp)         # 8-byte Spill
-	shlq	$2, %r9
-	movq	%r9, 480(%rsp)          # 8-byte Spill
-	leal	-1(%r10), %eax
-	movq	%rax, 2040(%rsp)        # 8-byte Spill
-	leal	-1(%r12), %eax
-	movq	%rax, 2032(%rsp)        # 8-byte Spill
-	leaq	64(%r8), %rax
-	movq	%rax, 2352(%rsp)        # 8-byte Spill
-	movq	440(%rsp), %rcx         # 8-byte Reload
-	leaq	32(%rcx), %rax
-	movq	%rax, 384(%rsp)         # 8-byte Spill
-	vmovd	%r14d, %xmm0
-	vmovaps	%ymm0, 832(%rsp)        # 32-byte Spill
-	movq	2752(%rsp), %rax        # 8-byte Reload
-	vmovd	%eax, %xmm0
-	vmovdqa	%ymm0, 2432(%rsp)       # 32-byte Spill
-	.align	16, 0x90
-.LBB147_133:                            # %for f2.s0.v16.v19
-                                        # =>This Loop Header: Depth=1
-                                        #     Child Loop BB147_138 Depth 2
-                                        #       Child Loop BB147_154 Depth 3
-                                        #     Child Loop BB147_174 Depth 2
-                                        #       Child Loop BB147_175 Depth 3
-                                        #         Child Loop BB147_176 Depth 4
-                                        #       Child Loop BB147_201 Depth 3
-                                        #         Child Loop BB147_202 Depth 4
-                                        #       Child Loop BB147_225 Depth 3
-                                        #         Child Loop BB147_226 Depth 4
-                                        #       Child Loop BB147_252 Depth 3
-                                        #         Child Loop BB147_253 Depth 4
-                                        #     Child Loop BB147_273 Depth 2
-                                        #       Child Loop BB147_274 Depth 3
-                                        #         Child Loop BB147_301 Depth 4
-                                        #       Child Loop BB147_305 Depth 3
-                                        #         Child Loop BB147_336 Depth 4
-                                        #         Child Loop BB147_374 Depth 4
-                                        #         Child Loop BB147_407 Depth 4
-                                        #       Child Loop BB147_340 Depth 3
-                                        #         Child Loop BB147_437 Depth 4
-                                        #       Child Loop BB147_456 Depth 3
-                                        #         Child Loop BB147_457 Depth 4
-                                        #           Child Loop BB147_458 Depth 5
-                                        #         Child Loop BB147_483 Depth 4
-                                        #           Child Loop BB147_484 Depth 5
-                                        #         Child Loop BB147_507 Depth 4
-                                        #           Child Loop BB147_508 Depth 5
-                                        #         Child Loop BB147_534 Depth 4
-                                        #           Child Loop BB147_535 Depth 5
-	movl	%esi, 372(%rsp)         # 4-byte Spill
-	movq	%rdi, 376(%rsp)         # 8-byte Spill
-	movl	332(%rsp), %eax         # 4-byte Reload
-	cmpl	%eax, %esi
-	movl	%eax, %ecx
-	cmovgel	%esi, %ecx
-	movl	%ecx, %r15d
-	cmpl	%eax, %esi
-	movl	%eax, %r13d
-	cmovgel	%esi, %r13d
-	cmpl	%eax, %esi
-	movl	%eax, %ebx
-	cmovgel	%esi, %ebx
-	cmpl	%eax, %esi
-	movl	%eax, %ecx
-	cmovgel	%esi, %ecx
-	movq	%rcx, 1104(%rsp)        # 8-byte Spill
-	cmpl	%eax, %esi
-	movl	%eax, %ecx
-	cmovgel	%esi, %ecx
-	movl	%ecx, 2752(%rsp)        # 4-byte Spill
-	cmpl	%eax, %esi
-	cmovgel	%esi, %eax
-	movl	%eax, 2744(%rsp)        # 4-byte Spill
-	shll	$5, %edi
-	movq	432(%rsp), %rax         # 8-byte Reload
-	addl	%eax, %edi
-	movl	356(%rsp), %eax         # 4-byte Reload
-	cmpl	%edi, %eax
-	cmovlel	%eax, %edi
-	movq	%rdi, 536(%rsp)         # 8-byte Spill
-	cmpb	$0, 351(%rsp)           # 1-byte Folded Reload
-	je	.LBB147_134
-# BB#135:                               # %assert succeeded202
-                                        #   in Loop: Header=BB147_133 Depth=1
-	xorl	%edi, %edi
-	movq	336(%rsp), %rsi         # 8-byte Reload
-	vzeroupper
-	callq	halide_malloc@PLT
-	movq	%rax, %r14
-	testq	%r14, %r14
-	je	.LBB147_136
-# BB#137:                               # %assert succeeded204
-                                        #   in Loop: Header=BB147_133 Depth=1
-	movl	$4, %eax
-	subl	%r15d, %eax
-	movq	%rax, 2488(%rsp)        # 8-byte Spill
-	movl	$2, %eax
-	subl	%r15d, %eax
-	movq	%rax, 2480(%rsp)        # 8-byte Spill
-	movl	%r15d, %eax
-	notl	%eax
-	cltq
-	movq	$-2, %rcx
-	subq	%rax, %rcx
-	movq	%rcx, 568(%rsp)         # 8-byte Spill
-	negl	%r15d
-	movl	%r15d, 924(%rsp)        # 4-byte Spill
-	movl	$2, %eax
-	subl	%r13d, %eax
-	movl	%eax, 580(%rsp)         # 4-byte Spill
-	notl	%ebx
-	movslq	%ebx, %rax
-	movq	296(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rax,%rcx), %rax
-	imulq	728(%rsp), %rax         # 8-byte Folded Reload
-	movq	384(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rcx,%rax), %rcx
-	movq	%rcx, 824(%rsp)         # 8-byte Spill
-	movq	440(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rax,%rcx), %rax
-	movq	%rax, 1880(%rsp)        # 8-byte Spill
-	movq	1104(%rsp), %r15        # 8-byte Reload
-	movl	%r15d, %eax
-	negl	%eax
-	movq	%rax, 712(%rsp)         # 8-byte Spill
-	notl	%r15d
-	movq	%r15, 1104(%rsp)        # 8-byte Spill
-	movl	$-2, %r12d
-	subl	2752(%rsp), %r12d       # 4-byte Folded Reload
-	movl	$1, %eax
-	subl	2744(%rsp), %eax        # 4-byte Folded Reload
-	movq	%rax, 2744(%rsp)        # 8-byte Spill
-	movq	536(%rsp), %rax         # 8-byte Reload
-	leal	-1(%rax), %ecx
-	movq	%rcx, 1176(%rsp)        # 8-byte Spill
-	leal	2(%rax), %eax
-	movl	%eax, 740(%rsp)         # 4-byte Spill
-	.align	16, 0x90
-.LBB147_138:                            # %for deinterleaved$3.s0.v16
-                                        #   Parent Loop BB147_133 Depth=1
-                                        # =>  This Loop Header: Depth=2
-                                        #       Child Loop BB147_154 Depth 3
-	movl	%r12d, 928(%rsp)        # 4-byte Spill
-	movzbl	%r12b, %ecx
-	andl	$3, %ecx
-	cmpl	$0, 908(%rsp)           # 4-byte Folded Reload
-	jle	.LBB147_170
-# BB#139:                               # %for deinterleaved$3.s0.v15.v15.preheader
-                                        #   in Loop: Header=BB147_138 Depth=2
-	imulq	816(%rsp), %rcx         # 8-byte Folded Reload
-	movq	1176(%rsp), %rsi        # 8-byte Reload
-	movl	%esi, %eax
-	movq	808(%rsp), %rdi         # 8-byte Reload
-	subl	%edi, %eax
-	cltd
-	idivl	752(%rsp)               # 4-byte Folded Reload
-	leaq	(%rcx,%r14), %rax
-	movq	%rax, 1632(%rsp)        # 8-byte Spill
-	movl	%edx, %eax
-	sarl	$31, %eax
-	andl	756(%rsp), %eax         # 4-byte Folded Reload
-	movq	760(%rsp), %rcx         # 8-byte Reload
-	subl	%ecx, %edx
-	leal	(%rdx,%rax), %ecx
-	leal	1(%rdx,%rax), %eax
-	cmpl	$-2, %ecx
-	notl	%ecx
-	cmovgl	%eax, %ecx
-	movl	748(%rsp), %eax         # 4-byte Reload
-	subl	%ecx, %eax
-	movl	744(%rsp), %ecx         # 4-byte Reload
-	cmpl	%esi, %ecx
-	movl	%ecx, %edx
-	cmovgl	%esi, %edx
-	cmpl	%edi, %edx
-	cmovll	%edi, %edx
-	cmpl	%esi, 804(%rsp)         # 4-byte Folded Reload
-	cmovlel	%eax, %edx
-	cmpl	%edi, %esi
-	cmovll	%eax, %edx
-	movl	904(%rsp), %ecx         # 4-byte Reload
-	testl	%ecx, %ecx
-	setne	%r10b
-	sete	%r11b
-	movl	%esi, %eax
-	andl	$1, %eax
-	movl	%eax, 1664(%rsp)        # 4-byte Spill
-	sete	%r9b
-	movq	912(%rsp), %rdi         # 8-byte Reload
-	imull	%edi, %edx
-	movl	%esi, %edi
-	movq	2392(%rsp), %rbx        # 8-byte Reload
-	orl	%ebx, %edi
-	testb	$1, %dil
-	sete	%r8b
-	movb	%al, %bl
-	andb	%r11b, %bl
-	andb	%r10b, %r9b
-	testl	%esi, %ecx
-	setne	%dil
-	vpxor	%xmm0, %xmm0, %xmm0
-	vmovdqa	%xmm0, 1152(%rsp)       # 16-byte Spill
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_140
-# BB#141:                               # %for deinterleaved$3.s0.v15.v15.preheader
-                                        #   in Loop: Header=BB147_138 Depth=2
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_142
-	.align	16, 0x90
-.LBB147_140:                            #   in Loop: Header=BB147_138 Depth=2
-	vmovd	%r8d, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-.LBB147_142:                            # %for deinterleaved$3.s0.v15.v15.preheader
-                                        #   in Loop: Header=BB147_138 Depth=2
-	vmovdqa	%xmm0, 1136(%rsp)       # 16-byte Spill
-	je	.LBB147_143
-# BB#144:                               # %for deinterleaved$3.s0.v15.v15.preheader
-                                        #   in Loop: Header=BB147_138 Depth=2
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_145
-	.align	16, 0x90
-.LBB147_143:                            #   in Loop: Header=BB147_138 Depth=2
-	movzbl	%bl, %eax
-	vmovd	%eax, %xmm0
-	movzbl	%r9b, %eax
-	vmovd	%eax, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-.LBB147_145:                            # %for deinterleaved$3.s0.v15.v15.preheader
-                                        #   in Loop: Header=BB147_138 Depth=2
-	vmovdqa	%xmm0, 1120(%rsp)       # 16-byte Spill
-	jne	.LBB147_147
-# BB#146:                               #   in Loop: Header=BB147_138 Depth=2
-	vmovd	%edi, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-	vmovdqa	%xmm0, 1152(%rsp)       # 16-byte Spill
-.LBB147_147:                            # %for deinterleaved$3.s0.v15.v15.preheader
-                                        #   in Loop: Header=BB147_138 Depth=2
-	vmovd	%edx, %xmm1
-	vpabsd	880(%rsp), %xmm0        # 16-byte Folded Reload
-	cmpl	$0, 104(%rbp)
-	jne	.LBB147_149
-# BB#148:                               #   in Loop: Header=BB147_138 Depth=2
-	vmovd	%ebx, %xmm3
-	vpbroadcastb	%xmm3, %xmm2
-	vmovdqa	%xmm2, 1136(%rsp)       # 16-byte Spill
-.LBB147_149:                            # %for deinterleaved$3.s0.v15.v15.preheader
-                                        #   in Loop: Header=BB147_138 Depth=2
-	vpsubd	832(%rsp), %ymm1, %ymm1 # 32-byte Folded Reload
-	jne	.LBB147_151
-# BB#150:                               #   in Loop: Header=BB147_138 Depth=2
-	movzbl	%r8b, %eax
-	vmovd	%eax, %xmm2
-	movzbl	%dil, %eax
-	vmovd	%eax, %xmm3
-	vpor	%xmm3, %xmm2, %xmm2
-	vpbroadcastb	%xmm2, %xmm2
-	vmovdqa	%xmm2, 1120(%rsp)       # 16-byte Spill
-.LBB147_151:                            # %for deinterleaved$3.s0.v15.v15.preheader
-                                        #   in Loop: Header=BB147_138 Depth=2
-	jne	.LBB147_153
-# BB#152:                               #   in Loop: Header=BB147_138 Depth=2
-	vmovd	%r9d, %xmm3
-	vpbroadcastb	%xmm3, %xmm2
-	vmovdqa	%xmm2, 1152(%rsp)       # 16-byte Spill
-.LBB147_153:                            # %for deinterleaved$3.s0.v15.v15.preheader
-                                        #   in Loop: Header=BB147_138 Depth=2
-	vinserti128	$1, %xmm0, %ymm0, %ymm0
-	vmovdqa	%ymm0, 1056(%rsp)       # 32-byte Spill
-	vpbroadcastd	%xmm1, %ymm0
-	vmovdqa	%ymm0, 960(%rsp)        # 32-byte Spill
-	xorl	%edi, %edi
-	movl	908(%rsp), %eax         # 4-byte Reload
-	.align	16, 0x90
-.LBB147_154:                            # %for deinterleaved$3.s0.v15.v15
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_138 Depth=2
-                                        # =>    This Inner Loop Header: Depth=3
-	movq	%rdi, 1600(%rsp)        # 8-byte Spill
-	movl	%eax, 1568(%rsp)        # 4-byte Spill
-	cmpl	$0, 1664(%rsp)          # 4-byte Folded Reload
-	setne	2624(%rsp)              # 1-byte Folded Spill
-	sete	2656(%rsp)              # 1-byte Folded Spill
-	movq	2032(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdi), %ecx
-	movl	%ecx, 2688(%rsp)        # 4-byte Spill
-	movl	%ecx, %eax
-	andl	$1, %eax
-	movl	%eax, 2752(%rsp)        # 4-byte Spill
-	sete	%al
-	movl	%eax, 2592(%rsp)        # 4-byte Spill
-	movl	%ecx, %eax
-	movq	1176(%rsp), %rcx        # 8-byte Reload
-	orl	%ecx, %eax
-	testb	$1, %al
-	sete	%al
-	movl	%eax, 1536(%rsp)        # 4-byte Spill
-	movq	2040(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdi), %eax
-	vmovd	%eax, %xmm0
-	vpbroadcastd	%xmm0, %ymm5
-	vmovdqa	.LCPI147_9(%rip), %ymm0 # ymm0 = [0,2,4,6,8,10,12,14]
-	vpaddd	%ymm0, %ymm5, %ymm6
-	vmovdqa	%ymm0, %ymm3
-	vextracti128	$1, %ymm6, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	vmovdqa	2080(%rsp), %ymm2       # 32-byte Reload
-	vextracti128	$1, %ymm2, %xmm1
-	vpextrd	$1, %xmm1, %r15d
-	cltd
-	idivl	%r15d
-	movl	%edx, 2560(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	vmovd	%xmm1, %r9d
-	cltd
-	idivl	%r9d
-	movl	%edx, 2528(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	vpextrd	$2, %xmm1, %r10d
-	cltd
-	idivl	%r10d
-	movl	%edx, 2496(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	vpextrd	$3, %xmm1, %r8d
-	cltd
-	idivl	%r8d
-	movl	%edx, 2400(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm6, %eax
-	vpextrd	$1, %xmm2, %ecx
-	movl	%ecx, 1376(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1824(%rsp)        # 4-byte Spill
-	vmovd	%xmm6, %eax
-	vmovd	%xmm2, %ecx
-	cltd
-	idivl	%ecx
-	movl	%edx, 1792(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm6, %eax
-	vpextrd	$2, %xmm2, %ebx
-	cltd
-	idivl	%ebx
-	movl	%edx, 1760(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm6, %eax
-	vpextrd	$3, %xmm2, %esi
-	movl	%esi, 1368(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%esi
-	movl	%edx, 1728(%rsp)        # 4-byte Spill
-	vmovdqa	.LCPI147_8(%rip), %ymm0 # ymm0 = [16,18,20,22,24,26,28,30]
-	vpaddd	%ymm0, %ymm5, %ymm5
-	vmovdqa	%ymm0, %ymm1
-	vextracti128	$1, %ymm5, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r15d
-	movl	%edx, 1696(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r9d
-	movl	%edx, 1504(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, 1472(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, 1440(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm5, %eax
-	vpextrd	$1, %xmm2, %esi
-	movl	%esi, 1360(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%esi
-	movl	%edx, 1408(%rsp)        # 4-byte Spill
-	vmovd	%xmm5, %eax
-	vmovd	%xmm2, %esi
-	movl	%esi, 1352(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%esi
-	movl	%edx, 1400(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm5, %eax
-	vpextrd	$2, %xmm2, %esi
-	movl	%esi, 1312(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%esi
-	movl	%edx, 1392(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm5, %eax
-	vpextrd	$3, %xmm2, %esi
-	movl	%esi, 1280(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%esi
-	movl	%edx, 1384(%rsp)        # 4-byte Spill
-	movq	2136(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdi), %eax
-	vmovd	%eax, %xmm0
-	vpbroadcastd	%xmm0, %ymm5
-	vpaddd	%ymm3, %ymm5, %ymm6
-	vmovdqa	%ymm3, %ymm9
-	vextracti128	$1, %ymm6, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r15d
-	movl	%edx, 1272(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r9d
-	movl	%edx, 1264(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, %r11d
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, %r13d
-	vpextrd	$1, %xmm6, %eax
-	cltd
-	idivl	1376(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %esi
-	vmovd	%xmm6, %eax
-	cltd
-	idivl	%ecx
-	movl	%edx, %ecx
-	vpextrd	$2, %xmm6, %eax
-	cltd
-	idivl	%ebx
-	movl	%edx, %ebx
-	vpextrd	$3, %xmm6, %eax
-	cltd
-	idivl	1368(%rsp)              # 4-byte Folded Reload
-	movl	%edx, 1368(%rsp)        # 4-byte Spill
-	vpaddd	%ymm1, %ymm5, %ymm5
-	vextracti128	$1, %ymm5, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r15d
-	movl	%edx, %r15d
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r9d
-	movl	%edx, %r9d
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, %r10d
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, 1376(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm5, %eax
-	cltd
-	idivl	1360(%rsp)              # 4-byte Folded Reload
-	movl	%edx, 1360(%rsp)        # 4-byte Spill
-	vmovd	%xmm5, %eax
-	cltd
-	idivl	1352(%rsp)              # 4-byte Folded Reload
-	movl	%edx, 1352(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm5, %eax
-	cltd
-	idivl	1312(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r8d
-	vpextrd	$3, %xmm5, %eax
-	cltd
-	idivl	1280(%rsp)              # 4-byte Folded Reload
-	vmovd	2528(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 2560(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 2496(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 2400(%rsp), %xmm0, %xmm5 # 4-byte Folded Reload
-	vmovd	1792(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1824(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1760(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1728(%rsp), %xmm0, %xmm6 # 4-byte Folded Reload
-	vmovd	1504(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1696(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1472(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1440(%rsp), %xmm0, %xmm2 # 4-byte Folded Reload
-	vmovd	1400(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1408(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1392(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1384(%rsp), %xmm0, %xmm10 # 4-byte Folded Reload
-	vmovd	1264(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1272(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, %r11d, %xmm0, %xmm0
-	vpinsrd	$3, %r13d, %xmm0, %xmm0
-	vmovdqa	%xmm0, 2560(%rsp)       # 16-byte Spill
-	vmovd	%ecx, %xmm0
-	vpinsrd	$1, %esi, %xmm0, %xmm0
-	vpinsrd	$2, %ebx, %xmm0, %xmm0
-	vmovdqa	%xmm0, 2528(%rsp)       # 16-byte Spill
-	vmovd	%edi, %xmm0
-	vpbroadcastd	%xmm0, %ymm0
-	vmovdqa	2304(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm12
-	vmovdqa	.LCPI147_5(%rip), %ymm14 # ymm14 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
-	vpshufb	%ymm14, %ymm12, %ymm12
-	vpermq	$232, %ymm12, %ymm12    # ymm12 = ymm12[0,2,2,3]
-	vmovdqa	2272(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm13
-	vpshufb	%ymm14, %ymm13, %ymm13
-	vpermq	$232, %ymm13, %ymm13    # ymm13 = ymm13[0,2,2,3]
-	vmovdqa	.LCPI147_6(%rip), %xmm15 # xmm15 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
-	vpshufb	%xmm15, %xmm13, %xmm3
-	vpshufb	%xmm15, %xmm12, %xmm4
-	vpunpcklqdq	%xmm3, %xmm4, %xmm3 # xmm3 = xmm4[0],xmm3[0]
-	vmovdqa	.LCPI147_7(%rip), %xmm1 # xmm1 = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-	vpxor	%xmm1, %xmm3, %xmm13
-	vmovdqa	1984(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm4
-	vpshufb	%ymm14, %ymm4, %ymm4
-	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
-	vmovdqa	1952(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm12
-	vpshufb	%ymm14, %ymm12, %ymm12
-	vpermq	$232, %ymm12, %ymm12    # ymm12 = ymm12[0,2,2,3]
-	vpshufb	%xmm15, %xmm12, %xmm3
-	vpshufb	%xmm15, %xmm4, %xmm4
-	vpunpcklqdq	%xmm3, %xmm4, %xmm3 # xmm3 = xmm4[0],xmm3[0]
-	vpor	%xmm13, %xmm3, %xmm3
-	vinserti128	$1, %xmm5, %ymm6, %ymm4
-	vpsrad	$31, %ymm4, %ymm5
-	vmovdqa	1056(%rsp), %ymm7       # 32-byte Reload
-	vpand	%ymm5, %ymm7, %ymm5
-	vmovdqa	2240(%rsp), %ymm13      # 32-byte Reload
-	vpaddd	%ymm4, %ymm13, %ymm4
-	vpaddd	%ymm5, %ymm4, %ymm4
-	vpabsd	%xmm4, %xmm5
-	vextracti128	$1, %ymm4, %xmm4
-	vpabsd	%xmm4, %xmm4
-	vinserti128	$1, %xmm4, %ymm5, %ymm4
-	vmovdqa	2208(%rsp), %ymm8       # 32-byte Reload
-	vpsubd	%ymm4, %ymm8, %ymm12
-	movl	2688(%rsp), %eax        # 4-byte Reload
-	vmovd	%eax, %xmm5
-	vpbroadcastd	%xmm5, %ymm6
-	vpaddd	%ymm9, %ymm6, %ymm5
-	vmovdqa	2064(%rsp), %xmm9       # 16-byte Reload
-	vpminsd	%xmm9, %xmm5, %xmm4
-	vextracti128	$1, %ymm5, %xmm5
-	vpminsd	%xmm9, %xmm5, %xmm5
-	vmovdqa	2048(%rsp), %xmm11      # 16-byte Reload
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm5, %xmm5
-	vinserti128	$1, %xmm5, %ymm4, %ymm4
-	vpmovzxbd	%xmm3, %ymm5    # ymm5 = xmm3[0],zero,zero,zero,xmm3[1],zero,zero,zero,xmm3[2],zero,zero,zero,xmm3[3],zero,zero,zero,xmm3[4],zero,zero,zero,xmm3[5],zero,zero,zero,xmm3[6],zero,zero,zero,xmm3[7],zero,zero,zero
-	vpslld	$31, %ymm5, %ymm5
-	vblendvps	%ymm5, %ymm12, %ymm4, %ymm5
-	vinserti128	$1, %xmm2, %ymm10, %ymm2
-	vpsrad	$31, %ymm2, %ymm4
-	vpand	%ymm4, %ymm7, %ymm4
-	vpaddd	%ymm2, %ymm13, %ymm2
-	vpaddd	%ymm4, %ymm2, %ymm2
-	vpabsd	%xmm2, %xmm4
-	vextracti128	$1, %ymm2, %xmm2
-	vpabsd	%xmm2, %xmm2
-	vinserti128	$1, %xmm2, %ymm4, %ymm2
-	vmovdqa	.LCPI147_8(%rip), %ymm10 # ymm10 = [16,18,20,22,24,26,28,30]
-	vpaddd	%ymm10, %ymm6, %ymm4
-	vpminsd	%xmm9, %xmm4, %xmm6
-	vextracti128	$1, %ymm4, %xmm4
-	vpminsd	%xmm9, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm6, %xmm6
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vinserti128	$1, %xmm4, %ymm6, %ymm4
-	vpsubd	%ymm2, %ymm8, %ymm2
-	vpunpckhbw	%xmm3, %xmm3, %xmm3 # xmm3 = xmm3[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm2, %ymm4, %ymm6
-	vmovdqa	2176(%rsp), %ymm2       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm2, %ymm2
-	vpshufb	%ymm14, %ymm2, %ymm2
-	vpermq	$232, %ymm2, %ymm2      # ymm2 = ymm2[0,2,2,3]
-	vmovdqa	2144(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm3
-	vpshufb	%ymm14, %ymm3, %ymm3
-	vpermq	$232, %ymm3, %ymm3      # ymm3 = ymm3[0,2,2,3]
-	vpshufb	%xmm15, %xmm3, %xmm3
-	vpshufb	%xmm15, %xmm2, %xmm2
-	vpunpcklqdq	%xmm3, %xmm2, %xmm2 # xmm2 = xmm2[0],xmm3[0]
-	vpxor	%xmm1, %xmm2, %xmm2
-	vmovdqa	1920(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm3
-	vpshufb	%ymm14, %ymm3, %ymm3
-	vpermq	$232, %ymm3, %ymm3      # ymm3 = ymm3[0,2,2,3]
-	vmovdqa	1888(%rsp), %ymm4       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm4, %ymm0
-	vpshufb	%ymm14, %ymm0, %ymm0
-	vpermq	$232, %ymm0, %ymm0      # ymm0 = ymm0[0,2,2,3]
-	vpshufb	%xmm15, %xmm0, %xmm0
-	vpshufb	%xmm15, %xmm3, %xmm3
-	vpunpcklqdq	%xmm0, %xmm3, %xmm0 # xmm0 = xmm3[0],xmm0[0]
-	vpor	%xmm2, %xmm0, %xmm0
-	vmovdqa	2528(%rsp), %xmm1       # 16-byte Reload
-	vpinsrd	$3, 1368(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vinserti128	$1, 2560(%rsp), %ymm1, %ymm1 # 16-byte Folded Reload
-	vpsrad	$31, %ymm1, %ymm2
-	vpand	%ymm7, %ymm2, %ymm2
-	vpaddd	%ymm1, %ymm13, %ymm1
-	vpaddd	%ymm2, %ymm1, %ymm1
-	vpabsd	%xmm1, %xmm2
-	vextracti128	$1, %ymm1, %xmm1
-	vpabsd	%xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm2, %ymm1
-	vpsubd	%ymm1, %ymm8, %ymm1
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdi), %eax
-	vmovd	%eax, %xmm2
-	vpbroadcastd	%xmm2, %ymm2
-	vpaddd	.LCPI147_9(%rip), %ymm2, %ymm3
-	vpminsd	%xmm9, %xmm3, %xmm4
-	vextracti128	$1, %ymm3, %xmm3
-	vpminsd	%xmm9, %xmm3, %xmm3
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm3, %xmm3
-	vinserti128	$1, %xmm3, %ymm4, %ymm3
-	vpmovzxbd	%xmm0, %ymm4    # ymm4 = xmm0[0],zero,zero,zero,xmm0[1],zero,zero,zero,xmm0[2],zero,zero,zero,xmm0[3],zero,zero,zero,xmm0[4],zero,zero,zero,xmm0[5],zero,zero,zero,xmm0[6],zero,zero,zero,xmm0[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm1, %ymm3, %ymm4
-	vmovd	%r9d, %xmm1
-	vpinsrd	$1, %r15d, %xmm1, %xmm1
-	vpinsrd	$2, %r10d, %xmm1, %xmm1
-	vpinsrd	$3, 1376(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vmovd	1352(%rsp), %xmm3       # 4-byte Folded Reload
-                                        # xmm3 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1360(%rsp), %xmm3, %xmm3 # 4-byte Folded Reload
-	vpinsrd	$2, %r8d, %xmm3, %xmm3
-	movl	2592(%rsp), %ebx        # 4-byte Reload
-	vpinsrd	$3, %edx, %xmm3, %xmm3
-	vinserti128	$1, %xmm1, %ymm3, %ymm1
-	vpsrad	$31, %ymm1, %ymm3
-	vpand	%ymm7, %ymm3, %ymm3
-	vpaddd	%ymm1, %ymm13, %ymm1
-	vpaddd	%ymm3, %ymm1, %ymm1
-	vpabsd	%xmm1, %xmm3
-	vextracti128	$1, %ymm1, %xmm1
-	vpabsd	%xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm3, %ymm1
-	vpaddd	%ymm10, %ymm2, %ymm2
-	vpminsd	%xmm9, %xmm2, %xmm3
-	vextracti128	$1, %ymm2, %xmm2
-	vpminsd	%xmm9, %xmm2, %xmm2
-	vpmaxsd	%xmm11, %xmm3, %xmm3
-	vpmaxsd	%xmm11, %xmm2, %xmm2
-	vinserti128	$1, %xmm2, %ymm3, %ymm2
-	vpsubd	%ymm1, %ymm8, %ymm1
-	vpunpckhbw	%xmm0, %xmm0, %xmm0 # xmm0 = xmm0[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpslld	$31, %ymm0, %ymm0
-	vblendvps	%ymm0, %ymm1, %ymm2, %ymm0
-	vmovdqa	960(%rsp), %ymm2        # 32-byte Reload
-	vpaddd	%ymm5, %ymm2, %ymm1
-	vpextrq	$1, %xmm1, %r13
-	vmovq	%xmm1, %r10
-	vextracti128	$1, %ymm1, %xmm1
-	vpextrq	$1, %xmm1, %rsi
-	movq	%rsi, 1504(%rsp)        # 8-byte Spill
-	vmovq	%xmm1, %r8
-	movq	%r8, 1472(%rsp)         # 8-byte Spill
-	andb	2624(%rsp), %bl         # 1-byte Folded Reload
-	vpaddd	%ymm6, %ymm2, %ymm1
-	movq	%r10, %r15
-	sarq	$32, %r15
-	movq	%r13, %r9
-	sarq	$32, %r9
-	sarq	$32, %r8
-	movq	%rsi, %r12
-	sarq	$32, %r12
-	vmovq	%xmm1, %rdx
-	movl	2752(%rsp), %eax        # 4-byte Reload
-	andb	2656(%rsp), %al         # 1-byte Folded Reload
-	movl	%eax, 2752(%rsp)        # 4-byte Spill
-	movq	%rdx, %rax
-	sarq	$32, %rax
-	movq	%rax, 1696(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rax
-	movq	%rax, 1368(%rsp)        # 8-byte Spill
-	sarq	$32, %rax
-	movq	%rax, 1760(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm1, %xmm1
-	vmovq	%xmm1, %rax
-	movq	%rax, 1312(%rsp)        # 8-byte Spill
-	sarq	$32, %rax
-	movq	%rax, 1728(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rax
-	movq	%rax, 1280(%rsp)        # 8-byte Spill
-	sarq	$32, %rax
-	movq	%rax, 1792(%rsp)        # 8-byte Spill
-	vpaddd	%ymm0, %ymm2, %ymm0
-	vpaddd	%ymm4, %ymm2, %ymm1
-	vmovq	%xmm1, %r11
-	movq	%r11, %rax
-	sarq	$32, %rax
-	movq	%rax, 2560(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rax
-	movq	%rax, 1440(%rsp)        # 8-byte Spill
-	sarq	$32, %rax
-	movq	%rax, 2624(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm1, %xmm1
-	vmovq	%xmm1, %rax
-	movq	%rax, 1408(%rsp)        # 8-byte Spill
-	sarq	$32, %rax
-	movq	%rax, 2592(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rax
-	movq	%rax, 1392(%rsp)        # 8-byte Spill
-	sarq	$32, %rax
-	movq	%rax, 2656(%rsp)        # 8-byte Spill
-	vmovq	%xmm0, %rax
-	movq	%rax, %rcx
-	sarq	$32, %rcx
-	movq	%rcx, 1824(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1352(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 2496(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm0, %xmm0
-	vmovq	%xmm0, %rcx
-	movq	%rcx, 1360(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 2400(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1264(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 2528(%rsp)        # 8-byte Spill
-	movl	2688(%rsp), %ecx        # 4-byte Reload
-	testl	1664(%rsp), %ecx        # 4-byte Folded Reload
-	vpxor	%xmm5, %xmm5, %xmm5
-	setne	%dil
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_155
-# BB#156:                               # %for deinterleaved$3.s0.v15.v15
-                                        #   in Loop: Header=BB147_154 Depth=3
-	vpxor	%xmm7, %xmm7, %xmm7
-	jmp	.LBB147_157
-	.align	16, 0x90
-.LBB147_155:                            #   in Loop: Header=BB147_154 Depth=3
-	movl	1536(%rsp), %ecx        # 4-byte Reload
-	vmovd	%ecx, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_157:                            # %for deinterleaved$3.s0.v15.v15
-                                        #   in Loop: Header=BB147_154 Depth=3
-	vmovaps	.LCPI147_10(%rip), %ymm9 # ymm9 = <u,4,u,5,u,6,u,7>
-	vmovaps	.LCPI147_11(%rip), %ymm11 # ymm11 = <4,u,5,u,6,u,7,u>
-	je	.LBB147_158
-# BB#159:                               # %for deinterleaved$3.s0.v15.v15
-                                        #   in Loop: Header=BB147_154 Depth=3
-	vpxor	%xmm6, %xmm6, %xmm6
-	jmp	.LBB147_160
-	.align	16, 0x90
-.LBB147_158:                            #   in Loop: Header=BB147_154 Depth=3
-	movzbl	%bl, %ecx
-	vmovd	%ecx, %xmm0
-	movl	2752(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm6
-.LBB147_160:                            # %for deinterleaved$3.s0.v15.v15
-                                        #   in Loop: Header=BB147_154 Depth=3
-	jne	.LBB147_162
-# BB#161:                               #   in Loop: Header=BB147_154 Depth=3
-	vmovd	%edi, %xmm0
-	vpbroadcastb	%xmm0, %xmm5
-.LBB147_162:                            # %for deinterleaved$3.s0.v15.v15
-                                        #   in Loop: Header=BB147_154 Depth=3
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_163
-# BB#164:                               # %for deinterleaved$3.s0.v15.v15
-                                        #   in Loop: Header=BB147_154 Depth=3
-	movl	%edi, 1184(%rsp)        # 4-byte Spill
-	jmp	.LBB147_165
-	.align	16, 0x90
-.LBB147_163:                            #   in Loop: Header=BB147_154 Depth=3
-	movl	%edi, 1184(%rsp)        # 4-byte Spill
-	vmovd	%ebx, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_165:                            # %for deinterleaved$3.s0.v15.v15
-                                        #   in Loop: Header=BB147_154 Depth=3
-	movslq	%edx, %rcx
-	movq	%rcx, 1272(%rsp)        # 8-byte Spill
-	movq	2384(%rsp), %rdx        # 8-byte Reload
-	movzwl	(%rdx,%rcx,2), %ecx
-	vmovd	%ecx, %xmm0
-	movslq	%r10d, %rcx
-	movq	%rcx, 1384(%rsp)        # 8-byte Spill
-	movzwl	(%rdx,%rcx,2), %ecx
-	vmovd	%ecx, %xmm1
-	cltq
-	movq	%rax, 1376(%rsp)        # 8-byte Spill
-	movzwl	(%rdx,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	movslq	%r11d, %rax
-	movq	%rax, 1400(%rsp)        # 8-byte Spill
-	movzwl	(%rdx,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	movslq	%r13d, %rax
-	movq	1472(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %r10
-	movq	1504(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %rsi
-	movq	%rsi, 1216(%rsp)        # 8-byte Spill
-	movq	1368(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %r11
-	movq	1312(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %rbx
-	movq	1280(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %rdi
-	movq	1696(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$2, (%rdx,%r11,2), %xmm0, %xmm0
-	movq	1760(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$4, (%rdx,%rbx,2), %xmm0, %xmm0
-	movq	1728(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$6, (%rdx,%rdi,2), %xmm0, %xmm0
-	movq	1792(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vcvtdq2ps	%ymm0, %ymm0
-	vpinsrw	$1, (%rdx,%r15,2), %xmm1, %xmm1
-	movq	%r15, 1472(%rsp)        # 8-byte Spill
-	vpinsrw	$2, (%rdx,%rax,2), %xmm1, %xmm1
-	vpinsrw	$3, (%rdx,%r9,2), %xmm1, %xmm1
-	movq	%r9, 1504(%rsp)         # 8-byte Spill
-	vpinsrw	$4, (%rdx,%r10,2), %xmm1, %xmm1
-	vpinsrw	$5, (%rdx,%r8,2), %xmm1, %xmm1
-	movq	%r8, 2688(%rsp)         # 8-byte Spill
-	vpinsrw	$6, (%rdx,%rsi,2), %xmm1, %xmm1
-	vpinsrw	$7, (%rdx,%r12,2), %xmm1, %xmm1
-	movq	%r12, 1368(%rsp)        # 8-byte Spill
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vcvtdq2ps	%ymm1, %ymm1
-	vpmovzxbd	%xmm7, %ymm4    # ymm4 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vpxor	%ymm8, %ymm8, %ymm8
-	vblendvps	%ymm4, %ymm1, %ymm8, %ymm1
-	vpunpckhbw	%xmm7, %xmm7, %xmm4 # xmm4 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm0, %ymm8, %ymm0
-	movq	1440(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %r9
-	movq	%r9, 1312(%rsp)         # 8-byte Spill
-	movq	1408(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %r15
-	movq	%r15, 1408(%rsp)        # 8-byte Spill
-	movq	1392(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %r12
-	movq	%r12, 1440(%rsp)        # 8-byte Spill
-	movq	1352(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %r8
-	movq	1360(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %rsi
-	movq	1264(%rsp), %rcx        # 8-byte Reload
-	movslq	%ecx, %r13
-	movq	%r13, 1392(%rsp)        # 8-byte Spill
-	movq	1824(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rcx,2), %xmm2, %xmm2
-	vpinsrw	$2, (%rdx,%r8,2), %xmm2, %xmm2
-	movq	2496(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rcx,2), %xmm2, %xmm2
-	vpinsrw	$4, (%rdx,%rsi,2), %xmm2, %xmm2
-	movq	2400(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rcx,2), %xmm2, %xmm2
-	vpinsrw	$6, (%rdx,%r13,2), %xmm2, %xmm2
-	movq	2528(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rcx,2), %xmm2, %xmm2
-	vpmovzxwd	%xmm2, %ymm2    # ymm2 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
-	vcvtdq2ps	%ymm2, %ymm2
-	movq	2560(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rcx,2), %xmm3, %xmm3
-	vpinsrw	$2, (%rdx,%r9,2), %xmm3, %xmm3
-	movq	2624(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rcx,2), %xmm3, %xmm3
-	vpinsrw	$4, (%rdx,%r15,2), %xmm3, %xmm3
-	movq	2592(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rcx,2), %xmm3, %xmm3
-	vpinsrw	$6, (%rdx,%r12,2), %xmm3, %xmm3
-	movq	2656(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rcx,2), %xmm3, %xmm3
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vcvtdq2ps	%ymm3, %ymm3
-	vmovdqa	1136(%rsp), %xmm7       # 16-byte Reload
-	vpmovzxbd	%xmm7, %ymm4    # ymm4 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm3, %ymm8, %ymm3
-	vpunpckhbw	%xmm7, %xmm7, %xmm4 # xmm4 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm2, %ymm8, %ymm2
-	vpermps	%ymm2, %ymm9, %ymm4
-	vpermps	%ymm0, %ymm11, %ymm7
-	vblendps	$170, %ymm4, %ymm7, %ymm4 # ymm4 = ymm7[0],ymm4[1],ymm7[2],ymm4[3],ymm7[4],ymm4[5],ymm7[6],ymm4[7]
-	vmovaps	.LCPI147_12(%rip), %ymm7 # ymm7 = <u,0,u,1,u,2,u,3>
-	vmovaps	%ymm7, %ymm8
-	vpermps	%ymm2, %ymm8, %ymm2
-	vmovaps	.LCPI147_13(%rip), %ymm7 # ymm7 = <0,u,1,u,2,u,3,u>
-	vmovaps	%ymm7, %ymm10
-	vpermps	%ymm0, %ymm10, %ymm0
-	vblendps	$170, %ymm2, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm2[1],ymm0[2],ymm2[3],ymm0[4],ymm2[5],ymm0[6],ymm2[7]
-	vpermps	%ymm3, %ymm9, %ymm2
-	vpermps	%ymm1, %ymm11, %ymm7
-	vblendps	$170, %ymm2, %ymm7, %ymm2 # ymm2 = ymm7[0],ymm2[1],ymm7[2],ymm2[3],ymm7[4],ymm2[5],ymm7[6],ymm2[7]
-	vpermps	%ymm3, %ymm8, %ymm3
-	vmovaps	%ymm8, %ymm14
-	vpermps	%ymm1, %ymm10, %ymm1
-	vmovaps	%ymm10, %ymm15
-	vblendps	$170, %ymm3, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm3[1],ymm1[2],ymm3[3],ymm1[4],ymm3[5],ymm1[6],ymm3[7]
-	movq	1632(%rsp), %r12        # 8-byte Reload
-	vmovups	%ymm1, (%r12)
-	vmovups	%ymm2, 32(%r12)
-	vmovups	%ymm0, 64(%r12)
-	vmovups	%ymm4, 96(%r12)
-	jne	.LBB147_167
-# BB#166:                               #   in Loop: Header=BB147_154 Depth=3
-	movl	1536(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm0
-	movl	1184(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm6
-.LBB147_167:                            # %for deinterleaved$3.s0.v15.v15
-                                        #   in Loop: Header=BB147_154 Depth=3
-	movq	1272(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rdx,%rcx,2), %ecx
-	vmovd	%ecx, %xmm0
-	movq	1696(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$2, (%rdx,%r11,2), %xmm0, %xmm0
-	movq	1760(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$4, (%rdx,%rbx,2), %xmm0, %xmm0
-	movq	1728(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$6, (%rdx,%rdi,2), %xmm0, %xmm0
-	movq	1792(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rcx,2), %xmm0, %xmm0
-	movq	1384(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rdx,%rcx,2), %ecx
-	vmovd	%ecx, %xmm1
-	movq	1472(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rcx,2), %xmm1, %xmm1
-	vpinsrw	$2, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1504(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rax,2), %xmm1, %xmm1
-	vpinsrw	$4, (%rdx,%r10,2), %xmm1, %xmm1
-	movq	2688(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1216(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1368(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1376(%rsp), %rax        # 8-byte Reload
-	movzwl	(%rdx,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	movq	1824(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rax,2), %xmm2, %xmm2
-	vpinsrw	$2, (%rdx,%r8,2), %xmm2, %xmm2
-	movq	2496(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rax,2), %xmm2, %xmm2
-	vpinsrw	$4, (%rdx,%rsi,2), %xmm2, %xmm2
-	movq	2400(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1392(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	2528(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1400(%rsp), %rax        # 8-byte Reload
-	movzwl	(%rdx,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	movq	2560(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	1312(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$2, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	2624(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	1408(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$4, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	2592(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	1440(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	2656(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rax,2), %xmm3, %xmm3
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vcvtdq2ps	%ymm0, %ymm7
-	vpmovzxwd	%xmm1, %ymm0    # ymm0 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vcvtdq2ps	%ymm0, %ymm10
-	vpmovzxbd	%xmm6, %ymm0    # ymm0 = xmm6[0],zero,zero,zero,xmm6[1],zero,zero,zero,xmm6[2],zero,zero,zero,xmm6[3],zero,zero,zero,xmm6[4],zero,zero,zero,xmm6[5],zero,zero,zero,xmm6[6],zero,zero,zero,xmm6[7],zero,zero,zero
-	vpslld	$31, %ymm0, %ymm0
-	vxorps	%ymm8, %ymm8, %ymm8
-	vblendvps	%ymm0, %ymm10, %ymm8, %ymm4
-	vpunpckhbw	%xmm6, %xmm6, %xmm0 # xmm0 = xmm6[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpslld	$31, %ymm0, %ymm0
-	vblendvps	%ymm0, %ymm7, %ymm8, %ymm6
-	vpmovzxwd	%xmm2, %ymm0    # ymm0 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
-	vcvtdq2ps	%ymm0, %ymm1
-	vpmovzxwd	%xmm3, %ymm0    # ymm0 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vcvtdq2ps	%ymm0, %ymm0
-	vmovdqa	1120(%rsp), %xmm3       # 16-byte Reload
-	vpmovzxbd	%xmm3, %ymm2    # ymm2 = xmm3[0],zero,zero,zero,xmm3[1],zero,zero,zero,xmm3[2],zero,zero,zero,xmm3[3],zero,zero,zero,xmm3[4],zero,zero,zero,xmm3[5],zero,zero,zero,xmm3[6],zero,zero,zero,xmm3[7],zero,zero,zero
-	vpslld	$31, %ymm2, %ymm2
-	vblendvps	%ymm2, %ymm0, %ymm8, %ymm2
-	vpunpckhbw	%xmm3, %xmm3, %xmm3 # xmm3 = xmm3[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm1, %ymm8, %ymm3
-	vpermps	%ymm3, %ymm9, %ymm12
-	vpermps	%ymm6, %ymm11, %ymm13
-	vblendps	$170, %ymm12, %ymm13, %ymm12 # ymm12 = ymm13[0],ymm12[1],ymm13[2],ymm12[3],ymm13[4],ymm12[5],ymm13[6],ymm12[7]
-	vpermps	%ymm3, %ymm14, %ymm3
-	vpermps	%ymm6, %ymm15, %ymm6
-	vblendps	$170, %ymm3, %ymm6, %ymm3 # ymm3 = ymm6[0],ymm3[1],ymm6[2],ymm3[3],ymm6[4],ymm3[5],ymm6[6],ymm3[7]
-	vpermps	%ymm2, %ymm9, %ymm6
-	vpermps	%ymm4, %ymm11, %ymm13
-	vblendps	$170, %ymm6, %ymm13, %ymm6 # ymm6 = ymm13[0],ymm6[1],ymm13[2],ymm6[3],ymm13[4],ymm6[5],ymm13[6],ymm6[7]
-	vpermps	%ymm2, %ymm14, %ymm2
-	vmovaps	%ymm14, %ymm8
-	vpermps	%ymm4, %ymm15, %ymm4
-	vmovaps	%ymm15, %ymm13
-	vblendps	$170, %ymm2, %ymm4, %ymm2 # ymm2 = ymm4[0],ymm2[1],ymm4[2],ymm2[3],ymm4[4],ymm2[5],ymm4[6],ymm2[7]
-	movq	2376(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm2, 32(%rax,%r12)
-	vmovups	%ymm6, 64(%rax,%r12)
-	vmovups	%ymm3, 96(%rax,%r12)
-	vmovups	%ymm12, 128(%rax,%r12)
-	movq	%r12, %rcx
-	jne	.LBB147_169
-# BB#168:                               #   in Loop: Header=BB147_154 Depth=3
-	movl	2752(%rsp), %eax        # 4-byte Reload
-	vmovd	%eax, %xmm2
-	vpbroadcastb	%xmm2, %xmm5
-.LBB147_169:                            # %for deinterleaved$3.s0.v15.v15
-                                        #   in Loop: Header=BB147_154 Depth=3
-	movq	1600(%rsp), %rdi        # 8-byte Reload
-	movq	1104(%rsp), %r15        # 8-byte Reload
-	vpmovzxbd	%xmm5, %ymm2    # ymm2 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
-	vpslld	$31, %ymm2, %ymm2
-	vxorps	%ymm6, %ymm6, %ymm6
-	vblendvps	%ymm2, %ymm10, %ymm6, %ymm2
-	vpunpckhbw	%xmm5, %xmm5, %xmm3 # xmm3 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm7, %ymm6, %ymm3
-	vmovdqa	1152(%rsp), %xmm5       # 16-byte Reload
-	vpmovzxbd	%xmm5, %ymm4    # ymm4 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm0, %ymm6, %ymm0
-	vpunpckhbw	%xmm5, %xmm5, %xmm4 # xmm4 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm1, %ymm6, %ymm1
-	vpermps	%ymm1, %ymm9, %ymm4
-	vpermps	%ymm3, %ymm11, %ymm5
-	vblendps	$170, %ymm4, %ymm5, %ymm4 # ymm4 = ymm5[0],ymm4[1],ymm5[2],ymm4[3],ymm5[4],ymm4[5],ymm5[6],ymm4[7]
-	vpermps	%ymm1, %ymm8, %ymm1
-	vpermps	%ymm3, %ymm13, %ymm3
-	vblendps	$170, %ymm1, %ymm3, %ymm1 # ymm1 = ymm3[0],ymm1[1],ymm3[2],ymm1[3],ymm3[4],ymm1[5],ymm3[6],ymm1[7]
-	vpermps	%ymm0, %ymm9, %ymm3
-	vpermps	%ymm2, %ymm11, %ymm5
-	vblendps	$170, %ymm3, %ymm5, %ymm3 # ymm3 = ymm5[0],ymm3[1],ymm5[2],ymm3[3],ymm5[4],ymm3[5],ymm5[6],ymm3[7]
-	vpermps	%ymm0, %ymm8, %ymm0
-	vpermps	%ymm2, %ymm13, %ymm2
-	vblendps	$170, %ymm0, %ymm2, %ymm0 # ymm0 = ymm2[0],ymm0[1],ymm2[2],ymm0[3],ymm2[4],ymm0[5],ymm2[6],ymm0[7]
-	movq	2352(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm0, (%rax,%rcx)
-	movq	2368(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm3, 96(%rax,%rcx)
-	vmovups	%ymm1, 128(%rax,%rcx)
-	movq	2360(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm4, (%rax,%rcx)
-	addl	$32, %edi
-	subq	$-128, %rcx
-	movq	%rcx, 1632(%rsp)        # 8-byte Spill
-	movl	1568(%rsp), %eax        # 4-byte Reload
-	addl	$-1, %eax
-	jne	.LBB147_154
-.LBB147_170:                            # %end for deinterleaved$3.s0.v15.v15
-                                        #   in Loop: Header=BB147_138 Depth=2
-	movq	1176(%rsp), %rcx        # 8-byte Reload
-	leal	1(%rcx), %eax
-	movl	928(%rsp), %r12d        # 4-byte Reload
-	addb	$1, %r12b
-	cmpl	740(%rsp), %ecx         # 4-byte Folded Reload
-	movq	%rax, 1176(%rsp)        # 8-byte Spill
-	jne	.LBB147_138
-# BB#171:                               # %consume deinterleaved$3
-                                        #   in Loop: Header=BB147_133 Depth=1
-	movq	536(%rsp), %rax         # 8-byte Reload
-	movslq	%eax, %rdx
-	cmpl	$0, 708(%rsp)           # 4-byte Folded Reload
-	jle	.LBB147_172
-# BB#173:                               # %produce demosaiced$3.preheader
-                                        #   in Loop: Header=BB147_133 Depth=1
-	movq	520(%rsp), %rax         # 8-byte Reload
-	movq	504(%rsp), %rcx         # 8-byte Reload
-	vbroadcastss	8(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1664(%rsp)       # 32-byte Spill
-	vbroadcastss	4(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1632(%rsp)       # 32-byte Spill
-	vbroadcastss	(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1600(%rsp)       # 32-byte Spill
-	movq	528(%rsp), %rcx         # 8-byte Reload
-	vbroadcastss	8(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1568(%rsp)       # 32-byte Spill
-	vbroadcastss	4(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1536(%rsp)       # 32-byte Spill
-	vbroadcastss	(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1504(%rsp)       # 32-byte Spill
-	movq	496(%rsp), %rcx         # 8-byte Reload
-	vbroadcastss	(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1472(%rsp)       # 32-byte Spill
-	movq	488(%rsp), %rcx         # 8-byte Reload
-	vbroadcastss	(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1440(%rsp)       # 32-byte Spill
-	movq	512(%rsp), %rcx         # 8-byte Reload
-	vpbroadcastd	(%rax,%rcx,4), %ymm0
-	vmovdqa	%ymm0, 1408(%rsp)       # 32-byte Spill
-	movq	%rdx, %rax
-	movq	%rdx, 560(%rsp)         # 8-byte Spill
-	subq	360(%rsp), %rax         # 8-byte Folded Reload
-	movq	%rax, 1352(%rsp)        # 8-byte Spill
-	movq	712(%rsp), %r12         # 8-byte Reload
-	leal	2(%r12), %r13d
-	leal	-1(%r12), %r10d
-	xorl	%eax, %eax
-	movq	%rax, 1400(%rsp)        # 8-byte Spill
-	movq	304(%rsp), %rcx         # 8-byte Reload
-	movq	312(%rsp), %rdx         # 8-byte Reload
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	movq	320(%rsp), %rsi         # 8-byte Reload
-	xorl	%edi, %edi
-	vmovaps	688(%rsp), %xmm6        # 16-byte Reload
-	vmovaps	672(%rsp), %xmm14       # 16-byte Reload
-	.align	16, 0x90
-.LBB147_174:                            # %produce demosaiced$3
-                                        #   Parent Loop BB147_133 Depth=1
-                                        # =>  This Loop Header: Depth=2
-                                        #       Child Loop BB147_175 Depth 3
-                                        #         Child Loop BB147_176 Depth 4
-                                        #       Child Loop BB147_201 Depth 3
-                                        #         Child Loop BB147_202 Depth 4
-                                        #       Child Loop BB147_225 Depth 3
-                                        #         Child Loop BB147_226 Depth 4
-                                        #       Child Loop BB147_252 Depth 3
-                                        #         Child Loop BB147_253 Depth 4
-	movq	%rdi, 1360(%rsp)        # 8-byte Spill
-	movq	%rsi, 1368(%rsp)        # 8-byte Spill
-	movl	%eax, 1376(%rsp)        # 4-byte Spill
-	movq	%rdx, 1384(%rsp)        # 8-byte Spill
-	movq	%rcx, 1392(%rsp)        # 8-byte Spill
-	cltq
-	leaq	(%rcx,%rax), %rcx
-	leaq	2816(%rsp,%rcx,4), %rcx
-	movq	%rcx, 1792(%rsp)        # 8-byte Spill
-	leaq	(%rdx,%rax), %rcx
-	leaq	2816(%rsp,%rcx,4), %rcx
-	movq	%rcx, 2496(%rsp)        # 8-byte Spill
-	leaq	(%rax,%rsi), %rax
-	leaq	2816(%rsp,%rax,4), %r8
-	shll	$5, %edi
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	addl	%eax, %edi
-	movq	%rdi, 1824(%rsp)        # 8-byte Spill
-	xorl	%eax, %eax
-	xorl	%edx, %edx
-	.align	16, 0x90
-.LBB147_175:                            # %for demosaiced$3.s0.v15.v15
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_174 Depth=2
-                                        # =>    This Loop Header: Depth=3
-                                        #         Child Loop BB147_176 Depth 4
-	movq	%rdx, 1696(%rsp)        # 8-byte Spill
-	movq	%rax, 1728(%rsp)        # 8-byte Spill
-	movq	%r8, 1760(%rsp)         # 8-byte Spill
-	movq	1824(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdx,8), %r9d
-	movl	%eax, %r11d
-	andl	$1, %r11d
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	subl	%eax, %r9d
-	xorl	%eax, %eax
-	.align	16, 0x90
-.LBB147_176:                            # %for demosaiced$3.s0.v16
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_174 Depth=2
-                                        #       Parent Loop BB147_175 Depth=3
-                                        # =>      This Inner Loop Header: Depth=4
-	leal	(%r13,%rax), %ecx
-	andl	$3, %ecx
-	movq	2808(%rsp), %rbx        # 8-byte Reload
-	imull	%ebx, %ecx
-	leal	(%r15,%rax), %esi
-	addl	%r9d, %ecx
-	leal	(%r12,%rax), %edx
-	andl	$3, %edx
-	imull	%ebx, %edx
-	movl	%esi, %edi
-	andl	$3, %edi
-	imull	%ebx, %edi
-	addl	%r9d, %edx
-	addl	%r9d, %edi
-	movslq	%ecx, %rcx
-	vmovups	(%r14,%rcx,4), %xmm8
-	vmovups	16(%r14,%rcx,4), %xmm9
-	vshufps	$221, %xmm9, %xmm8, %xmm1 # xmm1 = xmm8[1,3],xmm9[1,3]
-	vsubps	%xmm14, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm6, %xmm11
-	movslq	%edx, %rdx
-	vmovups	(%r14,%rdx,4), %xmm5
-	vmovups	16(%r14,%rdx,4), %xmm7
-	vshufps	$221, %xmm7, %xmm5, %xmm2 # xmm2 = xmm5[1,3],xmm7[1,3]
-	vsubps	%xmm14, %xmm2, %xmm2
-	vmulps	%xmm2, %xmm6, %xmm4
-	vmovups	8(%r14,%rcx,4), %xmm0
-	vmovaps	%xmm0, 2688(%rsp)       # 16-byte Spill
-	vmovups	24(%r14,%rcx,4), %xmm2
-	vmovaps	%xmm2, 2656(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm2, %xmm0, %xmm2 # xmm2 = xmm0[0,2],xmm2[0,2]
-	vsubps	%xmm14, %xmm2, %xmm2
-	vmovaps	%xmm6, %xmm3
-	vmulps	%xmm2, %xmm3, %xmm6
-	vmovups	8(%r14,%rdx,4), %xmm1
-	vmovaps	%xmm1, 2528(%rsp)       # 16-byte Spill
-	vmovups	24(%r14,%rdx,4), %xmm0
-	vmovaps	%xmm0, 2560(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm0, %xmm1, %xmm2 # xmm2 = xmm1[0,2],xmm0[0,2]
-	vsubps	%xmm14, %xmm2, %xmm2
-	vmulps	%xmm2, %xmm3, %xmm0
-	vbroadcastss	.LCPI147_14(%rip), %xmm2
-	vminps	%xmm2, %xmm0, %xmm0
-	vxorps	%xmm10, %xmm10, %xmm10
-	vmaxps	%xmm10, %xmm0, %xmm15
-	vminps	%xmm2, %xmm6, %xmm0
-	vmaxps	%xmm10, %xmm0, %xmm12
-	vbroadcastss	.LCPI147_15(%rip), %xmm6
-	vminps	%xmm2, %xmm4, %xmm0
-	vmaxps	%xmm10, %xmm0, %xmm1
-	vminps	%xmm2, %xmm11, %xmm0
-	vmaxps	%xmm10, %xmm0, %xmm0
-	vbroadcastss	.LCPI147_16(%rip), %xmm4
-	testl	%r11d, %r11d
-	je	.LBB147_177
-# BB#178:                               # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	%xmm1, 2592(%rsp)       # 16-byte Spill
-	vmovaps	%xmm0, 2624(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm7, %xmm5, %xmm0 # xmm0 = xmm5[0,2],xmm7[0,2]
-	vsubps	%xmm14, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm3, %xmm0
-	vminps	%xmm2, %xmm0, %xmm0
-	vmaxps	%xmm10, %xmm0, %xmm0
-	vaddps	%xmm15, %xmm0, %xmm0
-	vshufps	$136, %xmm9, %xmm8, %xmm1 # xmm1 = xmm8[0,2],xmm9[0,2]
-	vsubps	%xmm14, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm3, %xmm1
-	vminps	%xmm2, %xmm1, %xmm1
-	vmaxps	%xmm10, %xmm1, %xmm1
-	vaddps	%xmm12, %xmm1, %xmm1
-	vaddps	%xmm0, %xmm1, %xmm0
-	vmovaps	%xmm6, 2752(%rsp)       # 16-byte Spill
-	vmulps	%xmm6, %xmm0, %xmm11
-	jmp	.LBB147_179
-	.align	16, 0x90
-.LBB147_177:                            #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	%xmm6, 2752(%rsp)       # 16-byte Spill
-	vmovaps	%xmm0, 2624(%rsp)       # 16-byte Spill
-	vaddps	%xmm1, %xmm0, %xmm0
-	vmovaps	%xmm1, 2592(%rsp)       # 16-byte Spill
-	vmulps	%xmm4, %xmm0, %xmm11
-.LBB147_179:                            # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	movslq	%edi, %rcx
-	vmovups	(%r14,%rcx,4), %xmm1
-	vmovups	16(%r14,%rcx,4), %xmm8
-	vshufps	$221, %xmm8, %xmm1, %xmm0 # xmm0 = xmm1[1,3],xmm8[1,3]
-	vsubps	%xmm14, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm3, %xmm6
-	vmovups	8(%r14,%rcx,4), %xmm13
-	vmovups	24(%r14,%rcx,4), %xmm0
-	vshufps	$136, %xmm0, %xmm13, %xmm5 # xmm5 = xmm13[0,2],xmm0[0,2]
-	vsubps	%xmm14, %xmm5, %xmm5
-	vmulps	%xmm5, %xmm3, %xmm5
-	vminps	%xmm2, %xmm5, %xmm5
-	vmaxps	%xmm10, %xmm5, %xmm5
-	vminps	%xmm2, %xmm6, %xmm6
-	vmaxps	%xmm10, %xmm6, %xmm9
-	vxorps	%xmm6, %xmm6, %xmm6
-	vmovaps	%xmm9, %xmm7
-	vmovaps	%xmm4, %xmm10
-	je	.LBB147_181
-# BB#180:                               # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vshufps	$136, %xmm8, %xmm1, %xmm1 # xmm1 = xmm1[0,2],xmm8[0,2]
-	vsubps	%xmm14, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm3, %xmm1
-	vminps	%xmm2, %xmm1, %xmm1
-	vmaxps	%xmm6, %xmm1, %xmm1
-	vaddps	%xmm5, %xmm1, %xmm1
-	vmulps	%xmm10, %xmm1, %xmm7
-.LBB147_181:                            # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	jne	.LBB147_182
-# BB#183:                               # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	2528(%rsp), %xmm1       # 16-byte Reload
-	vshufps	$221, 2560(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-                                        # xmm1 = xmm1[1,3],mem[1,3]
-	vsubps	%xmm14, %xmm1, %xmm1
-	vmovaps	%xmm3, %xmm6
-	vmulps	%xmm1, %xmm6, %xmm1
-	vminps	%xmm2, %xmm1, %xmm1
-	vxorps	%xmm3, %xmm3, %xmm3
-	vmaxps	%xmm3, %xmm1, %xmm1
-	vaddps	2592(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-	vmovaps	2688(%rsp), %xmm4       # 16-byte Reload
-	vshufps	$221, 2656(%rsp), %xmm4, %xmm4 # 16-byte Folded Reload
-                                        # xmm4 = xmm4[1,3],mem[1,3]
-	vsubps	%xmm14, %xmm4, %xmm4
-	vmulps	%xmm4, %xmm6, %xmm4
-	vminps	%xmm2, %xmm4, %xmm4
-	vmaxps	%xmm3, %xmm4, %xmm4
-	vaddps	2624(%rsp), %xmm4, %xmm4 # 16-byte Folded Reload
-	vaddps	%xmm1, %xmm4, %xmm1
-	vmulps	2752(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-	jmp	.LBB147_184
-	.align	16, 0x90
-.LBB147_182:                            #   in Loop: Header=BB147_176 Depth=4
-	vaddps	%xmm15, %xmm12, %xmm1
-	vmulps	%xmm10, %xmm1, %xmm1
-	vmovaps	%xmm3, %xmm6
-	vxorps	%xmm3, %xmm3, %xmm3
-.LBB147_184:                            # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	jne	.LBB147_186
-# BB#185:                               # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vshufps	$221, %xmm0, %xmm13, %xmm0 # xmm0 = xmm13[1,3],xmm0[1,3]
-	vsubps	%xmm14, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm6, %xmm0
-	vminps	%xmm2, %xmm0, %xmm0
-	vmaxps	%xmm3, %xmm0, %xmm0
-	vaddps	%xmm0, %xmm9, %xmm0
-	vmulps	%xmm10, %xmm0, %xmm5
-.LBB147_186:                            # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	%xmm7, %xmm0
-	andl	$1, %esi
-	je	.LBB147_188
-# BB#187:                               # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	%xmm11, %xmm0
-.LBB147_188:                            # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	je	.LBB147_190
-# BB#189:                               # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	%xmm7, %xmm11
-.LBB147_190:                            # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	%xmm5, %xmm3
-	je	.LBB147_192
-# BB#191:                               # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	%xmm1, %xmm3
-.LBB147_192:                            # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	testl	%esi, %esi
-	je	.LBB147_194
-# BB#193:                               # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	%xmm5, %xmm1
-.LBB147_194:                            # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_196
-# BB#195:                               # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	%xmm0, %xmm11
-.LBB147_196:                            # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	je	.LBB147_198
-# BB#197:                               # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	%xmm3, %xmm1
-.LBB147_198:                            # %for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_176 Depth=4
-	vmovaps	.LCPI147_12(%rip), %ymm0 # ymm0 = <u,0,u,1,u,2,u,3>
-	vpermps	%ymm1, %ymm0, %ymm0
-	vmovaps	.LCPI147_13(%rip), %ymm1 # ymm1 = <0,u,1,u,2,u,3,u>
-	vpermps	%ymm11, %ymm1, %ymm1
-	vblendps	$170, %ymm0, %ymm1, %ymm0 # ymm0 = ymm1[0],ymm0[1],ymm1[2],ymm0[3],ymm1[4],ymm0[5],ymm1[6],ymm0[7]
-	vmovups	%ymm0, (%r8)
-	subq	$-128, %r8
-	addl	$1, %eax
-	cmpl	$2, %eax
-	jne	.LBB147_176
-# BB#199:                               # %end for demosaiced$3.s0.v16
-                                        #   in Loop: Header=BB147_175 Depth=3
-	vmovaps	%xmm10, %xmm15
-	movq	1728(%rsp), %rax        # 8-byte Reload
-	addq	$1, %rax
-	movq	1696(%rsp), %rdx        # 8-byte Reload
-	addl	$1, %edx
-	movq	1760(%rsp), %r8         # 8-byte Reload
-	addq	$32, %r8
-	xorl	%esi, %esi
-	cmpq	$4, %rax
-	jne	.LBB147_175
-# BB#200:                               #   in Loop: Header=BB147_174 Depth=2
-	xorl	%edx, %edx
-	vmovaps	656(%rsp), %xmm9        # 16-byte Reload
-	vmovaps	640(%rsp), %xmm10       # 16-byte Reload
-	vxorps	%xmm11, %xmm11, %xmm11
-	vmovaps	2752(%rsp), %xmm12      # 16-byte Reload
-	movq	2496(%rsp), %rcx        # 8-byte Reload
-	.align	16, 0x90
-.LBB147_201:                            # %for demosaiced$3.s0.v15.v15205
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_174 Depth=2
-                                        # =>    This Loop Header: Depth=3
-                                        #         Child Loop BB147_202 Depth 4
-	movq	%rdx, 2656(%rsp)        # 8-byte Spill
-	movq	%rsi, 2688(%rsp)        # 8-byte Spill
-	movq	%rcx, 2496(%rsp)        # 8-byte Spill
-	movq	1824(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdx,8), %r9d
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	subl	%eax, %r9d
-	addl	1036(%rsp), %r9d        # 4-byte Folded Reload
-	xorl	%eax, %eax
-	movq	%rcx, %rbx
-	.align	16, 0x90
-.LBB147_202:                            # %for demosaiced$3.s0.v16209
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_174 Depth=2
-                                        #       Parent Loop BB147_201 Depth=3
-                                        # =>      This Inner Loop Header: Depth=4
-	leal	(%r10,%rax), %r15d
-	movl	%r15d, %ecx
-	andl	$3, %ecx
-	movq	2808(%rsp), %rsi        # 8-byte Reload
-	imull	%esi, %ecx
-	leal	(%r13,%rax), %edx
-	andl	$3, %edx
-	imull	%esi, %edx
-	leal	(%rcx,%r9), %ecx
-	leal	(%rdx,%r9), %edi
-	leal	(%r12,%rax), %edx
-	andl	$3, %edx
-	imull	%esi, %edx
-	leal	(%rdx,%r9), %edx
-	movslq	%ecx, %rcx
-	vmovups	40(%r14,%rcx,4), %xmm8
-	vmovups	56(%r14,%rcx,4), %xmm4
-	vshufps	$136, %xmm4, %xmm8, %xmm0 # xmm0 = xmm8[0,2],xmm4[0,2]
-	vsubps	%xmm10, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm9, %xmm0
-	movslq	%edx, %rdx
-	vmovups	32(%r14,%rdx,4), %xmm1
-	vshufps	$221, 48(%r14,%rdx,4), %xmm1, %xmm1 # xmm1 = xmm1[1,3],mem[1,3]
-	vsubps	%xmm10, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm9, %xmm1
-	vminps	%xmm2, %xmm1, %xmm1
-	vmaxps	%xmm11, %xmm1, %xmm1
-	movslq	%edi, %r8
-	vmovups	32(%r14,%r8,4), %xmm5
-	vshufps	$221, 48(%r14,%r8,4), %xmm5, %xmm5 # xmm5 = xmm5[1,3],mem[1,3]
-	vsubps	%xmm10, %xmm5, %xmm5
-	vmulps	%xmm5, %xmm9, %xmm5
-	vminps	%xmm2, %xmm5, %xmm5
-	vmaxps	%xmm11, %xmm5, %xmm5
-	vaddps	%xmm5, %xmm1, %xmm1
-	vminps	%xmm2, %xmm0, %xmm0
-	vmaxps	%xmm11, %xmm0, %xmm5
-	vmovups	32(%r14,%rcx,4), %xmm0
-	vmovups	48(%r14,%rcx,4), %xmm6
-	vshufps	$136, %xmm6, %xmm0, %xmm7 # xmm7 = xmm0[0,2],xmm6[0,2]
-	vsubps	%xmm10, %xmm7, %xmm7
-	vmulps	%xmm7, %xmm9, %xmm7
-	vminps	%xmm2, %xmm7, %xmm7
-	vmaxps	%xmm11, %xmm7, %xmm7
-	vaddps	%xmm7, %xmm5, %xmm7
-	vaddps	%xmm7, %xmm1, %xmm1
-	vshufps	$221, %xmm6, %xmm0, %xmm0 # xmm0 = xmm0[1,3],xmm6[1,3]
-	vsubps	%xmm10, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm9, %xmm0
-	vmulps	%xmm12, %xmm1, %xmm1
-	vminps	%xmm2, %xmm0, %xmm0
-	vmaxps	%xmm11, %xmm0, %xmm6
-	vmovaps	%xmm6, %xmm0
-	testl	%r11d, %r11d
-	je	.LBB147_204
-# BB#203:                               # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm1, %xmm0
-.LBB147_204:                            # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	je	.LBB147_206
-# BB#205:                               # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm6, %xmm1
-.LBB147_206:                            # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovups	40(%r14,%rdx,4), %xmm7
-	vshufps	$136, 56(%r14,%rdx,4), %xmm7, %xmm7 # xmm7 = xmm7[0,2],mem[0,2]
-	vsubps	%xmm10, %xmm7, %xmm7
-	vmulps	%xmm7, %xmm9, %xmm7
-	vminps	%xmm2, %xmm7, %xmm7
-	vmaxps	%xmm11, %xmm7, %xmm7
-	vmovups	40(%r14,%r8,4), %xmm3
-	vshufps	$136, 56(%r14,%r8,4), %xmm3, %xmm3 # xmm3 = xmm3[0,2],mem[0,2]
-	vsubps	%xmm10, %xmm3, %xmm3
-	vmulps	%xmm3, %xmm9, %xmm3
-	vminps	%xmm2, %xmm3, %xmm3
-	vmaxps	%xmm11, %xmm3, %xmm3
-	vaddps	%xmm3, %xmm7, %xmm3
-	vshufps	$221, %xmm4, %xmm8, %xmm4 # xmm4 = xmm8[1,3],xmm4[1,3]
-	vsubps	%xmm10, %xmm4, %xmm4
-	vmulps	%xmm4, %xmm9, %xmm4
-	vminps	%xmm2, %xmm4, %xmm4
-	vmaxps	%xmm11, %xmm4, %xmm4
-	vaddps	%xmm6, %xmm4, %xmm4
-	vaddps	%xmm3, %xmm4, %xmm3
-	vmulps	%xmm12, %xmm3, %xmm4
-	vmovaps	%xmm5, %xmm3
-	jne	.LBB147_208
-# BB#207:                               # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm4, %xmm3
-.LBB147_208:                            # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	jne	.LBB147_210
-# BB#209:                               # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm5, %xmm4
-.LBB147_210:                            # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm1, %xmm5
-	andl	$1, %r15d
-	je	.LBB147_212
-# BB#211:                               # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm0, %xmm5
-.LBB147_212:                            # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm4, %xmm6
-	je	.LBB147_214
-# BB#213:                               # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm3, %xmm6
-.LBB147_214:                            # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	je	.LBB147_216
-# BB#215:                               # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm4, %xmm3
-.LBB147_216:                            # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	testl	%r15d, %r15d
-	je	.LBB147_218
-# BB#217:                               # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm1, %xmm0
-.LBB147_218:                            # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_220
-# BB#219:                               # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm5, %xmm0
-.LBB147_220:                            # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	je	.LBB147_222
-# BB#221:                               # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	%xmm6, %xmm3
-.LBB147_222:                            # %for demosaiced$3.s0.v16209
-                                        #   in Loop: Header=BB147_202 Depth=4
-	vmovaps	.LCPI147_12(%rip), %ymm1 # ymm1 = <u,0,u,1,u,2,u,3>
-	vpermps	%ymm3, %ymm1, %ymm1
-	vmovaps	.LCPI147_13(%rip), %ymm3 # ymm3 = <0,u,1,u,2,u,3,u>
-	vpermps	%ymm0, %ymm3, %ymm0
-	vblendps	$170, %ymm1, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm1[1],ymm0[2],ymm1[3],ymm0[4],ymm1[5],ymm0[6],ymm1[7]
-	vmovups	%ymm0, (%rbx)
-	subq	$-128, %rbx
-	addl	$1, %eax
-	cmpl	$2, %eax
-	jne	.LBB147_202
-# BB#223:                               # %end for demosaiced$3.s0.v16210
-                                        #   in Loop: Header=BB147_201 Depth=3
-	movq	2688(%rsp), %rsi        # 8-byte Reload
-	addq	$1, %rsi
-	movq	2656(%rsp), %rdx        # 8-byte Reload
-	addl	$1, %edx
-	movq	2496(%rsp), %rcx        # 8-byte Reload
-	addq	$32, %rcx
-	xorl	%eax, %eax
-	cmpq	$4, %rsi
-	jne	.LBB147_201
-# BB#224:                               #   in Loop: Header=BB147_174 Depth=2
-	xorl	%edx, %edx
-	vmovaps	784(%rsp), %xmm14       # 16-byte Reload
-	vmovaps	768(%rsp), %xmm9        # 16-byte Reload
-	movq	1792(%rsp), %rcx        # 8-byte Reload
-	vmovaps	%xmm15, %xmm10
-	vmovaps	%xmm10, 2400(%rsp)      # 16-byte Spill
-	.align	16, 0x90
-.LBB147_225:                            # %for demosaiced$3.s0.v15.v15212
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_174 Depth=2
-                                        # =>    This Loop Header: Depth=3
-                                        #         Child Loop BB147_226 Depth 4
-	movq	%rdx, 1728(%rsp)        # 8-byte Spill
-	movq	%rax, 1760(%rsp)        # 8-byte Spill
-	movq	%rcx, 1792(%rsp)        # 8-byte Spill
-	movq	1824(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdx,8), %r9d
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	subl	%eax, %r9d
-	movq	1040(%rsp), %rax        # 8-byte Reload
-	addl	%eax, %r9d
-	xorl	%edi, %edi
-	movq	%rcx, %rax
-	.align	16, 0x90
-.LBB147_226:                            # %for demosaiced$3.s0.v16216
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_174 Depth=2
-                                        #       Parent Loop BB147_225 Depth=3
-                                        # =>      This Inner Loop Header: Depth=4
-	leal	(%r10,%rdi), %r15d
-	movl	%r15d, %ecx
-	andl	$3, %ecx
-	movq	2808(%rsp), %rsi        # 8-byte Reload
-	imull	%esi, %ecx
-	leal	(%r13,%rdi), %edx
-	andl	$3, %edx
-	imull	%esi, %edx
-	leal	(%rcx,%r9), %ecx
-	leal	(%rdx,%r9), %edx
-	leal	(%r12,%rdi), %ebx
-	andl	$3, %ebx
-	imull	%esi, %ebx
-	leal	(%rbx,%r9), %r8d
-	movslq	%ecx, %rcx
-	vmovups	72(%r14,%rcx,4), %xmm0
-	vmovaps	%xmm0, 2656(%rsp)       # 16-byte Spill
-	vmovups	88(%r14,%rcx,4), %xmm1
-	vmovaps	%xmm1, 2624(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[0,2],xmm1[0,2]
-	vsubps	%xmm9, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm14, %xmm3
-	vmovups	64(%r14,%rcx,4), %xmm0
-	vmovups	80(%r14,%rcx,4), %xmm1
-	vshufps	$221, %xmm1, %xmm0, %xmm4 # xmm4 = xmm0[1,3],xmm1[1,3]
-	vsubps	%xmm9, %xmm4, %xmm4
-	vmulps	%xmm4, %xmm14, %xmm4
-	vminps	%xmm2, %xmm4, %xmm4
-	vmaxps	%xmm11, %xmm4, %xmm4
-	vminps	%xmm2, %xmm3, %xmm3
-	vmaxps	%xmm11, %xmm3, %xmm13
-	testl	%r11d, %r11d
-	je	.LBB147_227
-# BB#228:                               # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%xmm4, %xmm0
-	vmovaps	%xmm4, 2592(%rsp)       # 16-byte Spill
-	jmp	.LBB147_229
-	.align	16, 0x90
-.LBB147_227:                            #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%xmm4, 2592(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[0,2],xmm1[0,2]
-	vsubps	%xmm9, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm14, %xmm0
-	vminps	%xmm2, %xmm0, %xmm0
-	vmaxps	%xmm11, %xmm0, %xmm0
-	vaddps	%xmm0, %xmm13, %xmm0
-	vmulps	%xmm10, %xmm0, %xmm0
-.LBB147_229:                            # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%ymm0, 2688(%rsp)       # 32-byte Spill
-	vxorps	%xmm15, %xmm15, %xmm15
-	movslq	%edx, %rcx
-	vmovups	72(%r14,%rcx,4), %xmm0
-	vmovaps	%xmm0, 2560(%rsp)       # 16-byte Spill
-	vmovups	88(%r14,%rcx,4), %xmm1
-	vmovaps	%xmm1, 2528(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[0,2],xmm1[0,2]
-	vsubps	%xmm9, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm14, %xmm5
-	movslq	%r8d, %rdx
-	vmovups	72(%r14,%rdx,4), %xmm3
-	vmovups	88(%r14,%rdx,4), %xmm0
-	vshufps	$136, %xmm0, %xmm3, %xmm1 # xmm1 = xmm3[0,2],xmm0[0,2]
-	vsubps	%xmm9, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm14, %xmm4
-	vmovups	64(%r14,%rcx,4), %xmm6
-	vmovups	80(%r14,%rcx,4), %xmm10
-	vshufps	$221, %xmm10, %xmm6, %xmm1 # xmm1 = xmm6[1,3],xmm10[1,3]
-	vsubps	%xmm9, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm14, %xmm1
-	vmovups	64(%r14,%rdx,4), %xmm11
-	vmovups	80(%r14,%rdx,4), %xmm8
-	vshufps	$221, %xmm8, %xmm11, %xmm7 # xmm7 = xmm11[1,3],xmm8[1,3]
-	vsubps	%xmm9, %xmm7, %xmm7
-	vmulps	%xmm7, %xmm14, %xmm7
-	vminps	%xmm2, %xmm7, %xmm7
-	vmaxps	%xmm15, %xmm7, %xmm12
-	vminps	%xmm2, %xmm1, %xmm1
-	vmaxps	%xmm15, %xmm1, %xmm7
-	vminps	%xmm2, %xmm4, %xmm1
-	vmaxps	%xmm15, %xmm1, %xmm4
-	vminps	%xmm2, %xmm5, %xmm1
-	vmaxps	%xmm15, %xmm1, %xmm5
-	je	.LBB147_230
-# BB#231:                               # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vaddps	%xmm12, %xmm7, %xmm1
-	vmovaps	%xmm7, 2496(%rsp)       # 16-byte Spill
-	vmovaps	2400(%rsp), %xmm10      # 16-byte Reload
-	vmulps	%xmm10, %xmm1, %xmm8
-	vxorps	%xmm11, %xmm11, %xmm11
-	vmovaps	2752(%rsp), %xmm6       # 16-byte Reload
-	jmp	.LBB147_232
-	.align	16, 0x90
-.LBB147_230:                            #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%xmm7, 2496(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm8, %xmm11, %xmm1 # xmm1 = xmm11[0,2],xmm8[0,2]
-	vsubps	%xmm9, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm14, %xmm1
-	vminps	%xmm2, %xmm1, %xmm1
-	vmaxps	%xmm15, %xmm1, %xmm1
-	vaddps	%xmm1, %xmm4, %xmm1
-	vshufps	$136, %xmm10, %xmm6, %xmm6 # xmm6 = xmm6[0,2],xmm10[0,2]
-	vsubps	%xmm9, %xmm6, %xmm6
-	vmulps	%xmm6, %xmm14, %xmm6
-	vminps	%xmm2, %xmm6, %xmm6
-	vmaxps	%xmm15, %xmm6, %xmm6
-	vaddps	%xmm6, %xmm5, %xmm6
-	vaddps	%xmm1, %xmm6, %xmm1
-	vmovaps	2752(%rsp), %xmm6       # 16-byte Reload
-	vmulps	%xmm6, %xmm1, %xmm8
-	vxorps	%xmm11, %xmm11, %xmm11
-	vmovaps	2400(%rsp), %xmm10      # 16-byte Reload
-.LBB147_232:                            # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	je	.LBB147_234
-# BB#233:                               #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	2656(%rsp), %xmm1       # 16-byte Reload
-	vshufps	$221, 2624(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-                                        # xmm1 = xmm1[1,3],mem[1,3]
-	vsubps	%xmm9, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm14, %xmm1
-	vminps	%xmm2, %xmm1, %xmm1
-	vmaxps	%xmm11, %xmm1, %xmm1
-	vaddps	2592(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-	vmulps	%xmm10, %xmm1, %xmm13
-.LBB147_234:                            # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	jne	.LBB147_235
-# BB#236:                               # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vaddps	%xmm4, %xmm5, %xmm0
-	vmulps	%xmm10, %xmm0, %xmm3
-	jmp	.LBB147_237
-	.align	16, 0x90
-.LBB147_235:                            #   in Loop: Header=BB147_226 Depth=4
-	vshufps	$221, %xmm0, %xmm3, %xmm0 # xmm0 = xmm3[1,3],xmm0[1,3]
-	vsubps	%xmm9, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm14, %xmm0
-	vminps	%xmm2, %xmm0, %xmm0
-	vmaxps	%xmm11, %xmm0, %xmm0
-	vaddps	%xmm12, %xmm0, %xmm0
-	vmovaps	2560(%rsp), %xmm1       # 16-byte Reload
-	vshufps	$221, 2528(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-                                        # xmm1 = xmm1[1,3],mem[1,3]
-	vsubps	%xmm9, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm14, %xmm1
-	vminps	%xmm2, %xmm1, %xmm1
-	vmaxps	%xmm11, %xmm1, %xmm1
-	vaddps	2496(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-	vaddps	%xmm0, %xmm1, %xmm0
-	vmulps	%xmm6, %xmm0, %xmm3
-.LBB147_237:                            # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	2688(%rsp), %ymm4       # 32-byte Reload
-	vmovaps	%xmm8, %xmm0
-	andl	$1, %r15d
-	je	.LBB147_239
-# BB#238:                               # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%xmm4, %xmm0
-.LBB147_239:                            # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%xmm3, %xmm1
-	je	.LBB147_241
-# BB#240:                               # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%xmm13, %xmm1
-.LBB147_241:                            # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	je	.LBB147_243
-# BB#242:                               # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%xmm3, %xmm13
-.LBB147_243:                            # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	testl	%r15d, %r15d
-	je	.LBB147_245
-# BB#244:                               # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%xmm8, %xmm4
-.LBB147_245:                            # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_247
-# BB#246:                               # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%xmm0, %xmm4
-.LBB147_247:                            # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	je	.LBB147_249
-# BB#248:                               # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	%xmm1, %xmm13
-.LBB147_249:                            # %for demosaiced$3.s0.v16216
-                                        #   in Loop: Header=BB147_226 Depth=4
-	vmovaps	.LCPI147_12(%rip), %ymm0 # ymm0 = <u,0,u,1,u,2,u,3>
-	vpermps	%ymm13, %ymm0, %ymm0
-	vmovaps	.LCPI147_13(%rip), %ymm1 # ymm1 = <0,u,1,u,2,u,3,u>
-	vpermps	%ymm4, %ymm1, %ymm1
-	vblendps	$170, %ymm0, %ymm1, %ymm0 # ymm0 = ymm1[0],ymm0[1],ymm1[2],ymm0[3],ymm1[4],ymm0[5],ymm1[6],ymm0[7]
-	vmovups	%ymm0, (%rax)
-	subq	$-128, %rax
-	addl	$1, %edi
-	cmpl	$2, %edi
-	jne	.LBB147_226
-# BB#250:                               # %end for demosaiced$3.s0.v16217
-                                        #   in Loop: Header=BB147_225 Depth=3
-	movq	1760(%rsp), %rax        # 8-byte Reload
-	addq	$1, %rax
-	movq	1728(%rsp), %rdx        # 8-byte Reload
-	addl	$1, %edx
-	movq	1792(%rsp), %rcx        # 8-byte Reload
-	addq	$32, %rcx
-	cmpq	$4, %rax
-	jne	.LBB147_225
-# BB#251:                               #   in Loop: Header=BB147_174 Depth=2
-	vmovaps	%xmm9, 768(%rsp)        # 16-byte Spill
-	vmovaps	%xmm14, 784(%rsp)       # 16-byte Spill
-	movq	1400(%rsp), %r8         # 8-byte Reload
-	xorl	%r11d, %r11d
-	movq	1104(%rsp), %r15        # 8-byte Reload
-	movq	824(%rsp), %r9          # 8-byte Reload
-	.align	16, 0x90
-.LBB147_252:                            # %for f2.s0.v16.v18.yii
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_174 Depth=2
-                                        # =>    This Loop Header: Depth=3
-                                        #         Child Loop BB147_253 Depth 4
-	movq	%r11, %rax
-	shlq	$7, %rax
-	vmovaps	2816(%rsp,%rax), %ymm10
-	vmovaps	%ymm10, 2496(%rsp)      # 32-byte Spill
-	vmovaps	2848(%rsp,%rax), %ymm14
-	vmovaps	%ymm14, 2528(%rsp)      # 32-byte Spill
-	vmovaps	2880(%rsp,%rax), %ymm4
-	vmovaps	%ymm4, 2592(%rsp)       # 32-byte Spill
-	vmovaps	2912(%rsp,%rax), %ymm11
-	vmovaps	%ymm11, 2400(%rsp)      # 32-byte Spill
-	vmovaps	3072(%rsp,%rax), %ymm15
-	vmovaps	%ymm15, 2560(%rsp)      # 32-byte Spill
-	vmovaps	3104(%rsp,%rax), %ymm3
-	vmovaps	3136(%rsp,%rax), %ymm12
-	vmovaps	3168(%rsp,%rax), %ymm1
-	vmovaps	3328(%rsp,%rax), %ymm0
-	vmovaps	3360(%rsp,%rax), %ymm5
-	vmovaps	3392(%rsp,%rax), %ymm6
-	vmovaps	1600(%rsp), %ymm2       # 32-byte Reload
-	vmulps	%ymm2, %ymm4, %ymm7
-	vmulps	%ymm2, %ymm14, %ymm8
-	vmulps	%ymm2, %ymm10, %ymm9
-	vmovaps	%ymm10, %ymm4
-	vmulps	%ymm2, %ymm11, %ymm10
-	vmovaps	%ymm11, %ymm13
-	vmovaps	1632(%rsp), %ymm2       # 32-byte Reload
-	vmovaps	%ymm2, %ymm11
-	vfmadd213ps	%ymm10, %ymm1, %ymm11
-	vmovaps	%ymm2, %ymm10
-	vfmadd213ps	%ymm9, %ymm15, %ymm10
-	vmovaps	%ymm2, %ymm9
-	vfmadd213ps	%ymm8, %ymm3, %ymm9
-	vmovaps	%ymm2, %ymm8
-	vfmadd213ps	%ymm7, %ymm12, %ymm8
-	vmovaps	1664(%rsp), %ymm2       # 32-byte Reload
-	vmovaps	%ymm2, %ymm7
-	vfmadd213ps	%ymm8, %ymm6, %ymm7
-	vmovaps	%ymm7, 2752(%rsp)       # 32-byte Spill
-	vmovaps	%ymm2, %ymm7
-	vfmadd213ps	%ymm9, %ymm5, %ymm7
-	vmovaps	%ymm7, 2688(%rsp)       # 32-byte Spill
-	vmovaps	%ymm2, %ymm7
-	vfmadd213ps	%ymm10, %ymm0, %ymm7
-	vmovaps	%ymm7, 2656(%rsp)       # 32-byte Spill
-	vmovaps	3424(%rsp,%rax), %ymm15
-	vfmadd213ps	%ymm11, %ymm15, %ymm2
-	vmovaps	%ymm2, 2624(%rsp)       # 32-byte Spill
-	vmovaps	1504(%rsp), %ymm10      # 32-byte Reload
-	vmulps	%ymm10, %ymm13, %ymm7
-	vmovaps	1536(%rsp), %ymm2       # 32-byte Reload
-	vmovaps	%ymm2, %ymm13
-	vfmadd213ps	%ymm7, %ymm1, %ymm13
-	vmulps	%ymm10, %ymm4, %ymm7
-	vmovaps	%ymm2, %ymm8
-	vmovaps	2560(%rsp), %ymm9       # 32-byte Reload
-	vfmadd213ps	%ymm7, %ymm9, %ymm8
-	vmulps	%ymm10, %ymm14, %ymm7
-	vmovaps	%ymm2, %ymm14
-	vfmadd213ps	%ymm7, %ymm3, %ymm14
-	vmulps	2592(%rsp), %ymm10, %ymm7 # 32-byte Folded Reload
-	vmovaps	%ymm2, %ymm11
-	vfmadd213ps	%ymm7, %ymm12, %ymm11
-	vmovaps	1568(%rsp), %ymm2       # 32-byte Reload
-	vmovaps	%ymm2, %ymm10
-	vfmadd213ps	%ymm11, %ymm6, %ymm10
-	vmovaps	%ymm2, %ymm11
-	vfmadd213ps	%ymm14, %ymm5, %ymm11
-	vmovaps	%ymm2, %ymm7
-	vfmadd213ps	%ymm8, %ymm0, %ymm7
-	vmovaps	%ymm2, %ymm8
-	vfmadd213ps	%ymm13, %ymm15, %ymm8
-	vmovaps	1408(%rsp), %ymm13      # 32-byte Reload
-	vmulps	2400(%rsp), %ymm13, %ymm4 # 32-byte Folded Reload
-	vmovaps	1440(%rsp), %ymm2       # 32-byte Reload
-	vfmadd213ps	%ymm4, %ymm2, %ymm1
-	vmulps	2496(%rsp), %ymm13, %ymm4 # 32-byte Folded Reload
-	vfmadd213ps	%ymm4, %ymm2, %ymm9
-	vmulps	2528(%rsp), %ymm13, %ymm4 # 32-byte Folded Reload
-	vfmadd213ps	%ymm4, %ymm2, %ymm3
-	vmulps	2592(%rsp), %ymm13, %ymm4 # 32-byte Folded Reload
-	vfmadd213ps	%ymm4, %ymm2, %ymm12
-	vmovaps	1472(%rsp), %ymm2       # 32-byte Reload
-	vfmadd213ps	%ymm12, %ymm2, %ymm6
-	vfmadd213ps	%ymm3, %ymm2, %ymm5
-	vfmadd213ps	%ymm9, %ymm2, %ymm0
-	vmovaps	%ymm0, %ymm9
-	vfmadd213ps	%ymm1, %ymm2, %ymm15
-	xorl	%edi, %edi
-	movl	$3, %ebx
-	movq	%r8, %rax
-	vmovdqa	992(%rsp), %ymm14       # 32-byte Reload
-	.align	16, 0x90
-.LBB147_253:                            # %for f2.s0.v17
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_174 Depth=2
-                                        #       Parent Loop BB147_252 Depth=3
-                                        # =>      This Inner Loop Header: Depth=4
-	vmovaps	%ymm7, %ymm0
-	cmpl	$1, %edi
-	je	.LBB147_255
-# BB#254:                               # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	2656(%rsp), %ymm0       # 32-byte Reload
-.LBB147_255:                            # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm11, %ymm1
-	je	.LBB147_257
-# BB#256:                               # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	2688(%rsp), %ymm1       # 32-byte Reload
-.LBB147_257:                            # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm10, %ymm4
-	je	.LBB147_259
-# BB#258:                               # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	2752(%rsp), %ymm4       # 32-byte Reload
-.LBB147_259:                            # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm8, %ymm12
-	je	.LBB147_261
-# BB#260:                               # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	2624(%rsp), %ymm12      # 32-byte Reload
-.LBB147_261:                            # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm15, %ymm3
-	testl	%edi, %edi
-	je	.LBB147_263
-# BB#262:                               # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm12, %ymm3
-.LBB147_263:                            # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm6, %ymm12
-	je	.LBB147_265
-# BB#264:                               # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm4, %ymm12
-.LBB147_265:                            # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm5, %ymm4
-	je	.LBB147_267
-# BB#266:                               # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm1, %ymm4
-.LBB147_267:                            # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm9, %ymm1
-	je	.LBB147_269
-# BB#268:                               # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vmovaps	%ymm0, %ymm1
-.LBB147_269:                            # %for f2.s0.v17
-                                        #   in Loop: Header=BB147_253 Depth=4
-	vbroadcastss	.LCPI147_17(%rip), %ymm0
-	vminps	%ymm0, %ymm1, %ymm1
-	vminps	%ymm0, %ymm4, %ymm4
-	vminps	%ymm0, %ymm12, %ymm12
-	vminps	%ymm0, %ymm3, %ymm0
-	vxorps	%ymm2, %ymm2, %ymm2
-	vmaxps	%ymm2, %ymm1, %ymm1
-	vmaxps	%ymm2, %ymm4, %ymm3
-	vmaxps	%ymm2, %ymm12, %ymm4
-	vmaxps	%ymm2, %ymm0, %ymm0
-	vcvttps2dq	%ymm1, %ymm1
-	vmovdqa	.LCPI147_5(%rip), %ymm2 # ymm2 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
-	vpshufb	%ymm2, %ymm1, %ymm1
-	vpermq	$232, %ymm1, %ymm1      # ymm1 = ymm1[0,2,2,3]
-	vcvttps2dq	%ymm3, %ymm3
-	vpshufb	%ymm2, %ymm3, %ymm3
-	vpermq	$232, %ymm3, %ymm3      # ymm3 = ymm3[0,2,2,3]
-	vcvttps2dq	%ymm4, %ymm4
-	vpshufb	%ymm2, %ymm4, %ymm4
-	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
-	vcvttps2dq	%ymm0, %ymm0
-	vpshufb	%ymm2, %ymm0, %ymm0
-	vpermq	$232, %ymm0, %ymm0      # ymm0 = ymm0[0,2,2,3]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vpmulld	%ymm14, %ymm1, %ymm12
-	vpmulld	%ymm14, %ymm3, %ymm1
-	vpmulld	%ymm14, %ymm4, %ymm3
-	vpmulld	%ymm14, %ymm0, %ymm0
-	vmovd	%edi, %xmm4
-	vpsubd	2432(%rsp), %ymm4, %ymm4 # 32-byte Folded Reload
-	vpbroadcastd	%xmm4, %ymm13
-	vpaddd	%ymm0, %ymm13, %ymm4
-	vpaddd	%ymm3, %ymm13, %ymm3
-	vpaddd	%ymm1, %ymm13, %ymm1
-	vpaddd	%ymm12, %ymm13, %ymm0
-	vmovq	%xmm4, %rcx
-	movslq	%ecx, %rdx
-	movq	1048(%rsp), %rsi        # 8-byte Reload
-	movzwl	(%rsi,%rdx,2), %edx
-	vmovd	%edx, %xmm2
-	vpextrq	$1, %xmm4, %rdx
-	sarq	$32, %rcx
-	vpinsrw	$1, (%rsi,%rcx,2), %xmm2, %xmm2
-	movslq	%edx, %rcx
-	sarq	$32, %rdx
-	vextracti128	$1, %ymm4, %xmm4
-	vpinsrw	$2, (%rsi,%rcx,2), %xmm2, %xmm2
-	vmovq	%xmm4, %rcx
-	vpinsrw	$3, (%rsi,%rdx,2), %xmm2, %xmm2
-	movslq	%ecx, %rdx
-	vpinsrw	$4, (%rsi,%rdx,2), %xmm2, %xmm2
-	vpextrq	$1, %xmm4, %rdx
-	sarq	$32, %rcx
-	vpinsrw	$5, (%rsi,%rcx,2), %xmm2, %xmm2
-	movslq	%edx, %rcx
-	vpinsrw	$6, (%rsi,%rcx,2), %xmm2, %xmm2
-	vmovq	%xmm3, %rcx
-	sarq	$32, %rdx
-	vpinsrw	$7, (%rsi,%rdx,2), %xmm2, %xmm4
-	movslq	%ecx, %rdx
-	movzwl	(%rsi,%rdx,2), %edx
-	vmovd	%edx, %xmm2
-	vpextrq	$1, %xmm3, %rdx
-	sarq	$32, %rcx
-	vpinsrw	$1, (%rsi,%rcx,2), %xmm2, %xmm2
-	movslq	%edx, %rcx
-	sarq	$32, %rdx
-	vextracti128	$1, %ymm3, %xmm3
-	vpinsrw	$2, (%rsi,%rcx,2), %xmm2, %xmm2
-	vmovq	%xmm3, %rcx
-	vpinsrw	$3, (%rsi,%rdx,2), %xmm2, %xmm2
-	movslq	%ecx, %rdx
-	vpinsrw	$4, (%rsi,%rdx,2), %xmm2, %xmm2
-	vpextrq	$1, %xmm3, %rdx
-	sarq	$32, %rcx
-	vpinsrw	$5, (%rsi,%rcx,2), %xmm2, %xmm2
-	movslq	%edx, %rcx
-	vpinsrw	$6, (%rsi,%rcx,2), %xmm2, %xmm2
-	vmovq	%xmm1, %rcx
-	sarq	$32, %rdx
-	vpinsrw	$7, (%rsi,%rdx,2), %xmm2, %xmm2
-	movslq	%ecx, %rdx
-	movzwl	(%rsi,%rdx,2), %edx
-	vmovd	%edx, %xmm3
-	vpextrq	$1, %xmm1, %rdx
-	sarq	$32, %rcx
-	vpinsrw	$1, (%rsi,%rcx,2), %xmm3, %xmm3
-	movslq	%edx, %rcx
-	sarq	$32, %rdx
-	vextracti128	$1, %ymm1, %xmm1
-	vpinsrw	$2, (%rsi,%rcx,2), %xmm3, %xmm3
-	vmovq	%xmm1, %rcx
-	vpinsrw	$3, (%rsi,%rdx,2), %xmm3, %xmm3
-	movslq	%ecx, %rdx
-	vpinsrw	$4, (%rsi,%rdx,2), %xmm3, %xmm3
-	vpextrq	$1, %xmm1, %rdx
-	sarq	$32, %rcx
-	vpinsrw	$5, (%rsi,%rcx,2), %xmm3, %xmm1
-	movslq	%edx, %rcx
-	vpinsrw	$6, (%rsi,%rcx,2), %xmm1, %xmm1
-	vmovq	%xmm0, %rcx
-	sarq	$32, %rdx
-	vpinsrw	$7, (%rsi,%rdx,2), %xmm1, %xmm1
-	movslq	%ecx, %rdx
-	movzwl	(%rsi,%rdx,2), %edx
-	vmovd	%edx, %xmm3
-	vpextrq	$1, %xmm0, %rdx
-	sarq	$32, %rcx
-	vpinsrw	$1, (%rsi,%rcx,2), %xmm3, %xmm3
-	movslq	%edx, %rcx
-	sarq	$32, %rdx
-	vextracti128	$1, %ymm0, %xmm0
-	vpinsrw	$2, (%rsi,%rcx,2), %xmm3, %xmm3
-	vmovq	%xmm0, %rcx
-	vpinsrw	$3, (%rsi,%rdx,2), %xmm3, %xmm3
-	movslq	%ecx, %rdx
-	vpinsrw	$4, (%rsi,%rdx,2), %xmm3, %xmm3
-	vpextrq	$1, %xmm0, %rdx
-	sarq	$32, %rcx
-	vpinsrw	$5, (%rsi,%rcx,2), %xmm3, %xmm0
-	movslq	%edx, %rcx
-	vpinsrw	$6, (%rsi,%rcx,2), %xmm0, %xmm0
-	sarq	$32, %rdx
-	vpinsrw	$7, (%rsi,%rdx,2), %xmm0, %xmm0
-	vinserti128	$1, %xmm4, %ymm2, %ymm2
-	vinserti128	$1, %xmm1, %ymm0, %ymm0
-	movq	1880(%rsp), %rcx        # 8-byte Reload
-	vmovdqu	%ymm0, (%rcx,%rax)
-	vmovdqu	%ymm2, (%r9,%rax)
-	addq	1024(%rsp), %rax        # 8-byte Folded Reload
-	addl	$1, %edi
-	addq	$-1, %rbx
-	jne	.LBB147_253
-# BB#270:                               # %end for f2.s0.v17
-                                        #   in Loop: Header=BB147_252 Depth=3
-	addq	$1, %r11
-	addq	728(%rsp), %r8          # 8-byte Folded Reload
-	cmpq	$2, %r11
-	jne	.LBB147_252
-# BB#271:                               # %end for f2.s0.v16.v18.yii
-                                        #   in Loop: Header=BB147_174 Depth=2
-	movq	1360(%rsp), %rdi        # 8-byte Reload
-	addq	$1, %rdi
-	movq	1368(%rsp), %rsi        # 8-byte Reload
-	addq	$-32, %rsi
-	movl	1376(%rsp), %eax        # 4-byte Reload
-	addl	$32, %eax
-	movq	1384(%rsp), %rdx        # 8-byte Reload
-	addq	$-32, %rdx
-	movq	1392(%rsp), %rcx        # 8-byte Reload
-	addq	$-32, %rcx
-	addq	$64, 1400(%rsp)         # 8-byte Folded Spill
-	cmpl	708(%rsp), %edi         # 4-byte Folded Reload
-	vmovaps	688(%rsp), %xmm6        # 16-byte Reload
-	vmovaps	672(%rsp), %xmm14       # 16-byte Reload
-	jne	.LBB147_174
-	jmp	.LBB147_272
-.LBB147_172:                            # %consume deinterleaved$3.for f2.s0.v16.v18.v18.preheader_crit_edge
-                                        #   in Loop: Header=BB147_133 Depth=1
-	movq	%rdx, %rax
-	movq	%rdx, 560(%rsp)         # 8-byte Spill
-	subq	360(%rsp), %rax         # 8-byte Folded Reload
-	movq	%rax, 1352(%rsp)        # 8-byte Spill
-	vmovaps	688(%rsp), %xmm6        # 16-byte Reload
-	vmovaps	672(%rsp), %xmm14       # 16-byte Reload
-	.align	16, 0x90
-.LBB147_272:                            # %for f2.s0.v16.v18.v18.preheader
-                                        #   in Loop: Header=BB147_133 Depth=1
-	vmovaps	%xmm14, 672(%rsp)       # 16-byte Spill
-	vmovaps	%xmm6, 688(%rsp)        # 16-byte Spill
-	movq	288(%rsp), %rax         # 8-byte Reload
-	leaq	(%r14,%rax), %rax
-	movq	%rax, 632(%rsp)         # 8-byte Spill
-	movq	1352(%rsp), %rcx        # 8-byte Reload
-	addq	$2, %rcx
-	imulq	728(%rsp), %rcx         # 8-byte Folded Reload
-	movq	280(%rsp), %rax         # 8-byte Reload
-	leaq	(%r14,%rax), %rax
-	movq	%rax, 624(%rsp)         # 8-byte Spill
-	movq	384(%rsp), %rax         # 8-byte Reload
-	leaq	(%rax,%rcx), %rax
-	movq	%rax, 552(%rsp)         # 8-byte Spill
-	movq	440(%rsp), %rax         # 8-byte Reload
-	leaq	(%rcx,%rax), %rax
-	movq	%rax, 544(%rsp)         # 8-byte Spill
-	movl	$1, %edi
-	movl	580(%rsp), %esi         # 4-byte Reload
-	.align	16, 0x90
-.LBB147_273:                            # %for f2.s0.v16.v18.v18
-                                        #   Parent Loop BB147_133 Depth=1
-                                        # =>  This Loop Header: Depth=2
-                                        #       Child Loop BB147_274 Depth 3
-                                        #         Child Loop BB147_301 Depth 4
-                                        #       Child Loop BB147_305 Depth 3
-                                        #         Child Loop BB147_336 Depth 4
-                                        #         Child Loop BB147_374 Depth 4
-                                        #         Child Loop BB147_407 Depth 4
-                                        #       Child Loop BB147_340 Depth 3
-                                        #         Child Loop BB147_437 Depth 4
-                                        #       Child Loop BB147_456 Depth 3
-                                        #         Child Loop BB147_457 Depth 4
-                                        #           Child Loop BB147_458 Depth 5
-                                        #         Child Loop BB147_483 Depth 4
-                                        #           Child Loop BB147_484 Depth 5
-                                        #         Child Loop BB147_507 Depth 4
-                                        #           Child Loop BB147_508 Depth 5
-                                        #         Child Loop BB147_534 Depth 4
-                                        #           Child Loop BB147_535 Depth 5
-	movq	%rdi, 584(%rsp)         # 8-byte Spill
-	movl	%esi, 580(%rsp)         # 4-byte Spill
-	movq	560(%rsp), %rdx         # 8-byte Reload
-	leaq	1(%rdx,%rdi,2), %rbx
-	movq	%rbx, 1152(%rsp)        # 8-byte Spill
-	movq	808(%rsp), %rcx         # 8-byte Reload
-	cmpq	%rbx, %rcx
-	movl	%ebx, %eax
-	cmovgl	%ecx, %eax
-	leaq	3(%rdx,%rdi,2), %rcx
-	cltq
-	cmpq	%rax, %rcx
-	movl	%eax, %edi
-	cmovlel	%ecx, %edi
-	movl	%edi, 2656(%rsp)        # 4-byte Spill
-	movl	804(%rsp), %edx         # 4-byte Reload
-	cmpl	%eax, %edx
-	cmovgel	%edx, %eax
-	cltq
-	cmpq	%rax, %rcx
-	cmovlel	%ecx, %eax
-	movq	%rax, 1136(%rsp)        # 8-byte Spill
-	movslq	%edi, %rax
-	movb	%sil, %cl
-	cmpq	%rax, %rbx
-	vmovaps	.LCPI147_10(%rip), %ymm9 # ymm9 = <u,4,u,5,u,6,u,7>
-	vmovaps	.LCPI147_11(%rip), %ymm11 # ymm11 = <4,u,5,u,6,u,7,u>
-	jge	.LBB147_303
-	.align	16, 0x90
-.LBB147_274:                            # %for deinterleaved$3.s0.v16220
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        # =>    This Loop Header: Depth=3
-                                        #         Child Loop BB147_301 Depth 4
-	movb	%cl, 824(%rsp)          # 1-byte Spill
-	movzbl	%cl, %ecx
-	andl	$3, %ecx
-	cmpl	$0, 908(%rsp)           # 4-byte Folded Reload
-	jle	.LBB147_322
-# BB#275:                               # %for deinterleaved$3.s0.v15.v15222.preheader
-                                        #   in Loop: Header=BB147_274 Depth=3
-	imulq	816(%rsp), %rcx         # 8-byte Folded Reload
-	movq	1152(%rsp), %rbx        # 8-byte Reload
-	movl	%ebx, %eax
-	movq	808(%rsp), %rsi         # 8-byte Reload
-	subl	%esi, %eax
-	cltd
-	idivl	752(%rsp)               # 4-byte Folded Reload
-	leaq	(%rcx,%r14), %r9
-	movl	%edx, %eax
-	sarl	$31, %eax
-	andl	756(%rsp), %eax         # 4-byte Folded Reload
-	movq	760(%rsp), %rcx         # 8-byte Reload
-	subl	%ecx, %edx
-	leal	(%rdx,%rax), %ecx
-	leal	1(%rdx,%rax), %eax
-	cmpl	$-2, %ecx
-	notl	%ecx
-	cmovgl	%eax, %ecx
-	movl	748(%rsp), %eax         # 4-byte Reload
-	subl	%ecx, %eax
-	movl	744(%rsp), %ecx         # 4-byte Reload
-	cmpl	%ebx, %ecx
-	movl	%ecx, %edx
-	cmovgl	%ebx, %edx
-	cmpl	%esi, %edx
-	cmovll	%esi, %edx
-	cmpl	%ebx, 804(%rsp)         # 4-byte Folded Reload
-	cmovlel	%eax, %edx
-	cmpl	%esi, %ebx
-	cmovll	%eax, %edx
-	movl	904(%rsp), %esi         # 4-byte Reload
-	testl	%esi, %esi
-	setne	%r10b
-	sete	%al
-	movl	%ebx, %ecx
-	andl	$1, %ecx
-	movl	%ecx, 1632(%rsp)        # 4-byte Spill
-	sete	%r11b
-	movq	912(%rsp), %rdi         # 8-byte Reload
-	imull	%edi, %edx
-	movl	%ebx, %edi
-	movq	2392(%rsp), %r8         # 8-byte Reload
-	orl	%r8d, %edi
-	testb	$1, %dil
-	sete	%r8b
-	movb	%cl, %dil
-	andb	%al, %dil
-	andb	%r10b, %r11b
-	testl	%ebx, %esi
-	setne	%cl
-	vpxor	%xmm0, %xmm0, %xmm0
-	vmovdqa	%xmm0, 1120(%rsp)       # 16-byte Spill
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_276
-# BB#288:                               # %for deinterleaved$3.s0.v15.v15222.preheader
-                                        #   in Loop: Header=BB147_274 Depth=3
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_289
-	.align	16, 0x90
-.LBB147_276:                            #   in Loop: Header=BB147_274 Depth=3
-	vmovd	%r8d, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-.LBB147_289:                            # %for deinterleaved$3.s0.v15.v15222.preheader
-                                        #   in Loop: Header=BB147_274 Depth=3
-	vmovdqa	%xmm0, 1104(%rsp)       # 16-byte Spill
-	je	.LBB147_290
-# BB#291:                               # %for deinterleaved$3.s0.v15.v15222.preheader
-                                        #   in Loop: Header=BB147_274 Depth=3
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_292
-	.align	16, 0x90
-.LBB147_290:                            #   in Loop: Header=BB147_274 Depth=3
-	movzbl	%dil, %eax
-	vmovd	%eax, %xmm0
-	movzbl	%r11b, %eax
-	vmovd	%eax, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-.LBB147_292:                            # %for deinterleaved$3.s0.v15.v15222.preheader
-                                        #   in Loop: Header=BB147_274 Depth=3
-	vmovdqa	%xmm0, 1056(%rsp)       # 16-byte Spill
-	jne	.LBB147_294
-# BB#293:                               #   in Loop: Header=BB147_274 Depth=3
-	vmovd	%ecx, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-	vmovdqa	%xmm0, 1120(%rsp)       # 16-byte Spill
-.LBB147_294:                            # %for deinterleaved$3.s0.v15.v15222.preheader
-                                        #   in Loop: Header=BB147_274 Depth=3
-	vmovd	%edx, %xmm1
-	vpabsd	880(%rsp), %xmm0        # 16-byte Folded Reload
-	cmpl	$0, 104(%rbp)
-	jne	.LBB147_296
-# BB#295:                               #   in Loop: Header=BB147_274 Depth=3
-	vmovd	%edi, %xmm3
-	vpbroadcastb	%xmm3, %xmm2
-	vmovdqa	%xmm2, 1104(%rsp)       # 16-byte Spill
-.LBB147_296:                            # %for deinterleaved$3.s0.v15.v15222.preheader
-                                        #   in Loop: Header=BB147_274 Depth=3
-	vpsubd	832(%rsp), %ymm1, %ymm1 # 32-byte Folded Reload
-	jne	.LBB147_298
-# BB#297:                               #   in Loop: Header=BB147_274 Depth=3
-	movzbl	%r8b, %eax
-	vmovd	%eax, %xmm2
-	movzbl	%cl, %eax
-	vmovd	%eax, %xmm3
-	vpor	%xmm3, %xmm2, %xmm2
-	vpbroadcastb	%xmm2, %xmm2
-	vmovdqa	%xmm2, 1056(%rsp)       # 16-byte Spill
-.LBB147_298:                            # %for deinterleaved$3.s0.v15.v15222.preheader
-                                        #   in Loop: Header=BB147_274 Depth=3
-	jne	.LBB147_300
-# BB#299:                               #   in Loop: Header=BB147_274 Depth=3
-	vmovd	%r11d, %xmm3
-	vpbroadcastb	%xmm3, %xmm2
-	vmovdqa	%xmm2, 1120(%rsp)       # 16-byte Spill
-.LBB147_300:                            # %for deinterleaved$3.s0.v15.v15222.preheader
-                                        #   in Loop: Header=BB147_274 Depth=3
-	vinserti128	$1, %xmm0, %ymm0, %ymm0
-	vmovdqa	%ymm0, 960(%rsp)        # 32-byte Spill
-	vpbroadcastd	%xmm1, %ymm0
-	vmovdqa	%ymm0, 928(%rsp)        # 32-byte Spill
-	xorl	%r12d, %r12d
-	movl	908(%rsp), %ecx         # 4-byte Reload
-	.align	16, 0x90
-.LBB147_301:                            # %for deinterleaved$3.s0.v15.v15222
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_274 Depth=3
-                                        # =>      This Inner Loop Header: Depth=4
-	movl	%ecx, 1568(%rsp)        # 4-byte Spill
-	movq	%r12, 1600(%rsp)        # 8-byte Spill
-	cmpl	$0, 1632(%rsp)          # 4-byte Folded Reload
-	setne	2624(%rsp)              # 1-byte Folded Spill
-	sete	2688(%rsp)              # 1-byte Folded Spill
-	movq	2032(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%r12), %eax
-	movl	%eax, 1504(%rsp)        # 4-byte Spill
-	movl	%eax, %ecx
-	andl	$1, %ecx
-	movl	%ecx, 2752(%rsp)        # 4-byte Spill
-	sete	%cl
-	movl	%ecx, 2592(%rsp)        # 4-byte Spill
-	movq	1152(%rsp), %rcx        # 8-byte Reload
-	orl	%ecx, %eax
-	testb	$1, %al
-	sete	%al
-	movl	%eax, 1536(%rsp)        # 4-byte Spill
-	movq	2040(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%r12), %eax
-	vmovd	%eax, %xmm0
-	vpbroadcastd	%xmm0, %ymm5
-	vmovdqa	.LCPI147_9(%rip), %ymm0 # ymm0 = [0,2,4,6,8,10,12,14]
-	vpaddd	%ymm0, %ymm5, %ymm6
-	vmovdqa	%ymm0, %ymm3
-	vextracti128	$1, %ymm6, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	vmovdqa	2080(%rsp), %ymm2       # 32-byte Reload
-	vextracti128	$1, %ymm2, %xmm1
-	vpextrd	$1, %xmm1, %r15d
-	cltd
-	idivl	%r15d
-	movl	%edx, 2560(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	vmovd	%xmm1, %ecx
-	cltd
-	idivl	%ecx
-	movl	%edx, 2528(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	vpextrd	$2, %xmm1, %r8d
-	cltd
-	idivl	%r8d
-	movl	%edx, 2496(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	vpextrd	$3, %xmm1, %r10d
-	cltd
-	idivl	%r10d
-	movl	%edx, 2400(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm6, %eax
-	vpextrd	$1, %xmm2, %edi
-	movl	%edi, 1384(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%edi
-	movl	%edx, 1880(%rsp)        # 4-byte Spill
-	vmovd	%xmm6, %eax
-	vmovd	%xmm2, %edi
-	movl	%edi, 1376(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%edi
-	movl	%edx, 1824(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm6, %eax
-	vpextrd	$2, %xmm2, %ebx
-	cltd
-	idivl	%ebx
-	movl	%edx, 1792(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm6, %eax
-	vpextrd	$3, %xmm2, %edi
-	movl	%edi, 1368(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%edi
-	movl	%edx, 1760(%rsp)        # 4-byte Spill
-	vmovdqa	.LCPI147_8(%rip), %ymm0 # ymm0 = [16,18,20,22,24,26,28,30]
-	vpaddd	%ymm0, %ymm5, %ymm5
-	vmovdqa	%ymm0, %ymm1
-	vextracti128	$1, %ymm5, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r15d
-	movl	%edx, 1728(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%ecx
-	movl	%edx, 1696(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, 1664(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, 1472(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm5, %eax
-	vpextrd	$1, %xmm2, %edi
-	movl	%edi, 1360(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%edi
-	movl	%edx, 1440(%rsp)        # 4-byte Spill
-	vmovd	%xmm5, %eax
-	vmovd	%xmm2, %edi
-	movl	%edi, 1352(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%edi
-	movl	%edx, 1408(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm5, %eax
-	vpextrd	$2, %xmm2, %edi
-	movl	%edi, 1312(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%edi
-	movl	%edx, 1400(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm5, %eax
-	vpextrd	$3, %xmm2, %edi
-	movl	%edi, 1280(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%edi
-	movl	%edx, 1392(%rsp)        # 4-byte Spill
-	movq	2136(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%r12), %eax
-	vmovd	%eax, %xmm0
-	vpbroadcastd	%xmm0, %ymm5
-	vpaddd	%ymm3, %ymm5, %ymm6
-	vmovdqa	%ymm3, %ymm9
-	vextracti128	$1, %ymm6, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r15d
-	movl	%edx, 1216(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%ecx
-	movl	%edx, 1184(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, %r11d
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, %r13d
-	vpextrd	$1, %xmm6, %eax
-	cltd
-	idivl	1384(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %edi
-	vmovd	%xmm6, %eax
-	cltd
-	idivl	1376(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %esi
-	vpextrd	$2, %xmm6, %eax
-	cltd
-	idivl	%ebx
-	movl	%edx, %ebx
-	vpextrd	$3, %xmm6, %eax
-	cltd
-	idivl	1368(%rsp)              # 4-byte Folded Reload
-	movl	%edx, 1264(%rsp)        # 4-byte Spill
-	vpaddd	%ymm1, %ymm5, %ymm5
-	vextracti128	$1, %ymm5, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r15d
-	movl	%edx, 1384(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%ecx
-	movl	%edx, 1376(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, 1368(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, 1272(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm5, %eax
-	cltd
-	idivl	1360(%rsp)              # 4-byte Folded Reload
-	movl	%edx, 1360(%rsp)        # 4-byte Spill
-	vmovd	%xmm5, %eax
-	cltd
-	idivl	1352(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r10d
-	vpextrd	$2, %xmm5, %eax
-	cltd
-	idivl	1312(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r8d
-	vpextrd	$3, %xmm5, %eax
-	cltd
-	idivl	1280(%rsp)              # 4-byte Folded Reload
-	vmovd	2528(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 2560(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 2496(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 2400(%rsp), %xmm0, %xmm5 # 4-byte Folded Reload
-	vmovd	1824(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1880(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1792(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1760(%rsp), %xmm0, %xmm6 # 4-byte Folded Reload
-	vmovd	1696(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1728(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1664(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1472(%rsp), %xmm0, %xmm2 # 4-byte Folded Reload
-	vmovd	1408(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1440(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1400(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1392(%rsp), %xmm0, %xmm10 # 4-byte Folded Reload
-	vmovd	1184(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1216(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, %r11d, %xmm0, %xmm0
-	vpinsrd	$3, %r13d, %xmm0, %xmm0
-	vmovdqa	%xmm0, 2560(%rsp)       # 16-byte Spill
-	vmovd	%esi, %xmm0
-	vpinsrd	$1, %edi, %xmm0, %xmm0
-	movl	2592(%rsp), %edi        # 4-byte Reload
-	vpinsrd	$2, %ebx, %xmm0, %xmm0
-	vmovdqa	%xmm0, 2528(%rsp)       # 16-byte Spill
-	vmovd	%r12d, %xmm0
-	vpbroadcastd	%xmm0, %ymm0
-	vmovdqa	2304(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm12
-	vmovdqa	.LCPI147_5(%rip), %ymm14 # ymm14 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
-	vpshufb	%ymm14, %ymm12, %ymm12
-	vpermq	$232, %ymm12, %ymm12    # ymm12 = ymm12[0,2,2,3]
-	vmovdqa	2272(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm13
-	vpshufb	%ymm14, %ymm13, %ymm13
-	vpermq	$232, %ymm13, %ymm13    # ymm13 = ymm13[0,2,2,3]
-	vmovdqa	.LCPI147_6(%rip), %xmm15 # xmm15 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
-	vpshufb	%xmm15, %xmm13, %xmm3
-	vpshufb	%xmm15, %xmm12, %xmm4
-	vpunpcklqdq	%xmm3, %xmm4, %xmm3 # xmm3 = xmm4[0],xmm3[0]
-	vmovdqa	.LCPI147_7(%rip), %xmm1 # xmm1 = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-	vpxor	%xmm1, %xmm3, %xmm13
-	vmovdqa	1984(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm4
-	vpshufb	%ymm14, %ymm4, %ymm4
-	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
-	vmovdqa	1952(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm12
-	vpshufb	%ymm14, %ymm12, %ymm12
-	vpermq	$232, %ymm12, %ymm12    # ymm12 = ymm12[0,2,2,3]
-	vpshufb	%xmm15, %xmm12, %xmm3
-	vpshufb	%xmm15, %xmm4, %xmm4
-	vpunpcklqdq	%xmm3, %xmm4, %xmm3 # xmm3 = xmm4[0],xmm3[0]
-	vpor	%xmm13, %xmm3, %xmm3
-	vinserti128	$1, %xmm5, %ymm6, %ymm4
-	vpsrad	$31, %ymm4, %ymm5
-	vmovdqa	960(%rsp), %ymm7        # 32-byte Reload
-	vpand	%ymm5, %ymm7, %ymm5
-	vmovdqa	2240(%rsp), %ymm13      # 32-byte Reload
-	vpaddd	%ymm4, %ymm13, %ymm4
-	vpaddd	%ymm5, %ymm4, %ymm4
-	vpabsd	%xmm4, %xmm5
-	vextracti128	$1, %ymm4, %xmm4
-	vpabsd	%xmm4, %xmm4
-	vinserti128	$1, %xmm4, %ymm5, %ymm4
-	vmovdqa	2208(%rsp), %ymm8       # 32-byte Reload
-	vpsubd	%ymm4, %ymm8, %ymm12
-	movl	1504(%rsp), %r11d       # 4-byte Reload
-	vmovd	%r11d, %xmm5
-	vpbroadcastd	%xmm5, %ymm6
-	vpaddd	%ymm9, %ymm6, %ymm5
-	vmovdqa	2064(%rsp), %xmm9       # 16-byte Reload
-	vpminsd	%xmm9, %xmm5, %xmm4
-	vextracti128	$1, %ymm5, %xmm5
-	vpminsd	%xmm9, %xmm5, %xmm5
-	vmovdqa	2048(%rsp), %xmm11      # 16-byte Reload
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm5, %xmm5
-	vinserti128	$1, %xmm5, %ymm4, %ymm4
-	vpmovzxbd	%xmm3, %ymm5    # ymm5 = xmm3[0],zero,zero,zero,xmm3[1],zero,zero,zero,xmm3[2],zero,zero,zero,xmm3[3],zero,zero,zero,xmm3[4],zero,zero,zero,xmm3[5],zero,zero,zero,xmm3[6],zero,zero,zero,xmm3[7],zero,zero,zero
-	vpslld	$31, %ymm5, %ymm5
-	vblendvps	%ymm5, %ymm12, %ymm4, %ymm5
-	vinserti128	$1, %xmm2, %ymm10, %ymm2
-	vpsrad	$31, %ymm2, %ymm4
-	vpand	%ymm4, %ymm7, %ymm4
-	vpaddd	%ymm2, %ymm13, %ymm2
-	vpaddd	%ymm4, %ymm2, %ymm2
-	vpabsd	%xmm2, %xmm4
-	vextracti128	$1, %ymm2, %xmm2
-	vpabsd	%xmm2, %xmm2
-	vinserti128	$1, %xmm2, %ymm4, %ymm2
-	vmovdqa	.LCPI147_8(%rip), %ymm10 # ymm10 = [16,18,20,22,24,26,28,30]
-	vpaddd	%ymm10, %ymm6, %ymm4
-	vpminsd	%xmm9, %xmm4, %xmm6
-	vextracti128	$1, %ymm4, %xmm4
-	vpminsd	%xmm9, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm6, %xmm6
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vinserti128	$1, %xmm4, %ymm6, %ymm4
-	vpsubd	%ymm2, %ymm8, %ymm2
-	vpunpckhbw	%xmm3, %xmm3, %xmm3 # xmm3 = xmm3[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm2, %ymm4, %ymm6
-	vmovdqa	2176(%rsp), %ymm2       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm2, %ymm2
-	vpshufb	%ymm14, %ymm2, %ymm2
-	vpermq	$232, %ymm2, %ymm2      # ymm2 = ymm2[0,2,2,3]
-	vmovdqa	2144(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm3
-	vpshufb	%ymm14, %ymm3, %ymm3
-	vpermq	$232, %ymm3, %ymm3      # ymm3 = ymm3[0,2,2,3]
-	vpshufb	%xmm15, %xmm3, %xmm3
-	vpshufb	%xmm15, %xmm2, %xmm2
-	vpunpcklqdq	%xmm3, %xmm2, %xmm2 # xmm2 = xmm2[0],xmm3[0]
-	vpxor	%xmm1, %xmm2, %xmm2
-	vmovdqa	1920(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm3
-	vpshufb	%ymm14, %ymm3, %ymm3
-	vpermq	$232, %ymm3, %ymm3      # ymm3 = ymm3[0,2,2,3]
-	vmovdqa	1888(%rsp), %ymm4       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm4, %ymm0
-	vpshufb	%ymm14, %ymm0, %ymm0
-	vpermq	$232, %ymm0, %ymm0      # ymm0 = ymm0[0,2,2,3]
-	vpshufb	%xmm15, %xmm0, %xmm0
-	vpshufb	%xmm15, %xmm3, %xmm3
-	vpunpcklqdq	%xmm0, %xmm3, %xmm0 # xmm0 = xmm3[0],xmm0[0]
-	vpor	%xmm2, %xmm0, %xmm0
-	vmovdqa	2528(%rsp), %xmm1       # 16-byte Reload
-	vpinsrd	$3, 1264(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vinserti128	$1, 2560(%rsp), %ymm1, %ymm1 # 16-byte Folded Reload
-	vpsrad	$31, %ymm1, %ymm2
-	vpand	%ymm7, %ymm2, %ymm2
-	vpaddd	%ymm1, %ymm13, %ymm1
-	vpaddd	%ymm2, %ymm1, %ymm1
-	vpabsd	%xmm1, %xmm2
-	vextracti128	$1, %ymm1, %xmm1
-	vpabsd	%xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm2, %ymm1
-	vpsubd	%ymm1, %ymm8, %ymm1
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%r12), %eax
-	vmovd	%eax, %xmm2
-	vpbroadcastd	%xmm2, %ymm2
-	vpaddd	.LCPI147_9(%rip), %ymm2, %ymm3
-	vpminsd	%xmm9, %xmm3, %xmm4
-	vextracti128	$1, %ymm3, %xmm3
-	vpminsd	%xmm9, %xmm3, %xmm3
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm3, %xmm3
-	vinserti128	$1, %xmm3, %ymm4, %ymm3
-	vpmovzxbd	%xmm0, %ymm4    # ymm4 = xmm0[0],zero,zero,zero,xmm0[1],zero,zero,zero,xmm0[2],zero,zero,zero,xmm0[3],zero,zero,zero,xmm0[4],zero,zero,zero,xmm0[5],zero,zero,zero,xmm0[6],zero,zero,zero,xmm0[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm1, %ymm3, %ymm4
-	vmovd	1376(%rsp), %xmm1       # 4-byte Folded Reload
-                                        # xmm1 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1384(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vpinsrd	$2, 1368(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vpinsrd	$3, 1272(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vmovd	%r10d, %xmm3
-	vpinsrd	$1, 1360(%rsp), %xmm3, %xmm3 # 4-byte Folded Reload
-	vpinsrd	$2, %r8d, %xmm3, %xmm3
-	vpinsrd	$3, %edx, %xmm3, %xmm3
-	vinserti128	$1, %xmm1, %ymm3, %ymm1
-	vpsrad	$31, %ymm1, %ymm3
-	vpand	%ymm7, %ymm3, %ymm3
-	vpaddd	%ymm1, %ymm13, %ymm1
-	vpaddd	%ymm3, %ymm1, %ymm1
-	vpabsd	%xmm1, %xmm3
-	vextracti128	$1, %ymm1, %xmm1
-	vpabsd	%xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm3, %ymm1
-	vpaddd	%ymm10, %ymm2, %ymm2
-	vpminsd	%xmm9, %xmm2, %xmm3
-	vextracti128	$1, %ymm2, %xmm2
-	vpminsd	%xmm9, %xmm2, %xmm2
-	vpmaxsd	%xmm11, %xmm3, %xmm3
-	vpmaxsd	%xmm11, %xmm2, %xmm2
-	vinserti128	$1, %xmm2, %ymm3, %ymm2
-	vpsubd	%ymm1, %ymm8, %ymm1
-	vpunpckhbw	%xmm0, %xmm0, %xmm0 # xmm0 = xmm0[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpslld	$31, %ymm0, %ymm0
-	vblendvps	%ymm0, %ymm1, %ymm2, %ymm0
-	vmovdqa	928(%rsp), %ymm2        # 32-byte Reload
-	vpaddd	%ymm5, %ymm2, %ymm1
-	vpextrq	$1, %xmm1, %rdx
-	movq	%rdx, 1472(%rsp)        # 8-byte Spill
-	vmovq	%xmm1, %r8
-	vextracti128	$1, %ymm1, %xmm1
-	vpextrq	$1, %xmm1, %rcx
-	vmovq	%xmm1, %r15
-	movq	%r15, 1440(%rsp)        # 8-byte Spill
-	andb	2624(%rsp), %dil        # 1-byte Folded Reload
-	vpaddd	%ymm6, %ymm2, %ymm1
-	movq	%r8, %rax
-	sarq	$32, %rax
-	movq	%rax, 2400(%rsp)        # 8-byte Spill
-	movq	%rdx, %rax
-	sarq	$32, %rax
-	movq	%rax, 2592(%rsp)        # 8-byte Spill
-	sarq	$32, %r15
-	movq	%rcx, %r13
-	movq	%rcx, %r10
-	sarq	$32, %r13
-	vmovq	%xmm1, %rax
-	movl	2752(%rsp), %ecx        # 4-byte Reload
-	andb	2688(%rsp), %cl         # 1-byte Folded Reload
-	movl	%ecx, 2752(%rsp)        # 4-byte Spill
-	movq	%rax, %rsi
-	sarq	$32, %rsi
-	vpextrq	$1, %xmm1, %rcx
-	movq	%rcx, 1352(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1696(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm1, %xmm1
-	vmovq	%xmm1, %rcx
-	movq	%rcx, 1272(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1664(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rcx
-	movq	%rcx, 1264(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1728(%rsp)        # 8-byte Spill
-	vpaddd	%ymm0, %ymm2, %ymm0
-	vpaddd	%ymm4, %ymm2, %ymm1
-	vmovq	%xmm1, %r12
-	movq	%r12, %rcx
-	sarq	$32, %rcx
-	movq	%rcx, 2496(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rcx
-	movq	%rcx, 1408(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 2560(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm1, %xmm1
-	vmovq	%xmm1, %rcx
-	movq	%rcx, 1400(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 2528(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rcx
-	movq	%rcx, 1384(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 2624(%rsp)        # 8-byte Spill
-	vmovq	%xmm0, %rdx
-	movq	%rdx, %rcx
-	sarq	$32, %rcx
-	movq	%rcx, 1760(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1360(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1824(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm0, %xmm0
-	vmovq	%xmm0, %rcx
-	movq	%rcx, 1312(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1792(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1280(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1880(%rsp)        # 8-byte Spill
-	testl	1632(%rsp), %r11d       # 4-byte Folded Reload
-	vpxor	%xmm5, %xmm5, %xmm5
-	setne	%bl
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_302
-# BB#308:                               # %for deinterleaved$3.s0.v15.v15222
-                                        #   in Loop: Header=BB147_301 Depth=4
-	vpxor	%xmm7, %xmm7, %xmm7
-	jmp	.LBB147_309
-	.align	16, 0x90
-.LBB147_302:                            #   in Loop: Header=BB147_301 Depth=4
-	movl	1536(%rsp), %ecx        # 4-byte Reload
-	vmovd	%ecx, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_309:                            # %for deinterleaved$3.s0.v15.v15222
-                                        #   in Loop: Header=BB147_301 Depth=4
-	vmovaps	.LCPI147_10(%rip), %ymm9 # ymm9 = <u,4,u,5,u,6,u,7>
-	vmovaps	.LCPI147_11(%rip), %ymm11 # ymm11 = <4,u,5,u,6,u,7,u>
-	je	.LBB147_310
-# BB#311:                               # %for deinterleaved$3.s0.v15.v15222
-                                        #   in Loop: Header=BB147_301 Depth=4
-	vpxor	%xmm6, %xmm6, %xmm6
-	jmp	.LBB147_312
-	.align	16, 0x90
-.LBB147_310:                            #   in Loop: Header=BB147_301 Depth=4
-	movzbl	%dil, %ecx
-	vmovd	%ecx, %xmm0
-	movl	2752(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm6
-.LBB147_312:                            # %for deinterleaved$3.s0.v15.v15222
-                                        #   in Loop: Header=BB147_301 Depth=4
-	jne	.LBB147_314
-# BB#313:                               #   in Loop: Header=BB147_301 Depth=4
-	vmovd	%ebx, %xmm0
-	vpbroadcastb	%xmm0, %xmm5
-.LBB147_314:                            # %for deinterleaved$3.s0.v15.v15222
-                                        #   in Loop: Header=BB147_301 Depth=4
-	movq	%r9, 2688(%rsp)         # 8-byte Spill
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_315
-# BB#316:                               # %for deinterleaved$3.s0.v15.v15222
-                                        #   in Loop: Header=BB147_301 Depth=4
-	movl	%ebx, 1176(%rsp)        # 4-byte Spill
-	jmp	.LBB147_317
-	.align	16, 0x90
-.LBB147_315:                            #   in Loop: Header=BB147_301 Depth=4
-	movl	%ebx, 1176(%rsp)        # 4-byte Spill
-	vmovd	%edi, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_317:                            # %for deinterleaved$3.s0.v15.v15222
-                                        #   in Loop: Header=BB147_301 Depth=4
-	movq	%r10, %r9
-	movq	1472(%rsp), %rdi        # 8-byte Reload
-	movq	1440(%rsp), %rbx        # 8-byte Reload
-	cltq
-	movq	%rax, 1216(%rsp)        # 8-byte Spill
-	movq	2384(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm0
-	movslq	%r8d, %rax
-	movq	%rax, 1376(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm1
-	movslq	%edx, %rax
-	movq	%rax, 1368(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	movslq	%r12d, %rax
-	movq	%rax, 1392(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	movslq	%edi, %r10
-	movslq	%ebx, %r12
-	movslq	%r9d, %rax
-	movq	%rax, 1184(%rsp)        # 8-byte Spill
-	movq	1352(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rbx
-	movq	1272(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rdi
-	movq	1264(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r11
-	vpinsrw	$1, (%rcx,%rsi,2), %xmm0, %xmm0
-	movq	%rsi, 1352(%rsp)        # 8-byte Spill
-	vpinsrw	$2, (%rcx,%rbx,2), %xmm0, %xmm0
-	movq	1696(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm0, %xmm0
-	vpinsrw	$4, (%rcx,%rdi,2), %xmm0, %xmm0
-	movq	1664(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rdx,2), %xmm0, %xmm0
-	vpinsrw	$6, (%rcx,%r11,2), %xmm0, %xmm0
-	movq	1728(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rdx,2), %xmm0, %xmm0
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vcvtdq2ps	%ymm0, %ymm0
-	movq	2400(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rdx,2), %xmm1, %xmm1
-	vpinsrw	$2, (%rcx,%r10,2), %xmm1, %xmm1
-	movq	2592(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm1, %xmm1
-	vpinsrw	$4, (%rcx,%r12,2), %xmm1, %xmm1
-	vpinsrw	$5, (%rcx,%r15,2), %xmm1, %xmm1
-	movq	%r15, 1472(%rsp)        # 8-byte Spill
-	vpinsrw	$6, (%rcx,%rax,2), %xmm1, %xmm1
-	vpinsrw	$7, (%rcx,%r13,2), %xmm1, %xmm1
-	movq	%r13, 1504(%rsp)        # 8-byte Spill
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vcvtdq2ps	%ymm1, %ymm1
-	vpmovzxbd	%xmm7, %ymm4    # ymm4 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vpxor	%ymm8, %ymm8, %ymm8
-	vblendvps	%ymm4, %ymm1, %ymm8, %ymm1
-	vpunpckhbw	%xmm7, %xmm7, %xmm4 # xmm4 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm0, %ymm8, %ymm0
-	movq	1408(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r8
-	movq	%r8, 1272(%rsp)         # 8-byte Spill
-	movq	1400(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r13
-	movq	%r13, 1408(%rsp)        # 8-byte Spill
-	movq	1384(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r15
-	movq	%r15, 1440(%rsp)        # 8-byte Spill
-	movq	1360(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rsi
-	movq	1312(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rax
-	movq	%rax, 1384(%rsp)        # 8-byte Spill
-	movq	1280(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r9
-	movq	%r9, 1400(%rsp)         # 8-byte Spill
-	movq	1760(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpinsrw	$2, (%rcx,%rsi,2), %xmm2, %xmm2
-	movq	1824(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpinsrw	$4, (%rcx,%rax,2), %xmm2, %xmm2
-	movq	1792(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpinsrw	$6, (%rcx,%r9,2), %xmm2, %xmm2
-	movq	1880(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpmovzxwd	%xmm2, %ymm2    # ymm2 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
-	vcvtdq2ps	%ymm2, %ymm2
-	movq	2496(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rdx,2), %xmm3, %xmm3
-	vpinsrw	$2, (%rcx,%r8,2), %xmm3, %xmm3
-	movq	2560(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm3, %xmm3
-	vpinsrw	$4, (%rcx,%r13,2), %xmm3, %xmm3
-	movq	2528(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rdx,2), %xmm3, %xmm3
-	vpinsrw	$6, (%rcx,%r15,2), %xmm3, %xmm3
-	movq	2624(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rdx,2), %xmm3, %xmm3
-	movq	%rcx, %r15
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vcvtdq2ps	%ymm3, %ymm3
-	vmovdqa	1104(%rsp), %xmm7       # 16-byte Reload
-	vpmovzxbd	%xmm7, %ymm4    # ymm4 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm3, %ymm8, %ymm3
-	vpunpckhbw	%xmm7, %xmm7, %xmm4 # xmm4 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm2, %ymm8, %ymm2
-	vpermps	%ymm2, %ymm9, %ymm4
-	vpermps	%ymm0, %ymm11, %ymm7
-	vblendps	$170, %ymm4, %ymm7, %ymm4 # ymm4 = ymm7[0],ymm4[1],ymm7[2],ymm4[3],ymm7[4],ymm4[5],ymm7[6],ymm4[7]
-	vmovaps	.LCPI147_12(%rip), %ymm7 # ymm7 = <u,0,u,1,u,2,u,3>
-	vmovaps	%ymm7, %ymm8
-	vpermps	%ymm2, %ymm8, %ymm2
-	vmovaps	.LCPI147_13(%rip), %ymm7 # ymm7 = <0,u,1,u,2,u,3,u>
-	vmovaps	%ymm7, %ymm10
-	vpermps	%ymm0, %ymm10, %ymm0
-	vblendps	$170, %ymm2, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm2[1],ymm0[2],ymm2[3],ymm0[4],ymm2[5],ymm0[6],ymm2[7]
-	vpermps	%ymm3, %ymm9, %ymm2
-	vpermps	%ymm1, %ymm11, %ymm7
-	vblendps	$170, %ymm2, %ymm7, %ymm2 # ymm2 = ymm7[0],ymm2[1],ymm7[2],ymm2[3],ymm7[4],ymm2[5],ymm7[6],ymm2[7]
-	vpermps	%ymm3, %ymm8, %ymm3
-	vmovaps	%ymm8, %ymm14
-	vpermps	%ymm1, %ymm10, %ymm1
-	vmovaps	%ymm10, %ymm15
-	vblendps	$170, %ymm3, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm3[1],ymm1[2],ymm3[3],ymm1[4],ymm3[5],ymm1[6],ymm3[7]
-	movq	2688(%rsp), %rcx        # 8-byte Reload
-	vmovups	%ymm1, (%rcx)
-	vmovups	%ymm2, 32(%rcx)
-	vmovups	%ymm0, 64(%rcx)
-	vmovups	%ymm4, 96(%rcx)
-	jne	.LBB147_319
-# BB#318:                               #   in Loop: Header=BB147_301 Depth=4
-	movl	1536(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm0
-	movl	1176(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm6
-.LBB147_319:                            # %for deinterleaved$3.s0.v15.v15222
-                                        #   in Loop: Header=BB147_301 Depth=4
-	movq	1216(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%r15,%rcx,2), %ecx
-	vmovd	%ecx, %xmm0
-	movq	1352(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%r15,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$2, (%r15,%rbx,2), %xmm0, %xmm0
-	movq	1696(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%r15,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$4, (%r15,%rdi,2), %xmm0, %xmm0
-	movq	1664(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%r15,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$6, (%r15,%r11,2), %xmm0, %xmm0
-	movq	1728(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%r15,%rcx,2), %xmm0, %xmm0
-	movq	1376(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%r15,%rcx,2), %ecx
-	vmovd	%ecx, %xmm1
-	movq	2400(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%r15,%rcx,2), %xmm1, %xmm1
-	vpinsrw	$2, (%r15,%r10,2), %xmm1, %xmm1
-	movq	2592(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%r15,%rax,2), %xmm1, %xmm1
-	vpinsrw	$4, (%r15,%r12,2), %xmm1, %xmm1
-	movq	1472(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%r15,%rax,2), %xmm1, %xmm1
-	movq	1184(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%r15,%rax,2), %xmm1, %xmm1
-	movq	1504(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%r15,%rax,2), %xmm1, %xmm1
-	movq	1368(%rsp), %rax        # 8-byte Reload
-	movzwl	(%r15,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	movq	1760(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%r15,%rax,2), %xmm2, %xmm2
-	vpinsrw	$2, (%r15,%rsi,2), %xmm2, %xmm2
-	movq	1824(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%r15,%rax,2), %xmm2, %xmm2
-	movq	1384(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$4, (%r15,%rax,2), %xmm2, %xmm2
-	movq	1792(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%r15,%rax,2), %xmm2, %xmm2
-	movq	1400(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%r15,%rax,2), %xmm2, %xmm2
-	movq	1880(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%r15,%rax,2), %xmm2, %xmm2
-	movq	1392(%rsp), %rax        # 8-byte Reload
-	movzwl	(%r15,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	movq	2496(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%r15,%rax,2), %xmm3, %xmm3
-	movq	1272(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$2, (%r15,%rax,2), %xmm3, %xmm3
-	movq	2560(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%r15,%rax,2), %xmm3, %xmm3
-	movq	1408(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$4, (%r15,%rax,2), %xmm3, %xmm3
-	movq	2528(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%r15,%rax,2), %xmm3, %xmm3
-	movq	1440(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%r15,%rax,2), %xmm3, %xmm3
-	movq	2624(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%r15,%rax,2), %xmm3, %xmm3
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vcvtdq2ps	%ymm0, %ymm7
-	vpmovzxwd	%xmm1, %ymm0    # ymm0 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vcvtdq2ps	%ymm0, %ymm10
-	vpmovzxbd	%xmm6, %ymm0    # ymm0 = xmm6[0],zero,zero,zero,xmm6[1],zero,zero,zero,xmm6[2],zero,zero,zero,xmm6[3],zero,zero,zero,xmm6[4],zero,zero,zero,xmm6[5],zero,zero,zero,xmm6[6],zero,zero,zero,xmm6[7],zero,zero,zero
-	vpslld	$31, %ymm0, %ymm0
-	vxorps	%ymm8, %ymm8, %ymm8
-	vblendvps	%ymm0, %ymm10, %ymm8, %ymm4
-	vpunpckhbw	%xmm6, %xmm6, %xmm0 # xmm0 = xmm6[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpslld	$31, %ymm0, %ymm0
-	vblendvps	%ymm0, %ymm7, %ymm8, %ymm6
-	vpmovzxwd	%xmm2, %ymm0    # ymm0 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
-	vcvtdq2ps	%ymm0, %ymm1
-	vpmovzxwd	%xmm3, %ymm0    # ymm0 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vcvtdq2ps	%ymm0, %ymm0
-	vmovdqa	1056(%rsp), %xmm3       # 16-byte Reload
-	vpmovzxbd	%xmm3, %ymm2    # ymm2 = xmm3[0],zero,zero,zero,xmm3[1],zero,zero,zero,xmm3[2],zero,zero,zero,xmm3[3],zero,zero,zero,xmm3[4],zero,zero,zero,xmm3[5],zero,zero,zero,xmm3[6],zero,zero,zero,xmm3[7],zero,zero,zero
-	vpslld	$31, %ymm2, %ymm2
-	vblendvps	%ymm2, %ymm0, %ymm8, %ymm2
-	vpunpckhbw	%xmm3, %xmm3, %xmm3 # xmm3 = xmm3[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm1, %ymm8, %ymm3
-	vpermps	%ymm3, %ymm9, %ymm12
-	vpermps	%ymm6, %ymm11, %ymm13
-	vblendps	$170, %ymm12, %ymm13, %ymm12 # ymm12 = ymm13[0],ymm12[1],ymm13[2],ymm12[3],ymm13[4],ymm12[5],ymm13[6],ymm12[7]
-	vpermps	%ymm3, %ymm14, %ymm3
-	vpermps	%ymm6, %ymm15, %ymm6
-	vblendps	$170, %ymm3, %ymm6, %ymm3 # ymm3 = ymm6[0],ymm3[1],ymm6[2],ymm3[3],ymm6[4],ymm3[5],ymm6[6],ymm3[7]
-	vpermps	%ymm2, %ymm9, %ymm6
-	vpermps	%ymm4, %ymm11, %ymm13
-	vblendps	$170, %ymm6, %ymm13, %ymm6 # ymm6 = ymm13[0],ymm6[1],ymm13[2],ymm6[3],ymm13[4],ymm6[5],ymm13[6],ymm6[7]
-	vpermps	%ymm2, %ymm14, %ymm2
-	vmovaps	%ymm14, %ymm8
-	vpermps	%ymm4, %ymm15, %ymm4
-	vmovaps	%ymm15, %ymm13
-	vblendps	$170, %ymm2, %ymm4, %ymm2 # ymm2 = ymm4[0],ymm2[1],ymm4[2],ymm2[3],ymm4[4],ymm2[5],ymm4[6],ymm2[7]
-	movq	2376(%rsp), %rax        # 8-byte Reload
-	movq	2688(%rsp), %r9         # 8-byte Reload
-	vmovups	%ymm2, 32(%rax,%r9)
-	vmovups	%ymm6, 64(%rax,%r9)
-	vmovups	%ymm3, 96(%rax,%r9)
-	vmovups	%ymm12, 128(%rax,%r9)
-	jne	.LBB147_321
-# BB#320:                               #   in Loop: Header=BB147_301 Depth=4
-	movl	2752(%rsp), %eax        # 4-byte Reload
-	vmovd	%eax, %xmm2
-	vpbroadcastb	%xmm2, %xmm5
-.LBB147_321:                            # %for deinterleaved$3.s0.v15.v15222
-                                        #   in Loop: Header=BB147_301 Depth=4
-	movq	1600(%rsp), %r12        # 8-byte Reload
-	movl	1568(%rsp), %ecx        # 4-byte Reload
-	vpmovzxbd	%xmm5, %ymm2    # ymm2 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
-	vpslld	$31, %ymm2, %ymm2
-	vxorps	%ymm6, %ymm6, %ymm6
-	vblendvps	%ymm2, %ymm10, %ymm6, %ymm2
-	vpunpckhbw	%xmm5, %xmm5, %xmm3 # xmm3 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm7, %ymm6, %ymm3
-	vmovdqa	1120(%rsp), %xmm5       # 16-byte Reload
-	vpmovzxbd	%xmm5, %ymm4    # ymm4 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm0, %ymm6, %ymm0
-	vpunpckhbw	%xmm5, %xmm5, %xmm4 # xmm4 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm1, %ymm6, %ymm1
-	vpermps	%ymm1, %ymm9, %ymm4
-	vpermps	%ymm3, %ymm11, %ymm5
-	vblendps	$170, %ymm4, %ymm5, %ymm4 # ymm4 = ymm5[0],ymm4[1],ymm5[2],ymm4[3],ymm5[4],ymm4[5],ymm5[6],ymm4[7]
-	vpermps	%ymm1, %ymm8, %ymm1
-	vpermps	%ymm3, %ymm13, %ymm3
-	vblendps	$170, %ymm1, %ymm3, %ymm1 # ymm1 = ymm3[0],ymm1[1],ymm3[2],ymm1[3],ymm3[4],ymm1[5],ymm3[6],ymm1[7]
-	vpermps	%ymm0, %ymm9, %ymm3
-	vpermps	%ymm2, %ymm11, %ymm5
-	vblendps	$170, %ymm3, %ymm5, %ymm3 # ymm3 = ymm5[0],ymm3[1],ymm5[2],ymm3[3],ymm5[4],ymm3[5],ymm5[6],ymm3[7]
-	vpermps	%ymm0, %ymm8, %ymm0
-	vpermps	%ymm2, %ymm13, %ymm2
-	vblendps	$170, %ymm0, %ymm2, %ymm0 # ymm0 = ymm2[0],ymm0[1],ymm2[2],ymm0[3],ymm2[4],ymm0[5],ymm2[6],ymm0[7]
-	movq	2352(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm0, (%rax,%r9)
-	movq	2368(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm3, 96(%rax,%r9)
-	vmovups	%ymm1, 128(%rax,%r9)
-	movq	2360(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm4, (%rax,%r9)
-	addl	$32, %r12d
-	subq	$-128, %r9
-	addl	$-1, %ecx
-	jne	.LBB147_301
-.LBB147_322:                            # %end for deinterleaved$3.s0.v15.v15223
-                                        #   in Loop: Header=BB147_274 Depth=3
-	movq	1152(%rsp), %rax        # 8-byte Reload
-	addl	$1, %eax
-	movq	%rax, 1152(%rsp)        # 8-byte Spill
-	movb	824(%rsp), %cl          # 1-byte Reload
-	addb	$1, %cl
-	cmpl	2656(%rsp), %eax        # 4-byte Folded Reload
-	jne	.LBB147_274
-.LBB147_303:                            # %end for deinterleaved$3.s0.v16221
-                                        #   in Loop: Header=BB147_273 Depth=2
-	movq	560(%rsp), %rax         # 8-byte Reload
-	movq	584(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rax,%rcx,2), %rax
-	movq	%rax, 1536(%rsp)        # 8-byte Spill
-	movq	1136(%rsp), %rax        # 8-byte Reload
-	cmpl	%eax, 2656(%rsp)        # 4-byte Folded Reload
-	jge	.LBB147_338
-# BB#304:                               # %for deinterleaved$3.s0.v16225.preheader
-                                        #   in Loop: Header=BB147_273 Depth=2
-	movq	912(%rsp), %rax         # 8-byte Reload
-	movl	2656(%rsp), %edx        # 4-byte Reload
-	imull	%edx, %eax
-	movq	472(%rsp), %rcx         # 8-byte Reload
-	leal	(%rax,%rcx), %eax
-	movl	%eax, 740(%rsp)         # 4-byte Spill
-	movb	%dl, %cl
-	.align	16, 0x90
-.LBB147_305:                            # %for deinterleaved$3.s0.v16225
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        # =>    This Loop Header: Depth=3
-                                        #         Child Loop BB147_336 Depth 4
-                                        #         Child Loop BB147_374 Depth 4
-                                        #         Child Loop BB147_407 Depth 4
-	movb	%cl, 712(%rsp)          # 1-byte Spill
-	movzbl	%cl, %eax
-	andl	$3, %eax
-	imulq	816(%rsp), %rax         # 8-byte Folded Reload
-	movq	%rax, 824(%rsp)         # 8-byte Spill
-	cmpl	$0, 724(%rsp)           # 4-byte Folded Reload
-	jle	.LBB147_358
-# BB#306:                               # %for deinterleaved$3.s0.v15.v15227.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	movq	824(%rsp), %rax         # 8-byte Reload
-	leaq	(%r14,%rax), %r12
-	movl	904(%rsp), %eax         # 4-byte Reload
-	testl	%eax, %eax
-	setne	%r11b
-	sete	%r15b
-	movl	2656(%rsp), %ecx        # 4-byte Reload
-	movl	%ecx, %edx
-	andl	$1, %edx
-	movl	%edx, 1600(%rsp)        # 4-byte Spill
-	sete	%r9b
-	movq	912(%rsp), %rsi         # 8-byte Reload
-	movl	%esi, %r10d
-	imull	%ecx, %r10d
-	movl	%ecx, %esi
-	movq	2392(%rsp), %rbx        # 8-byte Reload
-	orl	%ebx, %esi
-	testb	$1, %sil
-	sete	%r8b
-	movb	%dl, %bl
-	andb	%r15b, %bl
-	andb	%r11b, %r9b
-	testl	%ecx, %eax
-	setne	%sil
-	vpxor	%xmm0, %xmm0, %xmm0
-	vmovdqa	%xmm0, 1120(%rsp)       # 16-byte Spill
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_307
-# BB#323:                               # %for deinterleaved$3.s0.v15.v15227.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_324
-	.align	16, 0x90
-.LBB147_307:                            #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%r8d, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-.LBB147_324:                            # %for deinterleaved$3.s0.v15.v15227.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vmovdqa	%xmm0, 1104(%rsp)       # 16-byte Spill
-	je	.LBB147_325
-# BB#326:                               # %for deinterleaved$3.s0.v15.v15227.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_327
-	.align	16, 0x90
-.LBB147_325:                            #   in Loop: Header=BB147_305 Depth=3
-	movzbl	%bl, %ecx
-	vmovd	%ecx, %xmm0
-	movzbl	%r9b, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-.LBB147_327:                            # %for deinterleaved$3.s0.v15.v15227.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vmovdqa	%xmm0, 1056(%rsp)       # 16-byte Spill
-	jne	.LBB147_329
-# BB#328:                               #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%esi, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-	vmovdqa	%xmm0, 1120(%rsp)       # 16-byte Spill
-.LBB147_329:                            # %for deinterleaved$3.s0.v15.v15227.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%r10d, %xmm1
-	vpabsd	880(%rsp), %xmm0        # 16-byte Folded Reload
-	cmpl	$0, 104(%rbp)
-	jne	.LBB147_331
-# BB#330:                               #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%ebx, %xmm3
-	vpbroadcastb	%xmm3, %xmm2
-	vmovdqa	%xmm2, 1104(%rsp)       # 16-byte Spill
-.LBB147_331:                            # %for deinterleaved$3.s0.v15.v15227.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vpsubd	832(%rsp), %ymm1, %ymm1 # 32-byte Folded Reload
-	jne	.LBB147_333
-# BB#332:                               #   in Loop: Header=BB147_305 Depth=3
-	movzbl	%r8b, %ecx
-	vmovd	%ecx, %xmm2
-	movzbl	%sil, %ecx
-	vmovd	%ecx, %xmm3
-	vpor	%xmm3, %xmm2, %xmm2
-	vpbroadcastb	%xmm2, %xmm2
-	vmovdqa	%xmm2, 1056(%rsp)       # 16-byte Spill
-.LBB147_333:                            # %for deinterleaved$3.s0.v15.v15227.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	jne	.LBB147_335
-# BB#334:                               #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%r9d, %xmm3
-	vpbroadcastb	%xmm3, %xmm2
-	vmovdqa	%xmm2, 1120(%rsp)       # 16-byte Spill
-.LBB147_335:                            # %for deinterleaved$3.s0.v15.v15227.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vinserti128	$1, %xmm0, %ymm0, %ymm0
-	vmovdqa	%ymm0, 960(%rsp)        # 32-byte Spill
-	vpbroadcastd	%xmm1, %ymm0
-	vmovdqa	%ymm0, 928(%rsp)        # 32-byte Spill
-	xorl	%edi, %edi
-	movq	616(%rsp), %rax         # 8-byte Reload
-	movl	%eax, %ecx
-	.align	16, 0x90
-.LBB147_336:                            # %for deinterleaved$3.s0.v15.v15227
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_305 Depth=3
-                                        # =>      This Inner Loop Header: Depth=4
-	movq	%rdi, 1568(%rsp)        # 8-byte Spill
-	movl	%ecx, 2752(%rsp)        # 4-byte Spill
-	cmpl	$0, 1600(%rsp)          # 4-byte Folded Reload
-	setne	2560(%rsp)              # 1-byte Folded Spill
-	sete	2592(%rsp)              # 1-byte Folded Spill
-	movq	2032(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdi), %ecx
-	movl	%ecx, 2624(%rsp)        # 4-byte Spill
-	movl	%ecx, %eax
-	andl	$1, %eax
-	movl	%eax, 2688(%rsp)        # 4-byte Spill
-	sete	%al
-	movl	%eax, 2528(%rsp)        # 4-byte Spill
-	movl	%ecx, %eax
-	orl	2656(%rsp), %eax        # 4-byte Folded Reload
-	testb	$1, %al
-	sete	%al
-	movl	%eax, 1504(%rsp)        # 4-byte Spill
-	movq	2040(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdi), %eax
-	vmovd	%eax, %xmm0
-	vpbroadcastd	%xmm0, %ymm5
-	vmovdqa	.LCPI147_9(%rip), %ymm0 # ymm0 = [0,2,4,6,8,10,12,14]
-	vpaddd	%ymm0, %ymm5, %ymm6
-	vmovdqa	%ymm0, %ymm3
-	vextracti128	$1, %ymm6, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	vmovdqa	2080(%rsp), %ymm2       # 32-byte Reload
-	vextracti128	$1, %ymm2, %xmm1
-	vpextrd	$1, %xmm1, %r9d
-	cltd
-	idivl	%r9d
-	movl	%r9d, %ecx
-	movl	%edx, 2496(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	vmovd	%xmm1, %r9d
-	cltd
-	idivl	%r9d
-	movl	%edx, 2400(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	vpextrd	$2, %xmm1, %r8d
-	cltd
-	idivl	%r8d
-	movl	%edx, 1880(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	vpextrd	$3, %xmm1, %r10d
-	cltd
-	idivl	%r10d
-	movl	%edx, 1824(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm6, %eax
-	vpextrd	$1, %xmm2, %esi
-	movl	%esi, 1376(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%esi
-	movl	%edx, 1792(%rsp)        # 4-byte Spill
-	vmovd	%xmm6, %eax
-	vmovd	%xmm2, %esi
-	movl	%esi, 1368(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%esi
-	movl	%edx, 1760(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm6, %eax
-	vpextrd	$2, %xmm2, %ebx
-	cltd
-	idivl	%ebx
-	movl	%edx, 1728(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm6, %eax
-	vpextrd	$3, %xmm2, %esi
-	movl	%esi, 1360(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%esi
-	movl	%edx, 1696(%rsp)        # 4-byte Spill
-	vmovdqa	.LCPI147_8(%rip), %ymm0 # ymm0 = [16,18,20,22,24,26,28,30]
-	vpaddd	%ymm0, %ymm5, %ymm5
-	vmovdqa	%ymm0, %ymm1
-	vextracti128	$1, %ymm5, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%ecx
-	movl	%ecx, %esi
-	movl	%edx, 1664(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r9d
-	movl	%edx, 1632(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, 1472(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, 1440(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm5, %eax
-	vpextrd	$1, %xmm2, %ecx
-	movl	%ecx, 1352(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1408(%rsp)        # 4-byte Spill
-	vmovd	%xmm5, %eax
-	vmovd	%xmm2, %ecx
-	movl	%ecx, 1312(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1400(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm5, %eax
-	vpextrd	$2, %xmm2, %ecx
-	movl	%ecx, 1280(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1392(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm5, %eax
-	vpextrd	$3, %xmm2, %ecx
-	movl	%ecx, 1272(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1384(%rsp)        # 4-byte Spill
-	movq	2136(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdi), %eax
-	vmovd	%eax, %xmm0
-	vpbroadcastd	%xmm0, %ymm5
-	vpaddd	%ymm3, %ymm5, %ymm6
-	vmovdqa	%ymm3, %ymm9
-	vextracti128	$1, %ymm6, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%esi
-	movl	%edx, 1264(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r9d
-	movl	%edx, 1216(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, %r11d
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, %r13d
-	vpextrd	$1, %xmm6, %eax
-	cltd
-	idivl	1376(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r15d
-	vmovd	%xmm6, %eax
-	cltd
-	idivl	1368(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %ecx
-	vpextrd	$2, %xmm6, %eax
-	cltd
-	idivl	%ebx
-	movl	%edx, %ebx
-	vpextrd	$3, %xmm6, %eax
-	cltd
-	idivl	1360(%rsp)              # 4-byte Folded Reload
-	movl	%edx, 1360(%rsp)        # 4-byte Spill
-	vpaddd	%ymm1, %ymm5, %ymm5
-	vextracti128	$1, %ymm5, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%esi
-	movl	%edx, %esi
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r9d
-	movl	%edx, 1376(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, 1368(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, %r9d
-	vpextrd	$1, %xmm5, %eax
-	cltd
-	idivl	1352(%rsp)              # 4-byte Folded Reload
-	movl	%edx, 1352(%rsp)        # 4-byte Spill
-	vmovd	%xmm5, %eax
-	cltd
-	idivl	1312(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r10d
-	vpextrd	$2, %xmm5, %eax
-	cltd
-	idivl	1280(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r8d
-	vpextrd	$3, %xmm5, %eax
-	cltd
-	idivl	1272(%rsp)              # 4-byte Folded Reload
-	vmovd	2400(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 2496(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1880(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1824(%rsp), %xmm0, %xmm5 # 4-byte Folded Reload
-	vmovd	1760(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1792(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1728(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1696(%rsp), %xmm0, %xmm6 # 4-byte Folded Reload
-	vmovd	1632(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1664(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1472(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1440(%rsp), %xmm0, %xmm2 # 4-byte Folded Reload
-	vmovd	1400(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1408(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1392(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1384(%rsp), %xmm0, %xmm10 # 4-byte Folded Reload
-	vmovd	1216(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1264(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, %r11d, %xmm0, %xmm0
-	vpinsrd	$3, %r13d, %xmm0, %xmm0
-	vmovdqa	%xmm0, 2496(%rsp)       # 16-byte Spill
-	vmovd	%ecx, %xmm0
-	vpinsrd	$1, %r15d, %xmm0, %xmm0
-	vpinsrd	$2, %ebx, %xmm0, %xmm0
-	vmovdqa	%xmm0, 2400(%rsp)       # 16-byte Spill
-	vmovd	%edi, %xmm0
-	vpbroadcastd	%xmm0, %ymm0
-	vmovdqa	2304(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm12
-	vmovdqa	.LCPI147_5(%rip), %ymm14 # ymm14 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
-	vpshufb	%ymm14, %ymm12, %ymm12
-	vpermq	$232, %ymm12, %ymm12    # ymm12 = ymm12[0,2,2,3]
-	vmovdqa	2272(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm13
-	vpshufb	%ymm14, %ymm13, %ymm13
-	vpermq	$232, %ymm13, %ymm13    # ymm13 = ymm13[0,2,2,3]
-	vmovdqa	.LCPI147_6(%rip), %xmm15 # xmm15 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
-	vpshufb	%xmm15, %xmm13, %xmm3
-	vpshufb	%xmm15, %xmm12, %xmm4
-	vpunpcklqdq	%xmm3, %xmm4, %xmm3 # xmm3 = xmm4[0],xmm3[0]
-	vmovdqa	.LCPI147_7(%rip), %xmm1 # xmm1 = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-	vpxor	%xmm1, %xmm3, %xmm13
-	vmovdqa	1984(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm4
-	vpshufb	%ymm14, %ymm4, %ymm4
-	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
-	vmovdqa	1952(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm12
-	vpshufb	%ymm14, %ymm12, %ymm12
-	vpermq	$232, %ymm12, %ymm12    # ymm12 = ymm12[0,2,2,3]
-	vpshufb	%xmm15, %xmm12, %xmm3
-	vpshufb	%xmm15, %xmm4, %xmm4
-	vpunpcklqdq	%xmm3, %xmm4, %xmm3 # xmm3 = xmm4[0],xmm3[0]
-	vpor	%xmm13, %xmm3, %xmm3
-	vinserti128	$1, %xmm5, %ymm6, %ymm4
-	vpsrad	$31, %ymm4, %ymm5
-	vmovdqa	960(%rsp), %ymm7        # 32-byte Reload
-	vpand	%ymm5, %ymm7, %ymm5
-	vmovdqa	2240(%rsp), %ymm13      # 32-byte Reload
-	vpaddd	%ymm4, %ymm13, %ymm4
-	vpaddd	%ymm5, %ymm4, %ymm4
-	vpabsd	%xmm4, %xmm5
-	vextracti128	$1, %ymm4, %xmm4
-	vpabsd	%xmm4, %xmm4
-	vinserti128	$1, %xmm4, %ymm5, %ymm4
-	vmovdqa	2208(%rsp), %ymm8       # 32-byte Reload
-	vpsubd	%ymm4, %ymm8, %ymm12
-	movl	2624(%rsp), %eax        # 4-byte Reload
-	vmovd	%eax, %xmm5
-	vpbroadcastd	%xmm5, %ymm6
-	vpaddd	%ymm9, %ymm6, %ymm5
-	vmovdqa	2064(%rsp), %xmm9       # 16-byte Reload
-	vpminsd	%xmm9, %xmm5, %xmm4
-	vextracti128	$1, %ymm5, %xmm5
-	vpminsd	%xmm9, %xmm5, %xmm5
-	vmovdqa	2048(%rsp), %xmm11      # 16-byte Reload
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm5, %xmm5
-	vinserti128	$1, %xmm5, %ymm4, %ymm4
-	vpmovzxbd	%xmm3, %ymm5    # ymm5 = xmm3[0],zero,zero,zero,xmm3[1],zero,zero,zero,xmm3[2],zero,zero,zero,xmm3[3],zero,zero,zero,xmm3[4],zero,zero,zero,xmm3[5],zero,zero,zero,xmm3[6],zero,zero,zero,xmm3[7],zero,zero,zero
-	vpslld	$31, %ymm5, %ymm5
-	vblendvps	%ymm5, %ymm12, %ymm4, %ymm5
-	vinserti128	$1, %xmm2, %ymm10, %ymm2
-	vpsrad	$31, %ymm2, %ymm4
-	vpand	%ymm4, %ymm7, %ymm4
-	vpaddd	%ymm2, %ymm13, %ymm2
-	vpaddd	%ymm4, %ymm2, %ymm2
-	vpabsd	%xmm2, %xmm4
-	vextracti128	$1, %ymm2, %xmm2
-	vpabsd	%xmm2, %xmm2
-	vinserti128	$1, %xmm2, %ymm4, %ymm2
-	vmovdqa	.LCPI147_8(%rip), %ymm10 # ymm10 = [16,18,20,22,24,26,28,30]
-	vpaddd	%ymm10, %ymm6, %ymm4
-	vpminsd	%xmm9, %xmm4, %xmm6
-	vextracti128	$1, %ymm4, %xmm4
-	vpminsd	%xmm9, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm6, %xmm6
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vinserti128	$1, %xmm4, %ymm6, %ymm4
-	vpsubd	%ymm2, %ymm8, %ymm2
-	vpunpckhbw	%xmm3, %xmm3, %xmm3 # xmm3 = xmm3[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm2, %ymm4, %ymm6
-	vmovdqa	2176(%rsp), %ymm2       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm2, %ymm2
-	vpshufb	%ymm14, %ymm2, %ymm2
-	vpermq	$232, %ymm2, %ymm2      # ymm2 = ymm2[0,2,2,3]
-	vmovdqa	2144(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm3
-	vpshufb	%ymm14, %ymm3, %ymm3
-	vpermq	$232, %ymm3, %ymm3      # ymm3 = ymm3[0,2,2,3]
-	vpshufb	%xmm15, %xmm3, %xmm3
-	vpshufb	%xmm15, %xmm2, %xmm2
-	vpunpcklqdq	%xmm3, %xmm2, %xmm2 # xmm2 = xmm2[0],xmm3[0]
-	vpxor	%xmm1, %xmm2, %xmm2
-	vmovdqa	1920(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm3
-	vpshufb	%ymm14, %ymm3, %ymm3
-	vpermq	$232, %ymm3, %ymm3      # ymm3 = ymm3[0,2,2,3]
-	vmovdqa	1888(%rsp), %ymm4       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm4, %ymm0
-	vpshufb	%ymm14, %ymm0, %ymm0
-	vpermq	$232, %ymm0, %ymm0      # ymm0 = ymm0[0,2,2,3]
-	vpshufb	%xmm15, %xmm0, %xmm0
-	vpshufb	%xmm15, %xmm3, %xmm3
-	vpunpcklqdq	%xmm0, %xmm3, %xmm0 # xmm0 = xmm3[0],xmm0[0]
-	vpor	%xmm2, %xmm0, %xmm0
-	vmovdqa	2400(%rsp), %xmm1       # 16-byte Reload
-	vpinsrd	$3, 1360(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vinserti128	$1, 2496(%rsp), %ymm1, %ymm1 # 16-byte Folded Reload
-	vpsrad	$31, %ymm1, %ymm2
-	vpand	%ymm7, %ymm2, %ymm2
-	vpaddd	%ymm1, %ymm13, %ymm1
-	vpaddd	%ymm2, %ymm1, %ymm1
-	vpabsd	%xmm1, %xmm2
-	vextracti128	$1, %ymm1, %xmm1
-	vpabsd	%xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm2, %ymm1
-	vpsubd	%ymm1, %ymm8, %ymm1
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdi), %eax
-	vmovd	%eax, %xmm2
-	vpbroadcastd	%xmm2, %ymm2
-	vpaddd	.LCPI147_9(%rip), %ymm2, %ymm3
-	vpminsd	%xmm9, %xmm3, %xmm4
-	vextracti128	$1, %ymm3, %xmm3
-	vpminsd	%xmm9, %xmm3, %xmm3
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm3, %xmm3
-	vinserti128	$1, %xmm3, %ymm4, %ymm3
-	vpmovzxbd	%xmm0, %ymm4    # ymm4 = xmm0[0],zero,zero,zero,xmm0[1],zero,zero,zero,xmm0[2],zero,zero,zero,xmm0[3],zero,zero,zero,xmm0[4],zero,zero,zero,xmm0[5],zero,zero,zero,xmm0[6],zero,zero,zero,xmm0[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm1, %ymm3, %ymm4
-	vmovd	1376(%rsp), %xmm1       # 4-byte Folded Reload
-                                        # xmm1 = mem[0],zero,zero,zero
-	vpinsrd	$1, %esi, %xmm1, %xmm1
-	vpinsrd	$2, 1368(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vpinsrd	$3, %r9d, %xmm1, %xmm1
-	vmovd	%r10d, %xmm3
-	movl	2528(%rsp), %ebx        # 4-byte Reload
-	vpinsrd	$1, 1352(%rsp), %xmm3, %xmm3 # 4-byte Folded Reload
-	vpinsrd	$2, %r8d, %xmm3, %xmm3
-	vpinsrd	$3, %edx, %xmm3, %xmm3
-	vinserti128	$1, %xmm1, %ymm3, %ymm1
-	vpsrad	$31, %ymm1, %ymm3
-	vpand	%ymm7, %ymm3, %ymm3
-	vpaddd	%ymm1, %ymm13, %ymm1
-	vpaddd	%ymm3, %ymm1, %ymm1
-	vpabsd	%xmm1, %xmm3
-	vextracti128	$1, %ymm1, %xmm1
-	vpabsd	%xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm3, %ymm1
-	vpaddd	%ymm10, %ymm2, %ymm2
-	vpminsd	%xmm9, %xmm2, %xmm3
-	vextracti128	$1, %ymm2, %xmm2
-	vpminsd	%xmm9, %xmm2, %xmm2
-	vpmaxsd	%xmm11, %xmm3, %xmm3
-	vpmaxsd	%xmm11, %xmm2, %xmm2
-	vinserti128	$1, %xmm2, %ymm3, %ymm2
-	vpsubd	%ymm1, %ymm8, %ymm1
-	vpunpckhbw	%xmm0, %xmm0, %xmm0 # xmm0 = xmm0[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpslld	$31, %ymm0, %ymm0
-	vblendvps	%ymm0, %ymm1, %ymm2, %ymm0
-	vmovdqa	928(%rsp), %ymm2        # 32-byte Reload
-	vpaddd	%ymm5, %ymm2, %ymm1
-	vpextrq	$1, %xmm1, %rcx
-	movq	%rcx, 1184(%rsp)        # 8-byte Spill
-	vmovq	%xmm1, %r11
-	vextracti128	$1, %ymm1, %xmm1
-	vpextrq	$1, %xmm1, %rsi
-	movq	%rsi, 1472(%rsp)        # 8-byte Spill
-	vmovq	%xmm1, %r8
-	movq	%r8, 1440(%rsp)         # 8-byte Spill
-	andb	2560(%rsp), %bl         # 1-byte Folded Reload
-	vpaddd	%ymm6, %ymm2, %ymm1
-	movq	%r11, %rax
-	sarq	$32, %rax
-	movq	%rax, 1880(%rsp)        # 8-byte Spill
-	movq	%rcx, %rax
-	sarq	$32, %rax
-	movq	%rax, 2560(%rsp)        # 8-byte Spill
-	sarq	$32, %r8
-	movq	%rsi, %r13
-	sarq	$32, %r13
-	vmovq	%xmm1, %rax
-	movl	2688(%rsp), %edx        # 4-byte Reload
-	andb	2592(%rsp), %dl         # 1-byte Folded Reload
-	movl	%edx, 2688(%rsp)        # 4-byte Spill
-	movq	%rax, %r15
-	sarq	$32, %r15
-	vpextrq	$1, %xmm1, %rcx
-	movq	%rcx, 1352(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1664(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm1, %xmm1
-	vmovq	%xmm1, %rcx
-	movq	%rcx, 1272(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1632(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rcx
-	movq	%rcx, 1264(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1696(%rsp)        # 8-byte Spill
-	vpaddd	%ymm0, %ymm2, %ymm0
-	vpaddd	%ymm4, %ymm2, %ymm1
-	vmovq	%xmm1, %r9
-	movq	%r9, %rdx
-	sarq	$32, %rdx
-	movq	%rdx, 2400(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rdx
-	movq	%rdx, 1408(%rsp)        # 8-byte Spill
-	sarq	$32, %rdx
-	movq	%rdx, 2528(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm1, %xmm1
-	vmovq	%xmm1, %rdx
-	movq	%rdx, 1400(%rsp)        # 8-byte Spill
-	sarq	$32, %rdx
-	movq	%rdx, 2496(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rdx
-	movq	%rdx, 1384(%rsp)        # 8-byte Spill
-	sarq	$32, %rdx
-	movq	%rdx, 2592(%rsp)        # 8-byte Spill
-	vmovq	%xmm0, %rdx
-	movq	%rdx, %rcx
-	sarq	$32, %rcx
-	movq	%rcx, 1728(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1360(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1792(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm0, %xmm0
-	vmovq	%xmm0, %rcx
-	movq	%rcx, 1312(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1760(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1280(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1824(%rsp)        # 8-byte Spill
-	movl	2624(%rsp), %ecx        # 4-byte Reload
-	testl	1600(%rsp), %ecx        # 4-byte Folded Reload
-	vpxor	%xmm5, %xmm5, %xmm5
-	setne	%dil
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_337
-# BB#343:                               # %for deinterleaved$3.s0.v15.v15227
-                                        #   in Loop: Header=BB147_336 Depth=4
-	vpxor	%xmm7, %xmm7, %xmm7
-	jmp	.LBB147_344
-	.align	16, 0x90
-.LBB147_337:                            #   in Loop: Header=BB147_336 Depth=4
-	movl	1504(%rsp), %ecx        # 4-byte Reload
-	vmovd	%ecx, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_344:                            # %for deinterleaved$3.s0.v15.v15227
-                                        #   in Loop: Header=BB147_336 Depth=4
-	vmovaps	.LCPI147_10(%rip), %ymm9 # ymm9 = <u,4,u,5,u,6,u,7>
-	vmovaps	.LCPI147_11(%rip), %ymm11 # ymm11 = <4,u,5,u,6,u,7,u>
-	je	.LBB147_345
-# BB#346:                               # %for deinterleaved$3.s0.v15.v15227
-                                        #   in Loop: Header=BB147_336 Depth=4
-	vpxor	%xmm6, %xmm6, %xmm6
-	jmp	.LBB147_347
-	.align	16, 0x90
-.LBB147_345:                            #   in Loop: Header=BB147_336 Depth=4
-	movzbl	%bl, %ecx
-	vmovd	%ecx, %xmm0
-	movl	2688(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm6
-.LBB147_347:                            # %for deinterleaved$3.s0.v15.v15227
-                                        #   in Loop: Header=BB147_336 Depth=4
-	movl	2752(%rsp), %ecx        # 4-byte Reload
-	je	.LBB147_348
-# BB#349:                               # %for deinterleaved$3.s0.v15.v15227
-                                        #   in Loop: Header=BB147_336 Depth=4
-	movl	%ecx, 2752(%rsp)        # 4-byte Spill
-	jmp	.LBB147_350
-	.align	16, 0x90
-.LBB147_348:                            #   in Loop: Header=BB147_336 Depth=4
-	movl	%ecx, 2752(%rsp)        # 4-byte Spill
-	vmovd	%edi, %xmm0
-	vpbroadcastb	%xmm0, %xmm5
-.LBB147_350:                            # %for deinterleaved$3.s0.v15.v15227
-                                        #   in Loop: Header=BB147_336 Depth=4
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_351
-# BB#352:                               # %for deinterleaved$3.s0.v15.v15227
-                                        #   in Loop: Header=BB147_336 Depth=4
-	movl	%edi, 1152(%rsp)        # 4-byte Spill
-	jmp	.LBB147_353
-	.align	16, 0x90
-.LBB147_351:                            #   in Loop: Header=BB147_336 Depth=4
-	movl	%edi, 1152(%rsp)        # 4-byte Spill
-	vmovd	%ebx, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_353:                            # %for deinterleaved$3.s0.v15.v15227
-                                        #   in Loop: Header=BB147_336 Depth=4
-	movq	1472(%rsp), %rbx        # 8-byte Reload
-	cltq
-	movq	%rax, 1216(%rsp)        # 8-byte Spill
-	movq	2384(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm0
-	movslq	%r11d, %rax
-	movq	%rax, 1376(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm1
-	movslq	%edx, %rax
-	movq	%rax, 1368(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	movslq	%r9d, %rax
-	movq	%rax, 1392(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	movq	1184(%rsp), %rax        # 8-byte Reload
-	movslq	%eax, %r10
-	movq	1440(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rsi
-	movq	%rsi, 1176(%rsp)        # 8-byte Spill
-	movslq	%ebx, %rax
-	movq	%rax, 1184(%rsp)        # 8-byte Spill
-	movq	1352(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rbx
-	movq	1272(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rdi
-	movq	1264(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r11
-	vpinsrw	$1, (%rcx,%r15,2), %xmm0, %xmm0
-	movq	%r15, 1352(%rsp)        # 8-byte Spill
-	vpinsrw	$2, (%rcx,%rbx,2), %xmm0, %xmm0
-	movq	1664(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm0, %xmm0
-	vpinsrw	$4, (%rcx,%rdi,2), %xmm0, %xmm0
-	movq	1632(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rdx,2), %xmm0, %xmm0
-	vpinsrw	$6, (%rcx,%r11,2), %xmm0, %xmm0
-	movq	1696(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rdx,2), %xmm0, %xmm0
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vcvtdq2ps	%ymm0, %ymm0
-	movq	1880(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rdx,2), %xmm1, %xmm1
-	vpinsrw	$2, (%rcx,%r10,2), %xmm1, %xmm1
-	movq	2560(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm1, %xmm1
-	vpinsrw	$4, (%rcx,%rsi,2), %xmm1, %xmm1
-	vpinsrw	$5, (%rcx,%r8,2), %xmm1, %xmm1
-	movq	%r8, 1472(%rsp)         # 8-byte Spill
-	vpinsrw	$6, (%rcx,%rax,2), %xmm1, %xmm1
-	vpinsrw	$7, (%rcx,%r13,2), %xmm1, %xmm1
-	movq	%r13, 2624(%rsp)        # 8-byte Spill
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vcvtdq2ps	%ymm1, %ymm1
-	vpmovzxbd	%xmm7, %ymm4    # ymm4 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vpxor	%ymm8, %ymm8, %ymm8
-	vblendvps	%ymm4, %ymm1, %ymm8, %ymm1
-	vpunpckhbw	%xmm7, %xmm7, %xmm4 # xmm4 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm0, %ymm8, %ymm0
-	movq	1408(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r9
-	movq	%r9, 1272(%rsp)         # 8-byte Spill
-	movq	1400(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r8
-	movq	%r8, 1408(%rsp)         # 8-byte Spill
-	movq	1384(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r13
-	movq	%r13, 1440(%rsp)        # 8-byte Spill
-	movq	1360(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rsi
-	movq	1312(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rax
-	movq	%rax, 1400(%rsp)        # 8-byte Spill
-	movq	1280(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r15
-	movq	%r15, 1384(%rsp)        # 8-byte Spill
-	movq	1728(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpinsrw	$2, (%rcx,%rsi,2), %xmm2, %xmm2
-	movq	1792(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpinsrw	$4, (%rcx,%rax,2), %xmm2, %xmm2
-	movq	1760(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpinsrw	$6, (%rcx,%r15,2), %xmm2, %xmm2
-	movq	1824(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpmovzxwd	%xmm2, %ymm2    # ymm2 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
-	vcvtdq2ps	%ymm2, %ymm2
-	movq	2400(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rdx,2), %xmm3, %xmm3
-	vpinsrw	$2, (%rcx,%r9,2), %xmm3, %xmm3
-	movq	2528(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm3, %xmm3
-	vpinsrw	$4, (%rcx,%r8,2), %xmm3, %xmm3
-	movq	2496(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rdx,2), %xmm3, %xmm3
-	vpinsrw	$6, (%rcx,%r13,2), %xmm3, %xmm3
-	movq	2592(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rdx,2), %xmm3, %xmm3
-	movq	%rcx, %rdx
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vcvtdq2ps	%ymm3, %ymm3
-	vmovdqa	1104(%rsp), %xmm7       # 16-byte Reload
-	vpmovzxbd	%xmm7, %ymm4    # ymm4 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm3, %ymm8, %ymm3
-	vpunpckhbw	%xmm7, %xmm7, %xmm4 # xmm4 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm2, %ymm8, %ymm2
-	vpermps	%ymm2, %ymm9, %ymm4
-	vpermps	%ymm0, %ymm11, %ymm7
-	vblendps	$170, %ymm4, %ymm7, %ymm4 # ymm4 = ymm7[0],ymm4[1],ymm7[2],ymm4[3],ymm7[4],ymm4[5],ymm7[6],ymm4[7]
-	vmovaps	.LCPI147_12(%rip), %ymm7 # ymm7 = <u,0,u,1,u,2,u,3>
-	vmovaps	%ymm7, %ymm8
-	vpermps	%ymm2, %ymm8, %ymm2
-	vmovaps	.LCPI147_13(%rip), %ymm7 # ymm7 = <0,u,1,u,2,u,3,u>
-	vmovaps	%ymm7, %ymm10
-	vpermps	%ymm0, %ymm10, %ymm0
-	vblendps	$170, %ymm2, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm2[1],ymm0[2],ymm2[3],ymm0[4],ymm2[5],ymm0[6],ymm2[7]
-	vpermps	%ymm3, %ymm9, %ymm2
-	vpermps	%ymm1, %ymm11, %ymm7
-	vblendps	$170, %ymm2, %ymm7, %ymm2 # ymm2 = ymm7[0],ymm2[1],ymm7[2],ymm2[3],ymm7[4],ymm2[5],ymm7[6],ymm2[7]
-	vpermps	%ymm3, %ymm8, %ymm3
-	vmovaps	%ymm8, %ymm14
-	vpermps	%ymm1, %ymm10, %ymm1
-	vmovaps	%ymm10, %ymm15
-	vblendps	$170, %ymm3, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm3[1],ymm1[2],ymm3[3],ymm1[4],ymm3[5],ymm1[6],ymm3[7]
-	vmovups	%ymm1, (%r12)
-	vmovups	%ymm2, 32(%r12)
-	vmovups	%ymm0, 64(%r12)
-	vmovups	%ymm4, 96(%r12)
-	jne	.LBB147_355
-# BB#354:                               #   in Loop: Header=BB147_336 Depth=4
-	movl	1504(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm0
-	movl	1152(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm6
-.LBB147_355:                            # %for deinterleaved$3.s0.v15.v15227
-                                        #   in Loop: Header=BB147_336 Depth=4
-	movq	1216(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rdx,%rcx,2), %ecx
-	vmovd	%ecx, %xmm0
-	movq	1352(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$2, (%rdx,%rbx,2), %xmm0, %xmm0
-	movq	1664(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$4, (%rdx,%rdi,2), %xmm0, %xmm0
-	movq	1632(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$6, (%rdx,%r11,2), %xmm0, %xmm0
-	movq	1696(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rcx,2), %xmm0, %xmm0
-	movq	1376(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rdx,%rcx,2), %ecx
-	vmovd	%ecx, %xmm1
-	movq	1880(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rcx,2), %xmm1, %xmm1
-	vpinsrw	$2, (%rdx,%r10,2), %xmm1, %xmm1
-	movq	2560(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1176(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$4, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1472(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1184(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	2624(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1368(%rsp), %rax        # 8-byte Reload
-	movzwl	(%rdx,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	movq	1728(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rax,2), %xmm2, %xmm2
-	vpinsrw	$2, (%rdx,%rsi,2), %xmm2, %xmm2
-	movq	1792(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1400(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$4, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1760(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1384(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1824(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1392(%rsp), %rax        # 8-byte Reload
-	movzwl	(%rdx,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	movq	2400(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	1272(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$2, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	2528(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	1408(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$4, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	2496(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	1440(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	2592(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rax,2), %xmm3, %xmm3
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vcvtdq2ps	%ymm0, %ymm7
-	vpmovzxwd	%xmm1, %ymm0    # ymm0 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vcvtdq2ps	%ymm0, %ymm10
-	vpmovzxbd	%xmm6, %ymm0    # ymm0 = xmm6[0],zero,zero,zero,xmm6[1],zero,zero,zero,xmm6[2],zero,zero,zero,xmm6[3],zero,zero,zero,xmm6[4],zero,zero,zero,xmm6[5],zero,zero,zero,xmm6[6],zero,zero,zero,xmm6[7],zero,zero,zero
-	vpslld	$31, %ymm0, %ymm0
-	vxorps	%ymm8, %ymm8, %ymm8
-	vblendvps	%ymm0, %ymm10, %ymm8, %ymm4
-	vpunpckhbw	%xmm6, %xmm6, %xmm0 # xmm0 = xmm6[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpslld	$31, %ymm0, %ymm0
-	vblendvps	%ymm0, %ymm7, %ymm8, %ymm6
-	vpmovzxwd	%xmm2, %ymm0    # ymm0 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
-	vcvtdq2ps	%ymm0, %ymm1
-	vpmovzxwd	%xmm3, %ymm0    # ymm0 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vcvtdq2ps	%ymm0, %ymm0
-	vmovdqa	1056(%rsp), %xmm3       # 16-byte Reload
-	vpmovzxbd	%xmm3, %ymm2    # ymm2 = xmm3[0],zero,zero,zero,xmm3[1],zero,zero,zero,xmm3[2],zero,zero,zero,xmm3[3],zero,zero,zero,xmm3[4],zero,zero,zero,xmm3[5],zero,zero,zero,xmm3[6],zero,zero,zero,xmm3[7],zero,zero,zero
-	vpslld	$31, %ymm2, %ymm2
-	vblendvps	%ymm2, %ymm0, %ymm8, %ymm2
-	vpunpckhbw	%xmm3, %xmm3, %xmm3 # xmm3 = xmm3[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm1, %ymm8, %ymm3
-	vpermps	%ymm3, %ymm9, %ymm12
-	vpermps	%ymm6, %ymm11, %ymm13
-	vblendps	$170, %ymm12, %ymm13, %ymm12 # ymm12 = ymm13[0],ymm12[1],ymm13[2],ymm12[3],ymm13[4],ymm12[5],ymm13[6],ymm12[7]
-	vpermps	%ymm3, %ymm14, %ymm3
-	vpermps	%ymm6, %ymm15, %ymm6
-	vblendps	$170, %ymm3, %ymm6, %ymm3 # ymm3 = ymm6[0],ymm3[1],ymm6[2],ymm3[3],ymm6[4],ymm3[5],ymm6[6],ymm3[7]
-	vpermps	%ymm2, %ymm9, %ymm6
-	vpermps	%ymm4, %ymm11, %ymm13
-	vblendps	$170, %ymm6, %ymm13, %ymm6 # ymm6 = ymm13[0],ymm6[1],ymm13[2],ymm6[3],ymm13[4],ymm6[5],ymm13[6],ymm6[7]
-	vpermps	%ymm2, %ymm14, %ymm2
-	vmovaps	%ymm14, %ymm8
-	vpermps	%ymm4, %ymm15, %ymm4
-	vmovaps	%ymm15, %ymm13
-	vblendps	$170, %ymm2, %ymm4, %ymm2 # ymm2 = ymm4[0],ymm2[1],ymm4[2],ymm2[3],ymm4[4],ymm2[5],ymm4[6],ymm2[7]
-	movq	2376(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm2, 32(%rax,%r12)
-	vmovups	%ymm6, 64(%rax,%r12)
-	vmovups	%ymm3, 96(%rax,%r12)
-	vmovups	%ymm12, 128(%rax,%r12)
-	jne	.LBB147_357
-# BB#356:                               #   in Loop: Header=BB147_336 Depth=4
-	movl	2688(%rsp), %eax        # 4-byte Reload
-	vmovd	%eax, %xmm2
-	vpbroadcastb	%xmm2, %xmm5
-.LBB147_357:                            # %for deinterleaved$3.s0.v15.v15227
-                                        #   in Loop: Header=BB147_336 Depth=4
-	movq	1568(%rsp), %rdi        # 8-byte Reload
-	movl	2752(%rsp), %ecx        # 4-byte Reload
-	vpmovzxbd	%xmm5, %ymm2    # ymm2 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
-	vpslld	$31, %ymm2, %ymm2
-	vxorps	%ymm6, %ymm6, %ymm6
-	vblendvps	%ymm2, %ymm10, %ymm6, %ymm2
-	vpunpckhbw	%xmm5, %xmm5, %xmm3 # xmm3 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm7, %ymm6, %ymm3
-	vmovdqa	1120(%rsp), %xmm5       # 16-byte Reload
-	vpmovzxbd	%xmm5, %ymm4    # ymm4 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm0, %ymm6, %ymm0
-	vpunpckhbw	%xmm5, %xmm5, %xmm4 # xmm4 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm1, %ymm6, %ymm1
-	vpermps	%ymm1, %ymm9, %ymm4
-	vpermps	%ymm3, %ymm11, %ymm5
-	vblendps	$170, %ymm4, %ymm5, %ymm4 # ymm4 = ymm5[0],ymm4[1],ymm5[2],ymm4[3],ymm5[4],ymm4[5],ymm5[6],ymm4[7]
-	vpermps	%ymm1, %ymm8, %ymm1
-	vpermps	%ymm3, %ymm13, %ymm3
-	vblendps	$170, %ymm1, %ymm3, %ymm1 # ymm1 = ymm3[0],ymm1[1],ymm3[2],ymm1[3],ymm3[4],ymm1[5],ymm3[6],ymm1[7]
-	vpermps	%ymm0, %ymm9, %ymm3
-	vpermps	%ymm2, %ymm11, %ymm5
-	vblendps	$170, %ymm3, %ymm5, %ymm3 # ymm3 = ymm5[0],ymm3[1],ymm5[2],ymm3[3],ymm5[4],ymm3[5],ymm5[6],ymm3[7]
-	vpermps	%ymm0, %ymm8, %ymm0
-	vpermps	%ymm2, %ymm13, %ymm2
-	vblendps	$170, %ymm0, %ymm2, %ymm0 # ymm0 = ymm2[0],ymm0[1],ymm2[2],ymm0[3],ymm2[4],ymm0[5],ymm2[6],ymm0[7]
-	movq	2352(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm0, (%rax,%r12)
-	movq	2368(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm3, 96(%rax,%r12)
-	vmovups	%ymm1, 128(%rax,%r12)
-	movq	2360(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm4, (%rax,%r12)
-	addl	$32, %edi
-	subq	$-128, %r12
-	addl	$1, %ecx
-	cmpl	$-1, %ecx
-	jne	.LBB147_336
-.LBB147_358:                            # %end for deinterleaved$3.s0.v15.v15228
-                                        #   in Loop: Header=BB147_305 Depth=3
-	movl	720(%rsp), %eax         # 4-byte Reload
-	cmpl	%eax, 724(%rsp)         # 4-byte Folded Reload
-	jge	.LBB147_391
-# BB#359:                               # %for deinterleaved$3.s0.v15.v15230.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	movq	632(%rsp), %rax         # 8-byte Reload
-	movq	824(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rax,%rcx), %rax
-	movl	904(%rsp), %esi         # 4-byte Reload
-	testl	%esi, %esi
-	setne	%r11b
-	sete	%dl
-	movl	2656(%rsp), %ecx        # 4-byte Reload
-	movl	%ecx, %r8d
-	andl	$1, %r8d
-	sete	%r10b
-	movl	%ecx, %edi
-	movq	2392(%rsp), %rbx        # 8-byte Reload
-	orl	%ebx, %edi
-	testb	$1, %dil
-	sete	%r9b
-	movb	%r8b, %bl
-	andb	%dl, %bl
-	andb	%r11b, %r10b
-	testl	%ecx, %esi
-	setne	%dil
-	vpxor	%xmm0, %xmm0, %xmm0
-	vmovdqa	%xmm0, 2688(%rsp)       # 16-byte Spill
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_360
-# BB#361:                               # %for deinterleaved$3.s0.v15.v15230.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_362
-	.align	16, 0x90
-.LBB147_360:                            #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%r9d, %xmm1
-	vpbroadcastb	%xmm1, %xmm0
-.LBB147_362:                            # %for deinterleaved$3.s0.v15.v15230.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vmovdqa	%xmm0, 2624(%rsp)       # 16-byte Spill
-	je	.LBB147_363
-# BB#364:                               # %for deinterleaved$3.s0.v15.v15230.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_365
-	.align	16, 0x90
-.LBB147_363:                            #   in Loop: Header=BB147_305 Depth=3
-	movzbl	%bl, %ecx
-	vmovd	%ecx, %xmm2
-	movzbl	%r10b, %ecx
-	vmovd	%ecx, %xmm3
-	vpor	%xmm3, %xmm2, %xmm2
-	vpbroadcastb	%xmm2, %xmm0
-.LBB147_365:                            # %for deinterleaved$3.s0.v15.v15230.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vmovdqa	%xmm0, 2592(%rsp)       # 16-byte Spill
-	jne	.LBB147_367
-# BB#366:                               #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%edi, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-	vmovdqa	%xmm0, 2688(%rsp)       # 16-byte Spill
-.LBB147_367:                            # %for deinterleaved$3.s0.v15.v15230.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	cmpl	$0, 104(%rbp)
-	jne	.LBB147_369
-# BB#368:                               #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%ebx, %xmm1
-	vpbroadcastb	%xmm1, %xmm0
-	vmovdqa	%xmm0, 2624(%rsp)       # 16-byte Spill
-.LBB147_369:                            # %for deinterleaved$3.s0.v15.v15230.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	jne	.LBB147_371
-# BB#370:                               #   in Loop: Header=BB147_305 Depth=3
-	movzbl	%r9b, %ecx
-	vmovd	%ecx, %xmm2
-	movzbl	%dil, %ecx
-	vmovd	%ecx, %xmm3
-	vpor	%xmm3, %xmm2, %xmm2
-	vpbroadcastb	%xmm2, %xmm0
-	vmovdqa	%xmm0, 2592(%rsp)       # 16-byte Spill
-.LBB147_371:                            # %for deinterleaved$3.s0.v15.v15230.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	jne	.LBB147_373
-# BB#372:                               #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%r10d, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-	vmovdqa	%xmm0, 2688(%rsp)       # 16-byte Spill
-.LBB147_373:                            # %for deinterleaved$3.s0.v15.v15230.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	movl	596(%rsp), %r10d        # 4-byte Reload
-	movl	740(%rsp), %edi         # 4-byte Reload
-	movl	612(%rsp), %esi         # 4-byte Reload
-	.align	16, 0x90
-.LBB147_374:                            # %for deinterleaved$3.s0.v15.v15230
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_305 Depth=3
-                                        # =>      This Inner Loop Header: Depth=4
-	testl	%r8d, %r8d
-	setne	%cl
-	sete	%dl
-	movl	%esi, %ebx
-	andl	$1, %ebx
-	sete	%r13b
-	andb	%dl, %bl
-	testl	%esi, %r8d
-	setne	%r11b
-	movl	%esi, %edx
-	orl	2656(%rsp), %edx        # 4-byte Folded Reload
-	testb	$1, %dl
-	sete	%r9b
-	andb	%cl, %r13b
-	vpxor	%xmm0, %xmm0, %xmm0
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_375
-# BB#376:                               # %for deinterleaved$3.s0.v15.v15230
-                                        #   in Loop: Header=BB147_374 Depth=4
-	vxorps	%xmm6, %xmm6, %xmm6
-	jmp	.LBB147_377
-	.align	16, 0x90
-.LBB147_375:                            #   in Loop: Header=BB147_374 Depth=4
-	vmovd	%ebx, %xmm4
-	vpbroadcastb	%xmm4, %xmm6
-.LBB147_377:                            # %for deinterleaved$3.s0.v15.v15230
-                                        #   in Loop: Header=BB147_374 Depth=4
-	je	.LBB147_378
-# BB#379:                               # %for deinterleaved$3.s0.v15.v15230
-                                        #   in Loop: Header=BB147_374 Depth=4
-	vxorps	%xmm7, %xmm7, %xmm7
-	jmp	.LBB147_380
-	.align	16, 0x90
-.LBB147_378:                            #   in Loop: Header=BB147_374 Depth=4
-	movzbl	%r11b, %ecx
-	vmovd	%ecx, %xmm4
-	movzbl	%r9b, %ecx
-	vmovd	%ecx, %xmm5
-	vpor	%xmm5, %xmm4, %xmm4
-	vpbroadcastb	%xmm4, %xmm7
-.LBB147_380:                            # %for deinterleaved$3.s0.v15.v15230
-                                        #   in Loop: Header=BB147_374 Depth=4
-	jne	.LBB147_382
-# BB#381:                               #   in Loop: Header=BB147_374 Depth=4
-	vmovd	%r13d, %xmm3
-	vpbroadcastb	%xmm3, %xmm0
-.LBB147_382:                            # %for deinterleaved$3.s0.v15.v15230
-                                        #   in Loop: Header=BB147_374 Depth=4
-	vmovaps	%ymm11, %ymm15
-	vmovaps	%ymm9, %ymm14
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_383
-# BB#384:                               # %for deinterleaved$3.s0.v15.v15230
-                                        #   in Loop: Header=BB147_374 Depth=4
-	vmovdqa	%xmm0, 2752(%rsp)       # 16-byte Spill
-	jmp	.LBB147_385
-	.align	16, 0x90
-.LBB147_383:                            #   in Loop: Header=BB147_374 Depth=4
-	vmovdqa	%xmm0, 2752(%rsp)       # 16-byte Spill
-	vmovd	%r11d, %xmm4
-	vpbroadcastb	%xmm4, %xmm6
-.LBB147_385:                            # %for deinterleaved$3.s0.v15.v15230
-                                        #   in Loop: Header=BB147_374 Depth=4
-	movslq	%edi, %rcx
-	movq	2384(%rsp), %rdx        # 8-byte Reload
-	vmovdqu	-2(%rdx,%rcx,2), %ymm4
-	vpblendw	$170, 28(%rdx,%rcx,2), %ymm4, %ymm4 # ymm4 = ymm4[0],mem[1],ymm4[2],mem[3],ymm4[4],mem[5],ymm4[6],mem[7],ymm4[8],mem[9],ymm4[10],mem[11],ymm4[12],mem[13],ymm4[14],mem[15]
-	vmovdqa	.LCPI147_18(%rip), %ymm0 # ymm0 = [0,1,4,5,8,9,12,13,2,3,6,7,10,11,14,15,16,17,20,21,24,25,28,29,18,19,22,23,26,27,30,31]
-	vpshufb	%ymm0, %ymm4, %ymm5
-	vperm2i128	$35, %ymm4, %ymm0, %ymm4 # ymm4 = ymm4[2,3,0,1]
-	vmovdqa	.LCPI147_19(%rip), %ymm1 # ymm1 = [2,3,6,7,10,11,14,15,0,1,4,5,8,9,12,13,18,19,22,23,26,27,30,31,16,17,20,21,24,25,28,29]
-	vmovdqa	%ymm1, %ymm2
-	vpshufb	%ymm2, %ymm4, %ymm4
-	vpblendd	$60, %ymm4, %ymm5, %ymm5 # ymm5 = ymm5[0,1],ymm4[2,3,4,5],ymm5[6,7]
-	vextracti128	$1, %ymm5, %xmm4
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vcvtdq2ps	%ymm4, %ymm4
-	vpmovzxwd	%xmm5, %ymm5    # ymm5 = xmm5[0],zero,xmm5[1],zero,xmm5[2],zero,xmm5[3],zero,xmm5[4],zero,xmm5[5],zero,xmm5[6],zero,xmm5[7],zero
-	vcvtdq2ps	%ymm5, %ymm5
-	vpmovzxbd	%xmm6, %ymm8    # ymm8 = xmm6[0],zero,zero,zero,xmm6[1],zero,zero,zero,xmm6[2],zero,zero,zero,xmm6[3],zero,zero,zero,xmm6[4],zero,zero,zero,xmm6[5],zero,zero,zero,xmm6[6],zero,zero,zero,xmm6[7],zero,zero,zero
-	vpslld	$31, %ymm8, %ymm8
-	vpxor	%ymm1, %ymm1, %ymm1
-	vblendvps	%ymm8, %ymm5, %ymm1, %ymm9
-	vpunpckhbw	%xmm6, %xmm6, %xmm6 # xmm6 = xmm6[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm6, %ymm6    # ymm6 = xmm6[0],zero,xmm6[1],zero,xmm6[2],zero,xmm6[3],zero,xmm6[4],zero,xmm6[5],zero,xmm6[6],zero,xmm6[7],zero
-	vpslld	$31, %ymm6, %ymm6
-	vblendvps	%ymm6, %ymm4, %ymm1, %ymm10
-	vmovdqu	(%rdx,%rcx,2), %ymm6
-	vpblendw	$170, 30(%rdx,%rcx,2), %ymm6, %ymm6 # ymm6 = ymm6[0],mem[1],ymm6[2],mem[3],ymm6[4],mem[5],ymm6[6],mem[7],ymm6[8],mem[9],ymm6[10],mem[11],ymm6[12],mem[13],ymm6[14],mem[15]
-	vpshufb	%ymm0, %ymm6, %ymm8
-	vperm2i128	$35, %ymm6, %ymm0, %ymm6 # ymm6 = ymm6[2,3,0,1]
-	vpshufb	%ymm2, %ymm6, %ymm6
-	vpblendd	$60, %ymm6, %ymm8, %ymm8 # ymm8 = ymm8[0,1],ymm6[2,3,4,5],ymm8[6,7]
-	vextracti128	$1, %ymm8, %xmm6
-	vpmovzxwd	%xmm6, %ymm6    # ymm6 = xmm6[0],zero,xmm6[1],zero,xmm6[2],zero,xmm6[3],zero,xmm6[4],zero,xmm6[5],zero,xmm6[6],zero,xmm6[7],zero
-	vcvtdq2ps	%ymm6, %ymm6
-	vpmovzxwd	%xmm8, %ymm8    # ymm8 = xmm8[0],zero,xmm8[1],zero,xmm8[2],zero,xmm8[3],zero,xmm8[4],zero,xmm8[5],zero,xmm8[6],zero,xmm8[7],zero
-	vcvtdq2ps	%ymm8, %ymm8
-	vmovdqa	2624(%rsp), %xmm0       # 16-byte Reload
-	vpmovzxbd	%xmm0, %ymm11   # ymm11 = xmm0[0],zero,zero,zero,xmm0[1],zero,zero,zero,xmm0[2],zero,zero,zero,xmm0[3],zero,zero,zero,xmm0[4],zero,zero,zero,xmm0[5],zero,zero,zero,xmm0[6],zero,zero,zero,xmm0[7],zero,zero,zero
-	vpslld	$31, %ymm11, %ymm11
-	vblendvps	%ymm11, %ymm8, %ymm1, %ymm11
-	vpunpckhbw	%xmm0, %xmm0, %xmm0 # xmm0 = xmm0[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpslld	$31, %ymm0, %ymm0
-	vblendvps	%ymm0, %ymm6, %ymm1, %ymm0
-	vpermps	%ymm10, %ymm15, %ymm13
-	vmovaps	%ymm14, %ymm1
-	vpermps	%ymm0, %ymm1, %ymm14
-	vblendps	$170, %ymm14, %ymm13, %ymm13 # ymm13 = ymm13[0],ymm14[1],ymm13[2],ymm14[3],ymm13[4],ymm14[5],ymm13[6],ymm14[7]
-	vmovaps	.LCPI147_13(%rip), %ymm3 # ymm3 = <0,u,1,u,2,u,3,u>
-	vpermps	%ymm10, %ymm3, %ymm10
-	vmovaps	.LCPI147_12(%rip), %ymm2 # ymm2 = <u,0,u,1,u,2,u,3>
-	vpermps	%ymm0, %ymm2, %ymm0
-	vblendps	$170, %ymm0, %ymm10, %ymm0 # ymm0 = ymm10[0],ymm0[1],ymm10[2],ymm0[3],ymm10[4],ymm0[5],ymm10[6],ymm0[7]
-	vpermps	%ymm9, %ymm15, %ymm10
-	vpermps	%ymm11, %ymm1, %ymm14
-	vmovaps	%ymm1, %ymm12
-	vblendps	$170, %ymm14, %ymm10, %ymm10 # ymm10 = ymm10[0],ymm14[1],ymm10[2],ymm14[3],ymm10[4],ymm14[5],ymm10[6],ymm14[7]
-	vpermps	%ymm9, %ymm3, %ymm9
-	vpermps	%ymm11, %ymm2, %ymm11
-	vblendps	$170, %ymm11, %ymm9, %ymm9 # ymm9 = ymm9[0],ymm11[1],ymm9[2],ymm11[3],ymm9[4],ymm11[5],ymm9[6],ymm11[7]
-	vmovups	%ymm9, (%rax)
-	vmovups	%ymm10, 32(%rax)
-	vmovups	%ymm0, 64(%rax)
-	vmovups	%ymm13, 96(%rax)
-	jne	.LBB147_387
-# BB#386:                               #   in Loop: Header=BB147_374 Depth=4
-	movzbl	%bl, %ecx
-	vmovd	%ecx, %xmm0
-	movzbl	%r13b, %ecx
-	vmovd	%ecx, %xmm7
-	vpor	%xmm7, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_387:                            # %for deinterleaved$3.s0.v15.v15230
-                                        #   in Loop: Header=BB147_374 Depth=4
-	vpmovzxbd	%xmm7, %ymm0    # ymm0 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm0, %ymm0
-	vxorps	%ymm10, %ymm10, %ymm10
-	vblendvps	%ymm0, %ymm5, %ymm10, %ymm0
-	vpunpckhbw	%xmm7, %xmm7, %xmm7 # xmm7 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm7, %ymm7    # ymm7 = xmm7[0],zero,xmm7[1],zero,xmm7[2],zero,xmm7[3],zero,xmm7[4],zero,xmm7[5],zero,xmm7[6],zero,xmm7[7],zero
-	vpslld	$31, %ymm7, %ymm7
-	vblendvps	%ymm7, %ymm4, %ymm10, %ymm7
-	vmovdqa	2592(%rsp), %xmm1       # 16-byte Reload
-	vpmovzxbd	%xmm1, %ymm9    # ymm9 = xmm1[0],zero,zero,zero,xmm1[1],zero,zero,zero,xmm1[2],zero,zero,zero,xmm1[3],zero,zero,zero,xmm1[4],zero,zero,zero,xmm1[5],zero,zero,zero,xmm1[6],zero,zero,zero,xmm1[7],zero,zero,zero
-	vpslld	$31, %ymm9, %ymm9
-	vblendvps	%ymm9, %ymm8, %ymm10, %ymm9
-	vpunpckhbw	%xmm1, %xmm1, %xmm1 # xmm1 = xmm1[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vpslld	$31, %ymm1, %ymm1
-	vblendvps	%ymm1, %ymm6, %ymm10, %ymm1
-	vpermps	%ymm7, %ymm15, %ymm10
-	vpermps	%ymm1, %ymm12, %ymm11
-	vblendps	$170, %ymm11, %ymm10, %ymm10 # ymm10 = ymm10[0],ymm11[1],ymm10[2],ymm11[3],ymm10[4],ymm11[5],ymm10[6],ymm11[7]
-	vpermps	%ymm7, %ymm3, %ymm7
-	vmovaps	%ymm2, %ymm14
-	vpermps	%ymm1, %ymm14, %ymm1
-	vblendps	$170, %ymm1, %ymm7, %ymm1 # ymm1 = ymm7[0],ymm1[1],ymm7[2],ymm1[3],ymm7[4],ymm1[5],ymm7[6],ymm1[7]
-	vpermps	%ymm0, %ymm15, %ymm7
-	vpermps	%ymm9, %ymm12, %ymm11
-	vblendps	$170, %ymm11, %ymm7, %ymm7 # ymm7 = ymm7[0],ymm11[1],ymm7[2],ymm11[3],ymm7[4],ymm11[5],ymm7[6],ymm11[7]
-	vpermps	%ymm0, %ymm3, %ymm0
-	vmovaps	%ymm3, %ymm2
-	vpermps	%ymm9, %ymm14, %ymm9
-	vblendps	$170, %ymm9, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm9[1],ymm0[2],ymm9[3],ymm0[4],ymm9[5],ymm0[6],ymm9[7]
-	movq	2376(%rsp), %rcx        # 8-byte Reload
-	vmovups	%ymm0, 32(%rcx,%rax)
-	vmovups	%ymm7, 64(%rcx,%rax)
-	vmovups	%ymm1, 96(%rcx,%rax)
-	vmovups	%ymm10, 128(%rcx,%rax)
-	je	.LBB147_388
-# BB#389:                               # %for deinterleaved$3.s0.v15.v15230
-                                        #   in Loop: Header=BB147_374 Depth=4
-	vmovdqa	2752(%rsp), %xmm1       # 16-byte Reload
-	jmp	.LBB147_390
-	.align	16, 0x90
-.LBB147_388:                            #   in Loop: Header=BB147_374 Depth=4
-	vmovd	%r9d, %xmm0
-	vpbroadcastb	%xmm0, %xmm1
-.LBB147_390:                            # %for deinterleaved$3.s0.v15.v15230
-                                        #   in Loop: Header=BB147_374 Depth=4
-	vpmovzxbd	%xmm1, %ymm0    # ymm0 = xmm1[0],zero,zero,zero,xmm1[1],zero,zero,zero,xmm1[2],zero,zero,zero,xmm1[3],zero,zero,zero,xmm1[4],zero,zero,zero,xmm1[5],zero,zero,zero,xmm1[6],zero,zero,zero,xmm1[7],zero,zero,zero
-	vpslld	$31, %ymm0, %ymm0
-	vxorps	%ymm7, %ymm7, %ymm7
-	vblendvps	%ymm0, %ymm5, %ymm7, %ymm0
-	vpunpckhbw	%xmm1, %xmm1, %xmm1 # xmm1 = xmm1[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vpslld	$31, %ymm1, %ymm1
-	vblendvps	%ymm1, %ymm4, %ymm7, %ymm1
-	vmovdqa	2688(%rsp), %xmm4       # 16-byte Reload
-	vpmovzxbd	%xmm4, %ymm3    # ymm3 = xmm4[0],zero,zero,zero,xmm4[1],zero,zero,zero,xmm4[2],zero,zero,zero,xmm4[3],zero,zero,zero,xmm4[4],zero,zero,zero,xmm4[5],zero,zero,zero,xmm4[6],zero,zero,zero,xmm4[7],zero,zero,zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm8, %ymm7, %ymm3
-	vpunpckhbw	%xmm4, %xmm4, %xmm4 # xmm4 = xmm4[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm6, %ymm7, %ymm4
-	vmovaps	%ymm15, %ymm11
-	vpermps	%ymm1, %ymm11, %ymm5
-	vmovaps	%ymm12, %ymm9
-	vpermps	%ymm4, %ymm9, %ymm6
-	vblendps	$170, %ymm6, %ymm5, %ymm5 # ymm5 = ymm5[0],ymm6[1],ymm5[2],ymm6[3],ymm5[4],ymm6[5],ymm5[6],ymm6[7]
-	vpermps	%ymm1, %ymm2, %ymm1
-	vpermps	%ymm4, %ymm14, %ymm4
-	vblendps	$170, %ymm4, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm4[1],ymm1[2],ymm4[3],ymm1[4],ymm4[5],ymm1[6],ymm4[7]
-	vpermps	%ymm0, %ymm11, %ymm4
-	vpermps	%ymm3, %ymm9, %ymm6
-	vblendps	$170, %ymm6, %ymm4, %ymm4 # ymm4 = ymm4[0],ymm6[1],ymm4[2],ymm6[3],ymm4[4],ymm6[5],ymm4[6],ymm6[7]
-	vpermps	%ymm0, %ymm2, %ymm0
-	vpermps	%ymm3, %ymm14, %ymm3
-	vblendps	$170, %ymm3, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm3[1],ymm0[2],ymm3[3],ymm0[4],ymm3[5],ymm0[6],ymm3[7]
-	movq	2352(%rsp), %rcx        # 8-byte Reload
-	vmovups	%ymm0, (%rcx,%rax)
-	movq	2368(%rsp), %rcx        # 8-byte Reload
-	vmovups	%ymm4, 96(%rcx,%rax)
-	vmovups	%ymm1, 128(%rcx,%rax)
-	movq	2360(%rsp), %rcx        # 8-byte Reload
-	vmovups	%ymm5, (%rcx,%rax)
-	addl	$32, %esi
-	addl	$32, %edi
-	subq	$-128, %rax
-	addl	$-1, %r10d
-	jne	.LBB147_374
-.LBB147_391:                            # %end for deinterleaved$3.s0.v15.v15231
-                                        #   in Loop: Header=BB147_305 Depth=3
-	movl	720(%rsp), %eax         # 4-byte Reload
-	cmpl	908(%rsp), %eax         # 4-byte Folded Reload
-	jge	.LBB147_423
-# BB#392:                               # %for deinterleaved$3.s0.v15.v15233.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	movq	624(%rsp), %rax         # 8-byte Reload
-	movq	824(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rcx,%rax), %r13
-	movl	904(%rsp), %eax         # 4-byte Reload
-	testl	%eax, %eax
-	setne	%r10b
-	sete	%dl
-	movl	2656(%rsp), %ecx        # 4-byte Reload
-	movl	%ecx, %edi
-	andl	$1, %edi
-	movl	%edi, 1568(%rsp)        # 4-byte Spill
-	sete	%r9b
-	movq	912(%rsp), %rsi         # 8-byte Reload
-	movl	%esi, %r11d
-	imull	%ecx, %r11d
-	movl	%ecx, %esi
-	movq	2392(%rsp), %rbx        # 8-byte Reload
-	orl	%ebx, %esi
-	testb	$1, %sil
-	sete	%r8b
-	movb	%dil, %bl
-	andb	%dl, %bl
-	andb	%r10b, %r9b
-	testl	%ecx, %eax
-	setne	%sil
-	vpxor	%xmm0, %xmm0, %xmm0
-	vmovdqa	%xmm0, 1120(%rsp)       # 16-byte Spill
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_393
-# BB#394:                               # %for deinterleaved$3.s0.v15.v15233.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_395
-	.align	16, 0x90
-.LBB147_393:                            #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%r8d, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-.LBB147_395:                            # %for deinterleaved$3.s0.v15.v15233.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vmovdqa	%xmm0, 1104(%rsp)       # 16-byte Spill
-	je	.LBB147_396
-# BB#397:                               # %for deinterleaved$3.s0.v15.v15233.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_398
-	.align	16, 0x90
-.LBB147_396:                            #   in Loop: Header=BB147_305 Depth=3
-	movzbl	%bl, %ecx
-	vmovd	%ecx, %xmm0
-	movzbl	%r9b, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-.LBB147_398:                            # %for deinterleaved$3.s0.v15.v15233.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vmovdqa	%xmm0, 1056(%rsp)       # 16-byte Spill
-	jne	.LBB147_400
-# BB#399:                               #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%esi, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-	vmovdqa	%xmm0, 1120(%rsp)       # 16-byte Spill
-.LBB147_400:                            # %for deinterleaved$3.s0.v15.v15233.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%r11d, %xmm1
-	vpabsd	880(%rsp), %xmm0        # 16-byte Folded Reload
-	cmpl	$0, 104(%rbp)
-	jne	.LBB147_402
-# BB#401:                               #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%ebx, %xmm3
-	vpbroadcastb	%xmm3, %xmm2
-	vmovdqa	%xmm2, 1104(%rsp)       # 16-byte Spill
-.LBB147_402:                            # %for deinterleaved$3.s0.v15.v15233.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vpsubd	832(%rsp), %ymm1, %ymm1 # 32-byte Folded Reload
-	jne	.LBB147_404
-# BB#403:                               #   in Loop: Header=BB147_305 Depth=3
-	movzbl	%r8b, %ecx
-	vmovd	%ecx, %xmm2
-	movzbl	%sil, %ecx
-	vmovd	%ecx, %xmm3
-	vpor	%xmm3, %xmm2, %xmm2
-	vpbroadcastb	%xmm2, %xmm2
-	vmovdqa	%xmm2, 1056(%rsp)       # 16-byte Spill
-.LBB147_404:                            # %for deinterleaved$3.s0.v15.v15233.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	jne	.LBB147_406
-# BB#405:                               #   in Loop: Header=BB147_305 Depth=3
-	vmovd	%r9d, %xmm3
-	vpbroadcastb	%xmm3, %xmm2
-	vmovdqa	%xmm2, 1120(%rsp)       # 16-byte Spill
-.LBB147_406:                            # %for deinterleaved$3.s0.v15.v15233.preheader
-                                        #   in Loop: Header=BB147_305 Depth=3
-	vinserti128	$1, %xmm0, %ymm0, %ymm0
-	vmovdqa	%ymm0, 960(%rsp)        # 32-byte Spill
-	vpbroadcastd	%xmm1, %ymm0
-	vmovdqa	%ymm0, 928(%rsp)        # 32-byte Spill
-	movl	592(%rsp), %ecx         # 4-byte Reload
-	movq	600(%rsp), %rax         # 8-byte Reload
-	movl	%eax, %r15d
-	.align	16, 0x90
-.LBB147_407:                            # %for deinterleaved$3.s0.v15.v15233
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_305 Depth=3
-                                        # =>      This Inner Loop Header: Depth=4
-	movl	%ecx, 2752(%rsp)        # 4-byte Spill
-	cmpl	$0, 1568(%rsp)          # 4-byte Folded Reload
-	setne	2560(%rsp)              # 1-byte Folded Spill
-	sete	2592(%rsp)              # 1-byte Folded Spill
-	movq	2032(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%r15), %ecx
-	movl	%ecx, 1504(%rsp)        # 4-byte Spill
-	movl	%ecx, %eax
-	andl	$1, %eax
-	movl	%eax, 2688(%rsp)        # 4-byte Spill
-	sete	%al
-	movl	%eax, 2528(%rsp)        # 4-byte Spill
-	movl	%ecx, %eax
-	orl	2656(%rsp), %eax        # 4-byte Folded Reload
-	testb	$1, %al
-	sete	%al
-	movl	%eax, 1472(%rsp)        # 4-byte Spill
-	movq	2040(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%r15), %eax
-	vmovd	%eax, %xmm0
-	vpbroadcastd	%xmm0, %ymm5
-	vmovdqa	.LCPI147_9(%rip), %ymm13 # ymm13 = [0,2,4,6,8,10,12,14]
-	vpaddd	%ymm13, %ymm5, %ymm6
-	vmovdqa	%ymm13, %ymm3
-	vextracti128	$1, %ymm6, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	vmovdqa	2080(%rsp), %ymm2       # 32-byte Reload
-	vextracti128	$1, %ymm2, %xmm1
-	vpextrd	$1, %xmm1, %r8d
-	cltd
-	idivl	%r8d
-	movl	%edx, 2496(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	vmovd	%xmm1, %r10d
-	cltd
-	idivl	%r10d
-	movl	%edx, 2400(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	vpextrd	$2, %xmm1, %esi
-	cltd
-	idivl	%esi
-	movl	%edx, 1880(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	vpextrd	$3, %xmm1, %ebx
-	cltd
-	idivl	%ebx
-	movl	%edx, 1824(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm6, %eax
-	vpextrd	$1, %xmm2, %ecx
-	movl	%ecx, 1376(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1792(%rsp)        # 4-byte Spill
-	vmovd	%xmm6, %eax
-	vmovd	%xmm2, %ecx
-	movl	%ecx, 1368(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1760(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm6, %eax
-	vpextrd	$2, %xmm2, %edi
-	cltd
-	idivl	%edi
-	movl	%edx, 1728(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm6, %eax
-	vpextrd	$3, %xmm2, %r9d
-	cltd
-	idivl	%r9d
-	movl	%edx, 1696(%rsp)        # 4-byte Spill
-	vmovdqa	.LCPI147_8(%rip), %ymm12 # ymm12 = [16,18,20,22,24,26,28,30]
-	vpaddd	%ymm12, %ymm5, %ymm5
-	vextracti128	$1, %ymm5, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, 1664(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, 1632(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%esi
-	movl	%edx, 1600(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%ebx
-	movl	%edx, 1440(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm5, %eax
-	vpextrd	$1, %xmm2, %ecx
-	movl	%ecx, 1360(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1408(%rsp)        # 4-byte Spill
-	vmovd	%xmm5, %eax
-	vmovd	%xmm2, %ecx
-	movl	%ecx, 1352(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1400(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm5, %eax
-	vpextrd	$2, %xmm2, %ecx
-	movl	%ecx, 1312(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1392(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm5, %eax
-	vpextrd	$3, %xmm2, %ecx
-	movl	%ecx, 1280(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1384(%rsp)        # 4-byte Spill
-	movq	2136(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%r15), %eax
-	vmovd	%eax, %xmm0
-	vpbroadcastd	%xmm0, %ymm5
-	vmovdqa	%ymm3, %ymm8
-	vpaddd	%ymm8, %ymm5, %ymm6
-	vextracti128	$1, %ymm6, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, %r12d
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, 1272(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%esi
-	movl	%edx, 1216(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%ebx
-	movl	%edx, 1176(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm6, %eax
-	cltd
-	idivl	1376(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r11d
-	vmovd	%xmm6, %eax
-	cltd
-	idivl	1368(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %ecx
-	vpextrd	$2, %xmm6, %eax
-	cltd
-	idivl	%edi
-	movl	%edx, %edi
-	vpextrd	$3, %xmm6, %eax
-	cltd
-	idivl	%r9d
-	movl	%edx, 1264(%rsp)        # 4-byte Spill
-	vmovdqa	%ymm12, %ymm2
-	vpaddd	%ymm2, %ymm5, %ymm5
-	vextracti128	$1, %ymm5, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, 1376(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, 1368(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%esi
-	movl	%edx, 1184(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%ebx
-	movl	%edx, %r10d
-	vpextrd	$1, %xmm5, %eax
-	cltd
-	idivl	1360(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r8d
-	vmovd	%xmm5, %eax
-	cltd
-	idivl	1352(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %esi
-	vpextrd	$2, %xmm5, %eax
-	cltd
-	idivl	1312(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r9d
-	vpextrd	$3, %xmm5, %eax
-	cltd
-	idivl	1280(%rsp)              # 4-byte Folded Reload
-	vmovd	2400(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 2496(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1880(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1824(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vmovd	1760(%rsp), %xmm1       # 4-byte Folded Reload
-                                        # xmm1 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1792(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vpinsrd	$2, 1728(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vpinsrd	$3, 1696(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vmovd	1632(%rsp), %xmm5       # 4-byte Folded Reload
-                                        # xmm5 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1664(%rsp), %xmm5, %xmm5 # 4-byte Folded Reload
-	vpinsrd	$2, 1600(%rsp), %xmm5, %xmm5 # 4-byte Folded Reload
-	vpinsrd	$3, 1440(%rsp), %xmm5, %xmm7 # 4-byte Folded Reload
-	vmovd	1400(%rsp), %xmm5       # 4-byte Folded Reload
-                                        # xmm5 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1408(%rsp), %xmm5, %xmm5 # 4-byte Folded Reload
-	vpinsrd	$2, 1392(%rsp), %xmm5, %xmm5 # 4-byte Folded Reload
-	vpinsrd	$3, 1384(%rsp), %xmm5, %xmm10 # 4-byte Folded Reload
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%r15), %eax
-	vmovd	%eax, %xmm3
-	vmovd	1272(%rsp), %xmm5       # 4-byte Folded Reload
-                                        # xmm5 = mem[0],zero,zero,zero
-	vpinsrd	$1, %r12d, %xmm5, %xmm5
-	vpinsrd	$2, 1216(%rsp), %xmm5, %xmm5 # 4-byte Folded Reload
-	vpinsrd	$3, 1176(%rsp), %xmm5, %xmm4 # 4-byte Folded Reload
-	vmovdqa	%xmm4, 2496(%rsp)       # 16-byte Spill
-	vmovd	%ecx, %xmm5
-	vpinsrd	$1, %r11d, %xmm5, %xmm5
-	vpinsrd	$2, %edi, %xmm5, %xmm13
-	movl	1504(%rsp), %r11d       # 4-byte Reload
-	vmovd	%r11d, %xmm5
-	vpbroadcastd	%xmm5, %ymm14
-	vpaddd	%ymm8, %ymm14, %ymm5
-	vmovdqa	%ymm8, %ymm4
-	vmovdqa	2064(%rsp), %xmm9       # 16-byte Reload
-	vpminsd	%xmm9, %xmm5, %xmm6
-	vextracti128	$1, %ymm5, %xmm5
-	vpminsd	%xmm9, %xmm5, %xmm5
-	vmovdqa	2048(%rsp), %xmm11      # 16-byte Reload
-	vpmaxsd	%xmm11, %xmm6, %xmm6
-	vpmaxsd	%xmm11, %xmm5, %xmm5
-	vinserti128	$1, %xmm5, %ymm6, %ymm12
-	vmovd	%r15d, %xmm5
-	vpbroadcastd	%xmm5, %ymm6
-	vinserti128	$1, %xmm0, %ymm1, %ymm0
-	vpsrad	$31, %ymm0, %ymm1
-	vmovdqa	960(%rsp), %ymm5        # 32-byte Reload
-	vpand	%ymm1, %ymm5, %ymm1
-	vmovdqa	2240(%rsp), %ymm15      # 32-byte Reload
-	vpaddd	%ymm0, %ymm15, %ymm0
-	vpaddd	%ymm1, %ymm0, %ymm0
-	vpabsd	%xmm0, %xmm1
-	vextracti128	$1, %ymm0, %xmm0
-	vpabsd	%xmm0, %xmm0
-	vinserti128	$1, %xmm0, %ymm1, %ymm0
-	vmovdqa	2304(%rsp), %ymm1       # 32-byte Reload
-	vpcmpgtd	%ymm6, %ymm1, %ymm1
-	vmovdqa	2208(%rsp), %ymm8       # 32-byte Reload
-	vpsubd	%ymm0, %ymm8, %ymm0
-	vblendvps	%ymm1, %ymm12, %ymm0, %ymm12
-	vpaddd	%ymm2, %ymm14, %ymm0
-	vpminsd	%xmm9, %xmm0, %xmm1
-	vextracti128	$1, %ymm0, %xmm0
-	vpminsd	%xmm9, %xmm0, %xmm0
-	vpmaxsd	%xmm11, %xmm1, %xmm1
-	vpmaxsd	%xmm11, %xmm0, %xmm0
-	vinserti128	$1, %xmm0, %ymm1, %ymm0
-	vinserti128	$1, %xmm7, %ymm10, %ymm1
-	vpsrad	$31, %ymm1, %ymm7
-	vpand	%ymm7, %ymm5, %ymm7
-	vpaddd	%ymm1, %ymm15, %ymm1
-	vpaddd	%ymm7, %ymm1, %ymm1
-	vpabsd	%xmm1, %xmm7
-	vextracti128	$1, %ymm1, %xmm1
-	vpabsd	%xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm7, %ymm1
-	vmovdqa	2272(%rsp), %ymm7       # 32-byte Reload
-	vpcmpgtd	%ymm6, %ymm7, %ymm7
-	vpsubd	%ymm1, %ymm8, %ymm1
-	vblendvps	%ymm7, %ymm0, %ymm1, %ymm0
-	vpbroadcastd	%xmm3, %ymm1
-	vpaddd	%ymm2, %ymm1, %ymm2
-	vpaddd	%ymm4, %ymm1, %ymm1
-	vpminsd	%xmm9, %xmm1, %xmm7
-	vextracti128	$1, %ymm1, %xmm1
-	vpminsd	%xmm9, %xmm1, %xmm1
-	vpmaxsd	%xmm11, %xmm7, %xmm7
-	vpmaxsd	%xmm11, %xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm7, %ymm1
-	vpminsd	%xmm9, %xmm2, %xmm7
-	vextracti128	$1, %ymm2, %xmm2
-	vpminsd	%xmm9, %xmm2, %xmm2
-	vpmaxsd	%xmm11, %xmm7, %xmm7
-	vpmaxsd	%xmm11, %xmm2, %xmm2
-	vinserti128	$1, %xmm2, %ymm7, %ymm2
-	vpinsrd	$3, 1264(%rsp), %xmm13, %xmm4 # 4-byte Folded Reload
-	vinserti128	$1, 2496(%rsp), %ymm4, %ymm3 # 16-byte Folded Reload
-	vpsrad	$31, %ymm3, %ymm4
-	vpand	%ymm5, %ymm4, %ymm4
-	vpaddd	%ymm3, %ymm15, %ymm3
-	vpaddd	%ymm4, %ymm3, %ymm3
-	vpabsd	%xmm3, %xmm4
-	vextracti128	$1, %ymm3, %xmm3
-	vpabsd	%xmm3, %xmm3
-	vinserti128	$1, %xmm3, %ymm4, %ymm3
-	vmovdqa	2176(%rsp), %ymm4       # 32-byte Reload
-	vpcmpgtd	%ymm6, %ymm4, %ymm4
-	vpsubd	%ymm3, %ymm8, %ymm3
-	vblendvps	%ymm4, %ymm1, %ymm3, %ymm7
-	vmovd	1368(%rsp), %xmm1       # 4-byte Folded Reload
-                                        # xmm1 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1376(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vpinsrd	$2, 1184(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vpinsrd	$3, %r10d, %xmm1, %xmm1
-	movl	2528(%rsp), %ebx        # 4-byte Reload
-	vmovd	%esi, %xmm3
-	vpinsrd	$1, %r8d, %xmm3, %xmm3
-	vpinsrd	$2, %r9d, %xmm3, %xmm3
-	vpinsrd	$3, %edx, %xmm3, %xmm3
-	vinserti128	$1, %xmm1, %ymm3, %ymm1
-	vpsrad	$31, %ymm1, %ymm3
-	vpand	%ymm5, %ymm3, %ymm3
-	vpaddd	%ymm1, %ymm15, %ymm1
-	vpaddd	%ymm3, %ymm1, %ymm1
-	vpabsd	%xmm1, %xmm3
-	vextracti128	$1, %ymm1, %xmm1
-	vpabsd	%xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm3, %ymm1
-	vmovdqa	2144(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm6, %ymm3, %ymm3
-	vpsubd	%ymm1, %ymm8, %ymm1
-	vblendvps	%ymm3, %ymm2, %ymm1, %ymm1
-	vmovdqa	928(%rsp), %ymm3        # 32-byte Reload
-	vpaddd	%ymm12, %ymm3, %ymm2
-	vpextrq	$1, %xmm2, %rcx
-	movq	%rcx, 1408(%rsp)        # 8-byte Spill
-	vmovq	%xmm2, %r8
-	vextracti128	$1, %ymm2, %xmm2
-	vpextrq	$1, %xmm2, %r12
-	movq	%r12, 1312(%rsp)        # 8-byte Spill
-	vmovq	%xmm2, %r10
-	movq	%r10, 1440(%rsp)        # 8-byte Spill
-	andb	2560(%rsp), %bl         # 1-byte Folded Reload
-	vpaddd	%ymm0, %ymm3, %ymm0
-	movq	%r8, %rax
-	sarq	$32, %rax
-	movq	%rax, 1880(%rsp)        # 8-byte Spill
-	movq	%rcx, %rax
-	sarq	$32, %rax
-	movq	%rax, 2560(%rsp)        # 8-byte Spill
-	sarq	$32, %r10
-	sarq	$32, %r12
-	vmovq	%xmm0, %rax
-	movl	2688(%rsp), %edx        # 4-byte Reload
-	andb	2592(%rsp), %dl         # 1-byte Folded Reload
-	movl	%edx, 2688(%rsp)        # 4-byte Spill
-	movq	%rax, %rcx
-	sarq	$32, %rcx
-	movq	%rcx, 1600(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rsi
-	movq	%rsi, %rcx
-	sarq	$32, %rcx
-	movq	%rcx, 1664(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm0, %xmm0
-	vmovq	%xmm0, %rcx
-	movq	%rcx, 1264(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1632(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1216(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1696(%rsp)        # 8-byte Spill
-	vpaddd	%ymm1, %ymm3, %ymm0
-	vpaddd	%ymm7, %ymm3, %ymm1
-	vmovq	%xmm1, %r9
-	movq	%r9, %rdx
-	sarq	$32, %rdx
-	movq	%rdx, 2400(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rdx
-	movq	%rdx, 1400(%rsp)        # 8-byte Spill
-	sarq	$32, %rdx
-	movq	%rdx, 2528(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm1, %xmm1
-	vmovq	%xmm1, %rdx
-	movq	%rdx, 1392(%rsp)        # 8-byte Spill
-	sarq	$32, %rdx
-	movq	%rdx, 2496(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rdx
-	movq	%rdx, 1384(%rsp)        # 8-byte Spill
-	sarq	$32, %rdx
-	movq	%rdx, 2592(%rsp)        # 8-byte Spill
-	vmovq	%xmm0, %rdx
-	movq	%rdx, %rcx
-	sarq	$32, %rcx
-	movq	%rcx, 1728(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1360(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1792(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm0, %xmm0
-	vmovq	%xmm0, %rcx
-	movq	%rcx, 1280(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1760(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1272(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1824(%rsp)        # 8-byte Spill
-	testl	1568(%rsp), %r11d       # 4-byte Folded Reload
-	vpxor	%xmm5, %xmm5, %xmm5
-	setne	%dil
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_408
-# BB#409:                               # %for deinterleaved$3.s0.v15.v15233
-                                        #   in Loop: Header=BB147_407 Depth=4
-	vpxor	%xmm7, %xmm7, %xmm7
-	jmp	.LBB147_410
-	.align	16, 0x90
-.LBB147_408:                            #   in Loop: Header=BB147_407 Depth=4
-	movl	1472(%rsp), %ecx        # 4-byte Reload
-	vmovd	%ecx, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_410:                            # %for deinterleaved$3.s0.v15.v15233
-                                        #   in Loop: Header=BB147_407 Depth=4
-	vmovaps	.LCPI147_10(%rip), %ymm9 # ymm9 = <u,4,u,5,u,6,u,7>
-	vmovaps	.LCPI147_11(%rip), %ymm11 # ymm11 = <4,u,5,u,6,u,7,u>
-	je	.LBB147_411
-# BB#412:                               # %for deinterleaved$3.s0.v15.v15233
-                                        #   in Loop: Header=BB147_407 Depth=4
-	vpxor	%xmm6, %xmm6, %xmm6
-	jmp	.LBB147_413
-	.align	16, 0x90
-.LBB147_411:                            #   in Loop: Header=BB147_407 Depth=4
-	movzbl	%bl, %ecx
-	vmovd	%ecx, %xmm0
-	movl	2688(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm6
-.LBB147_413:                            # %for deinterleaved$3.s0.v15.v15233
-                                        #   in Loop: Header=BB147_407 Depth=4
-	movl	2752(%rsp), %ecx        # 4-byte Reload
-	jne	.LBB147_415
-# BB#414:                               #   in Loop: Header=BB147_407 Depth=4
-	vmovd	%edi, %xmm0
-	vpbroadcastb	%xmm0, %xmm5
-.LBB147_415:                            # %for deinterleaved$3.s0.v15.v15233
-                                        #   in Loop: Header=BB147_407 Depth=4
-	movq	%r13, 2624(%rsp)        # 8-byte Spill
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_416
-# BB#417:                               # %for deinterleaved$3.s0.v15.v15233
-                                        #   in Loop: Header=BB147_407 Depth=4
-	movl	%edi, 1152(%rsp)        # 4-byte Spill
-	movq	%r15, 1504(%rsp)        # 8-byte Spill
-	movl	%ecx, 2752(%rsp)        # 4-byte Spill
-	jmp	.LBB147_418
-	.align	16, 0x90
-.LBB147_416:                            #   in Loop: Header=BB147_407 Depth=4
-	movl	%edi, 1152(%rsp)        # 4-byte Spill
-	movq	%r15, 1504(%rsp)        # 8-byte Spill
-	movl	%ecx, 2752(%rsp)        # 4-byte Spill
-	vmovd	%ebx, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_418:                            # %for deinterleaved$3.s0.v15.v15233
-                                        #   in Loop: Header=BB147_407 Depth=4
-	movq	1440(%rsp), %rbx        # 8-byte Reload
-	movq	1408(%rsp), %rdi        # 8-byte Reload
-	movq	%rsi, %r13
-	movq	1312(%rsp), %r15        # 8-byte Reload
-	cltq
-	movq	%rax, 1184(%rsp)        # 8-byte Spill
-	movq	2384(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm1
-	movslq	%r8d, %rax
-	movq	%rax, 1368(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm0
-	movslq	%edx, %rax
-	movq	%rax, 1352(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	movslq	%r9d, %rax
-	movq	%rax, 1376(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	movslq	%edi, %r11
-	movslq	%ebx, %rdx
-	movslq	%r15d, %rsi
-	movq	%rsi, 1176(%rsp)        # 8-byte Spill
-	movslq	%r13d, %r13
-	movq	1264(%rsp), %rax        # 8-byte Reload
-	movslq	%eax, %rbx
-	movq	1216(%rsp), %rax        # 8-byte Reload
-	movslq	%eax, %rdi
-	movq	1600(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rax,2), %xmm1, %xmm1
-	vpinsrw	$2, (%rcx,%r13,2), %xmm1, %xmm1
-	movq	1664(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rax,2), %xmm1, %xmm1
-	vpinsrw	$4, (%rcx,%rbx,2), %xmm1, %xmm1
-	movq	1632(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rax,2), %xmm1, %xmm1
-	vpinsrw	$6, (%rcx,%rdi,2), %xmm1, %xmm1
-	movq	1696(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rax,2), %xmm1, %xmm1
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vcvtdq2ps	%ymm1, %ymm1
-	movq	1880(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rax,2), %xmm0, %xmm0
-	vpinsrw	$2, (%rcx,%r11,2), %xmm0, %xmm0
-	movq	2560(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rax,2), %xmm0, %xmm0
-	vpinsrw	$4, (%rcx,%rdx,2), %xmm0, %xmm0
-	vpinsrw	$5, (%rcx,%r10,2), %xmm0, %xmm0
-	movq	%r10, 1440(%rsp)        # 8-byte Spill
-	vpinsrw	$6, (%rcx,%rsi,2), %xmm0, %xmm0
-	vpinsrw	$7, (%rcx,%r12,2), %xmm0, %xmm0
-	movq	%r12, 1312(%rsp)        # 8-byte Spill
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vcvtdq2ps	%ymm0, %ymm0
-	vpmovzxbd	%xmm7, %ymm4    # ymm4 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vpxor	%ymm8, %ymm8, %ymm8
-	vblendvps	%ymm4, %ymm0, %ymm8, %ymm0
-	vpunpckhbw	%xmm7, %xmm7, %xmm4 # xmm4 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm1, %ymm8, %ymm1
-	movq	1400(%rsp), %rax        # 8-byte Reload
-	movslq	%eax, %r8
-	movq	%r8, 1264(%rsp)         # 8-byte Spill
-	movq	1392(%rsp), %rax        # 8-byte Reload
-	movslq	%eax, %r15
-	movq	%r15, 1400(%rsp)        # 8-byte Spill
-	movq	1384(%rsp), %rax        # 8-byte Reload
-	movslq	%eax, %r12
-	movq	%r12, 1408(%rsp)        # 8-byte Spill
-	movq	1360(%rsp), %rax        # 8-byte Reload
-	movslq	%eax, %rsi
-	movq	1280(%rsp), %rax        # 8-byte Reload
-	movslq	%eax, %r10
-	movq	1272(%rsp), %rax        # 8-byte Reload
-	movslq	%eax, %r9
-	movq	%r9, 1392(%rsp)         # 8-byte Spill
-	movq	1728(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rax,2), %xmm2, %xmm2
-	vpinsrw	$2, (%rcx,%rsi,2), %xmm2, %xmm2
-	movq	1792(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rax,2), %xmm2, %xmm2
-	vpinsrw	$4, (%rcx,%r10,2), %xmm2, %xmm2
-	movq	1760(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rax,2), %xmm2, %xmm2
-	vpinsrw	$6, (%rcx,%r9,2), %xmm2, %xmm2
-	movq	1824(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rax,2), %xmm2, %xmm2
-	vpmovzxwd	%xmm2, %ymm2    # ymm2 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
-	vcvtdq2ps	%ymm2, %ymm2
-	movq	2400(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rax,2), %xmm3, %xmm3
-	vpinsrw	$2, (%rcx,%r8,2), %xmm3, %xmm3
-	movq	2528(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rax,2), %xmm3, %xmm3
-	vpinsrw	$4, (%rcx,%r15,2), %xmm3, %xmm3
-	movq	2496(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rax,2), %xmm3, %xmm3
-	vpinsrw	$6, (%rcx,%r12,2), %xmm3, %xmm3
-	movq	2592(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rax,2), %xmm3, %xmm3
-	movq	%rcx, %rax
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vcvtdq2ps	%ymm3, %ymm3
-	vmovdqa	1104(%rsp), %xmm7       # 16-byte Reload
-	vpmovzxbd	%xmm7, %ymm4    # ymm4 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm3, %ymm8, %ymm3
-	vpunpckhbw	%xmm7, %xmm7, %xmm4 # xmm4 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm2, %ymm8, %ymm2
-	vpermps	%ymm2, %ymm9, %ymm4
-	vpermps	%ymm1, %ymm11, %ymm7
-	vblendps	$170, %ymm4, %ymm7, %ymm4 # ymm4 = ymm7[0],ymm4[1],ymm7[2],ymm4[3],ymm7[4],ymm4[5],ymm7[6],ymm4[7]
-	vmovaps	.LCPI147_12(%rip), %ymm7 # ymm7 = <u,0,u,1,u,2,u,3>
-	vmovaps	%ymm7, %ymm8
-	vpermps	%ymm2, %ymm8, %ymm2
-	vmovaps	.LCPI147_13(%rip), %ymm7 # ymm7 = <0,u,1,u,2,u,3,u>
-	vmovaps	%ymm7, %ymm10
-	vpermps	%ymm1, %ymm10, %ymm1
-	vblendps	$170, %ymm2, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm2[1],ymm1[2],ymm2[3],ymm1[4],ymm2[5],ymm1[6],ymm2[7]
-	vpermps	%ymm3, %ymm9, %ymm2
-	vpermps	%ymm0, %ymm11, %ymm7
-	vblendps	$170, %ymm2, %ymm7, %ymm2 # ymm2 = ymm7[0],ymm2[1],ymm7[2],ymm2[3],ymm7[4],ymm2[5],ymm7[6],ymm2[7]
-	vpermps	%ymm3, %ymm8, %ymm3
-	vmovaps	%ymm8, %ymm12
-	vpermps	%ymm0, %ymm10, %ymm0
-	vmovaps	%ymm10, %ymm13
-	vblendps	$170, %ymm3, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm3[1],ymm0[2],ymm3[3],ymm0[4],ymm3[5],ymm0[6],ymm3[7]
-	movq	2624(%rsp), %rcx        # 8-byte Reload
-	vmovups	%ymm0, (%rcx)
-	vmovups	%ymm2, 32(%rcx)
-	vmovups	%ymm1, 64(%rcx)
-	vmovups	%ymm4, 96(%rcx)
-	jne	.LBB147_420
-# BB#419:                               #   in Loop: Header=BB147_407 Depth=4
-	movl	1472(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm0
-	movl	1152(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm6
-.LBB147_420:                            # %for deinterleaved$3.s0.v15.v15233
-                                        #   in Loop: Header=BB147_407 Depth=4
-	movq	1184(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rax,%rcx,2), %ecx
-	vmovd	%ecx, %xmm0
-	movq	1600(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rax,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$2, (%rax,%r13,2), %xmm0, %xmm0
-	movq	1664(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%rax,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$4, (%rax,%rbx,2), %xmm0, %xmm0
-	movq	1632(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%rax,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$6, (%rax,%rdi,2), %xmm0, %xmm0
-	movq	1696(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%rax,%rcx,2), %xmm0, %xmm0
-	movq	1368(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rax,%rcx,2), %ecx
-	vmovd	%ecx, %xmm1
-	movq	1880(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rax,%rcx,2), %xmm1, %xmm1
-	vpinsrw	$2, (%rax,%r11,2), %xmm1, %xmm1
-	movq	2560(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%rax,%rcx,2), %xmm1, %xmm1
-	vpinsrw	$4, (%rax,%rdx,2), %xmm1, %xmm1
-	movq	1440(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%rax,%rcx,2), %xmm1, %xmm1
-	movq	1176(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$6, (%rax,%rcx,2), %xmm1, %xmm1
-	movq	1312(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%rax,%rcx,2), %xmm1, %xmm1
-	movq	1352(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rax,%rcx,2), %ecx
-	vmovd	%ecx, %xmm2
-	movq	1728(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rax,%rcx,2), %xmm2, %xmm2
-	vpinsrw	$2, (%rax,%rsi,2), %xmm2, %xmm2
-	movq	1792(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%rax,%rcx,2), %xmm2, %xmm2
-	vpinsrw	$4, (%rax,%r10,2), %xmm2, %xmm2
-	movq	1760(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%rax,%rcx,2), %xmm2, %xmm2
-	movq	1392(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$6, (%rax,%rcx,2), %xmm2, %xmm2
-	movq	1824(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%rax,%rcx,2), %xmm2, %xmm2
-	movq	1376(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rax,%rcx,2), %ecx
-	vmovd	%ecx, %xmm3
-	movq	2400(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rax,%rcx,2), %xmm3, %xmm3
-	movq	1264(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$2, (%rax,%rcx,2), %xmm3, %xmm3
-	movq	2528(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%rax,%rcx,2), %xmm3, %xmm3
-	movq	1400(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$4, (%rax,%rcx,2), %xmm3, %xmm3
-	movq	2496(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%rax,%rcx,2), %xmm3, %xmm3
-	movq	1408(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$6, (%rax,%rcx,2), %xmm3, %xmm3
-	movq	2592(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%rax,%rcx,2), %xmm3, %xmm3
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vcvtdq2ps	%ymm0, %ymm0
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vcvtdq2ps	%ymm1, %ymm7
-	vpmovzxbd	%xmm6, %ymm1    # ymm1 = xmm6[0],zero,zero,zero,xmm6[1],zero,zero,zero,xmm6[2],zero,zero,zero,xmm6[3],zero,zero,zero,xmm6[4],zero,zero,zero,xmm6[5],zero,zero,zero,xmm6[6],zero,zero,zero,xmm6[7],zero,zero,zero
-	vpslld	$31, %ymm1, %ymm1
-	vxorps	%ymm8, %ymm8, %ymm8
-	vblendvps	%ymm1, %ymm7, %ymm8, %ymm4
-	vpunpckhbw	%xmm6, %xmm6, %xmm1 # xmm1 = xmm6[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vpslld	$31, %ymm1, %ymm1
-	vblendvps	%ymm1, %ymm0, %ymm8, %ymm10
-	vpmovzxwd	%xmm2, %ymm1    # ymm1 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
-	vcvtdq2ps	%ymm1, %ymm6
-	vpmovzxwd	%xmm3, %ymm1    # ymm1 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vcvtdq2ps	%ymm1, %ymm1
-	vmovdqa	1056(%rsp), %xmm3       # 16-byte Reload
-	vpmovzxbd	%xmm3, %ymm2    # ymm2 = xmm3[0],zero,zero,zero,xmm3[1],zero,zero,zero,xmm3[2],zero,zero,zero,xmm3[3],zero,zero,zero,xmm3[4],zero,zero,zero,xmm3[5],zero,zero,zero,xmm3[6],zero,zero,zero,xmm3[7],zero,zero,zero
-	vpslld	$31, %ymm2, %ymm2
-	vblendvps	%ymm2, %ymm1, %ymm8, %ymm2
-	vpunpckhbw	%xmm3, %xmm3, %xmm3 # xmm3 = xmm3[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm6, %ymm8, %ymm3
-	vpermps	%ymm3, %ymm9, %ymm14
-	vpermps	%ymm10, %ymm11, %ymm15
-	vblendps	$170, %ymm14, %ymm15, %ymm14 # ymm14 = ymm15[0],ymm14[1],ymm15[2],ymm14[3],ymm15[4],ymm14[5],ymm15[6],ymm14[7]
-	vpermps	%ymm3, %ymm12, %ymm3
-	vpermps	%ymm10, %ymm13, %ymm10
-	vblendps	$170, %ymm3, %ymm10, %ymm3 # ymm3 = ymm10[0],ymm3[1],ymm10[2],ymm3[3],ymm10[4],ymm3[5],ymm10[6],ymm3[7]
-	vpermps	%ymm2, %ymm9, %ymm10
-	vpermps	%ymm4, %ymm11, %ymm15
-	vblendps	$170, %ymm10, %ymm15, %ymm10 # ymm10 = ymm15[0],ymm10[1],ymm15[2],ymm10[3],ymm15[4],ymm10[5],ymm15[6],ymm10[7]
-	vpermps	%ymm2, %ymm12, %ymm2
-	vmovaps	%ymm12, %ymm8
-	vpermps	%ymm4, %ymm13, %ymm4
-	vmovaps	%ymm13, %ymm12
-	vblendps	$170, %ymm2, %ymm4, %ymm2 # ymm2 = ymm4[0],ymm2[1],ymm4[2],ymm2[3],ymm4[4],ymm2[5],ymm4[6],ymm2[7]
-	movq	2376(%rsp), %rax        # 8-byte Reload
-	movq	2624(%rsp), %r13        # 8-byte Reload
-	vmovups	%ymm2, 32(%rax,%r13)
-	vmovups	%ymm10, 64(%rax,%r13)
-	vmovups	%ymm3, 96(%rax,%r13)
-	vmovups	%ymm14, 128(%rax,%r13)
-	jne	.LBB147_422
-# BB#421:                               #   in Loop: Header=BB147_407 Depth=4
-	movl	2688(%rsp), %eax        # 4-byte Reload
-	vmovd	%eax, %xmm2
-	vpbroadcastb	%xmm2, %xmm5
-.LBB147_422:                            # %for deinterleaved$3.s0.v15.v15233
-                                        #   in Loop: Header=BB147_407 Depth=4
-	movl	2752(%rsp), %ecx        # 4-byte Reload
-	movq	1504(%rsp), %r15        # 8-byte Reload
-	vpmovzxbd	%xmm5, %ymm2    # ymm2 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
-	vpslld	$31, %ymm2, %ymm2
-	vxorps	%ymm4, %ymm4, %ymm4
-	vblendvps	%ymm2, %ymm7, %ymm4, %ymm2
-	vpunpckhbw	%xmm5, %xmm5, %xmm3 # xmm3 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm0, %ymm4, %ymm0
-	vmovdqa	1120(%rsp), %xmm5       # 16-byte Reload
-	vpmovzxbd	%xmm5, %ymm3    # ymm3 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm1, %ymm4, %ymm1
-	vpunpckhbw	%xmm5, %xmm5, %xmm3 # xmm3 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm6, %ymm4, %ymm3
-	vpermps	%ymm3, %ymm9, %ymm4
-	vpermps	%ymm0, %ymm11, %ymm5
-	vblendps	$170, %ymm4, %ymm5, %ymm4 # ymm4 = ymm5[0],ymm4[1],ymm5[2],ymm4[3],ymm5[4],ymm4[5],ymm5[6],ymm4[7]
-	vpermps	%ymm3, %ymm8, %ymm3
-	vpermps	%ymm0, %ymm12, %ymm0
-	vblendps	$170, %ymm3, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm3[1],ymm0[2],ymm3[3],ymm0[4],ymm3[5],ymm0[6],ymm3[7]
-	vpermps	%ymm1, %ymm9, %ymm3
-	vpermps	%ymm2, %ymm11, %ymm5
-	vblendps	$170, %ymm3, %ymm5, %ymm3 # ymm3 = ymm5[0],ymm3[1],ymm5[2],ymm3[3],ymm5[4],ymm3[5],ymm5[6],ymm3[7]
-	vpermps	%ymm1, %ymm8, %ymm1
-	vpermps	%ymm2, %ymm12, %ymm2
-	vblendps	$170, %ymm1, %ymm2, %ymm1 # ymm1 = ymm2[0],ymm1[1],ymm2[2],ymm1[3],ymm2[4],ymm1[5],ymm2[6],ymm1[7]
-	movq	2352(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm1, (%rax,%r13)
-	movq	2368(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm3, 96(%rax,%r13)
-	vmovups	%ymm0, 128(%rax,%r13)
-	movq	2360(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm4, (%rax,%r13)
-	addl	$32, %r15d
-	subq	$-128, %r13
-	addl	$-1, %ecx
-	jne	.LBB147_407
-.LBB147_423:                            # %end for deinterleaved$3.s0.v15.v15234
-                                        #   in Loop: Header=BB147_305 Depth=3
-	movl	2656(%rsp), %edx        # 4-byte Reload
-	addl	$1, %edx
-	movl	%edx, 2656(%rsp)        # 4-byte Spill
-	movb	712(%rsp), %cl          # 1-byte Reload
-	addb	$1, %cl
-	movq	912(%rsp), %rax         # 8-byte Reload
-	addl	%eax, 740(%rsp)         # 4-byte Folded Spill
-	movq	1136(%rsp), %rax        # 8-byte Reload
-	cmpl	%eax, %edx
-	jne	.LBB147_305
-.LBB147_338:                            # %end for deinterleaved$3.s0.v16226
-                                        #   in Loop: Header=BB147_273 Depth=2
-	movq	1536(%rsp), %rax        # 8-byte Reload
-	leal	3(%rax), %ecx
-	movl	%ecx, 824(%rsp)         # 4-byte Spill
-	movq	1136(%rsp), %rax        # 8-byte Reload
-	cmpl	%ecx, %eax
-	jge	.LBB147_454
-# BB#339:                               # %for deinterleaved$3.s0.v16236.preheader
-                                        #   in Loop: Header=BB147_273 Depth=2
-	movq	1136(%rsp), %rax        # 8-byte Reload
-	movb	%al, %cl
-	.align	16, 0x90
-.LBB147_340:                            # %for deinterleaved$3.s0.v16236
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        # =>    This Loop Header: Depth=3
-                                        #         Child Loop BB147_437 Depth 4
-	movb	%cl, 928(%rsp)          # 1-byte Spill
-	movzbl	%cl, %edi
-	andl	$3, %edi
-	cmpl	$0, 908(%rsp)           # 4-byte Folded Reload
-	jle	.LBB147_453
-# BB#341:                               # %for deinterleaved$3.s0.v15.v15239.preheader
-                                        #   in Loop: Header=BB147_340 Depth=3
-	imulq	816(%rsp), %rdi         # 8-byte Folded Reload
-	movl	904(%rsp), %r11d        # 4-byte Reload
-	testl	%r11d, %r11d
-	setne	%r8b
-	sete	%r9b
-	movq	1136(%rsp), %rsi        # 8-byte Reload
-	movl	%esi, %r15d
-	andl	$1, %r15d
-	movl	%r15d, 1696(%rsp)       # 4-byte Spill
-	sete	%r10b
-	movl	744(%rsp), %eax         # 4-byte Reload
-	cmpl	%esi, %eax
-	movl	%eax, %ecx
-	cmovgl	%esi, %ecx
-	movq	808(%rsp), %rdx         # 8-byte Reload
+	movl	%r13d, %r9d
+	andl	$3, %r9d
+	movl	%r9d, 248(%rsp)         # 4-byte Spill
+	movq	272(%rsp), %rcx         # 8-byte Reload
+	addq	%rcx, %rcx
+	movq	%rcx, 272(%rsp)         # 8-byte Spill
+	leal	-1(%rbx,%r13), %ecx
+	movl	96(%rsp), %edx          # 4-byte Reload
 	cmpl	%edx, %ecx
 	cmovll	%edx, %ecx
-	movl	%esi, %eax
-	subl	%edx, %eax
-	cltd
-	idivl	752(%rsp)               # 4-byte Folded Reload
-	movl	%edx, %eax
-	sarl	$31, %eax
-	andl	756(%rsp), %eax         # 4-byte Folded Reload
-	movq	760(%rsp), %rbx         # 8-byte Reload
-	subl	%ebx, %edx
-	leal	(%rdx,%rax), %ebx
-	leal	1(%rdx,%rax), %eax
-	leaq	(%rdi,%r14), %rdx
-	movq	%rdx, 2688(%rsp)        # 8-byte Spill
-	cmpl	$-2, %ebx
-	notl	%ebx
-	cmovgl	%eax, %ebx
-	movl	748(%rsp), %edi         # 4-byte Reload
-	subl	%ebx, %edi
-	cmpl	%esi, 804(%rsp)         # 4-byte Folded Reload
-	cmovgl	%ecx, %edi
-	movq	912(%rsp), %rax         # 8-byte Reload
-	imull	%eax, %edi
-	movl	%esi, %eax
-	movq	2392(%rsp), %rcx        # 8-byte Reload
-	orl	%ecx, %eax
-	testb	$1, %al
-	sete	%al
-	movb	%r15b, %bl
-	andb	%r9b, %bl
-	andb	%r8b, %r10b
-	testl	%esi, %r11d
-	setne	%dl
-	vpxor	%xmm0, %xmm0, %xmm0
-	vmovdqa	%xmm0, 1152(%rsp)       # 16-byte Spill
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_342
-# BB#424:                               # %for deinterleaved$3.s0.v15.v15239.preheader
-                                        #   in Loop: Header=BB147_340 Depth=3
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_425
-	.align	16, 0x90
-.LBB147_342:                            #   in Loop: Header=BB147_340 Depth=3
-	vmovd	%eax, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-.LBB147_425:                            # %for deinterleaved$3.s0.v15.v15239.preheader
-                                        #   in Loop: Header=BB147_340 Depth=3
-	vmovdqa	%xmm0, 1120(%rsp)       # 16-byte Spill
-	je	.LBB147_426
-# BB#427:                               # %for deinterleaved$3.s0.v15.v15239.preheader
-                                        #   in Loop: Header=BB147_340 Depth=3
-	vpxor	%xmm0, %xmm0, %xmm0
-	jmp	.LBB147_428
-	.align	16, 0x90
-.LBB147_426:                            #   in Loop: Header=BB147_340 Depth=3
-	movzbl	%bl, %ecx
-	vmovd	%ecx, %xmm0
-	movzbl	%r10b, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-.LBB147_428:                            # %for deinterleaved$3.s0.v15.v15239.preheader
-                                        #   in Loop: Header=BB147_340 Depth=3
-	vmovdqa	%xmm0, 1104(%rsp)       # 16-byte Spill
-	jne	.LBB147_430
-# BB#429:                               #   in Loop: Header=BB147_340 Depth=3
-	vmovd	%edx, %xmm0
-	vpbroadcastb	%xmm0, %xmm0
-	vmovdqa	%xmm0, 1152(%rsp)       # 16-byte Spill
-.LBB147_430:                            # %for deinterleaved$3.s0.v15.v15239.preheader
-                                        #   in Loop: Header=BB147_340 Depth=3
-	vmovd	%edi, %xmm1
-	vpabsd	880(%rsp), %xmm0        # 16-byte Folded Reload
-	cmpl	$0, 104(%rbp)
-	jne	.LBB147_432
-# BB#431:                               #   in Loop: Header=BB147_340 Depth=3
-	vmovd	%ebx, %xmm3
-	vpbroadcastb	%xmm3, %xmm2
-	vmovdqa	%xmm2, 1120(%rsp)       # 16-byte Spill
-.LBB147_432:                            # %for deinterleaved$3.s0.v15.v15239.preheader
-                                        #   in Loop: Header=BB147_340 Depth=3
-	vpsubd	832(%rsp), %ymm1, %ymm1 # 32-byte Folded Reload
-	jne	.LBB147_434
-# BB#433:                               #   in Loop: Header=BB147_340 Depth=3
-	movzbl	%al, %eax
-	vmovd	%eax, %xmm2
-	movzbl	%dl, %eax
-	vmovd	%eax, %xmm3
-	vpor	%xmm3, %xmm2, %xmm2
-	vpbroadcastb	%xmm2, %xmm2
-	vmovdqa	%xmm2, 1104(%rsp)       # 16-byte Spill
-.LBB147_434:                            # %for deinterleaved$3.s0.v15.v15239.preheader
-                                        #   in Loop: Header=BB147_340 Depth=3
-	jne	.LBB147_436
-# BB#435:                               #   in Loop: Header=BB147_340 Depth=3
-	vmovd	%r10d, %xmm3
-	vpbroadcastb	%xmm3, %xmm2
-	vmovdqa	%xmm2, 1152(%rsp)       # 16-byte Spill
-.LBB147_436:                            # %for deinterleaved$3.s0.v15.v15239.preheader
-                                        #   in Loop: Header=BB147_340 Depth=3
-	vinserti128	$1, %xmm0, %ymm0, %ymm0
-	vmovdqa	%ymm0, 1056(%rsp)       # 32-byte Spill
-	vpbroadcastd	%xmm1, %ymm0
-	vmovdqa	%ymm0, 960(%rsp)        # 32-byte Spill
-	xorl	%esi, %esi
-	movl	908(%rsp), %edx         # 4-byte Reload
-	.align	16, 0x90
-.LBB147_437:                            # %for deinterleaved$3.s0.v15.v15239
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_340 Depth=3
-                                        # =>      This Inner Loop Header: Depth=4
-	movq	%rsi, 1664(%rsp)        # 8-byte Spill
-	movl	%edx, 1632(%rsp)        # 4-byte Spill
-	cmpl	$0, 1696(%rsp)          # 4-byte Folded Reload
-	setne	2624(%rsp)              # 1-byte Folded Spill
-	sete	2656(%rsp)              # 1-byte Folded Spill
-	movq	2032(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rsi), %ecx
-	movl	%ecx, 1568(%rsp)        # 4-byte Spill
-	movl	%ecx, %eax
-	andl	$1, %eax
-	movl	%eax, 2752(%rsp)        # 4-byte Spill
-	sete	%al
-	movl	%eax, 2592(%rsp)        # 4-byte Spill
-	movl	%ecx, %eax
-	movq	1136(%rsp), %rcx        # 8-byte Reload
-	orl	%ecx, %eax
-	testb	$1, %al
-	sete	%al
-	movl	%eax, 1600(%rsp)        # 4-byte Spill
-	movq	2040(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rsi), %eax
-	vmovd	%eax, %xmm0
-	vpbroadcastd	%xmm0, %ymm5
-	vmovdqa	.LCPI147_9(%rip), %ymm0 # ymm0 = [0,2,4,6,8,10,12,14]
-	vpaddd	%ymm0, %ymm5, %ymm6
-	vmovdqa	%ymm0, %ymm3
-	vextracti128	$1, %ymm6, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	vmovdqa	2080(%rsp), %ymm2       # 32-byte Reload
-	vextracti128	$1, %ymm2, %xmm1
-	vpextrd	$1, %xmm1, %r9d
-	cltd
-	idivl	%r9d
-	movl	%edx, 2560(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	vmovd	%xmm1, %r12d
-	cltd
-	idivl	%r12d
-	movl	%edx, 2528(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	vpextrd	$2, %xmm1, %r8d
-	cltd
-	idivl	%r8d
-	movl	%edx, 2496(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	vpextrd	$3, %xmm1, %r10d
-	cltd
-	idivl	%r10d
-	movl	%edx, 2400(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm6, %eax
-	vpextrd	$1, %xmm2, %ecx
-	movl	%ecx, 1376(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1880(%rsp)        # 4-byte Spill
-	vmovd	%xmm6, %eax
-	vmovd	%xmm2, %edi
-	cltd
-	idivl	%edi
-	movl	%edx, 1824(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm6, %eax
-	vpextrd	$2, %xmm2, %ebx
-	cltd
-	idivl	%ebx
-	movl	%edx, 1792(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm6, %eax
-	vpextrd	$3, %xmm2, %ecx
-	movl	%ecx, 1368(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1760(%rsp)        # 4-byte Spill
-	vmovdqa	.LCPI147_8(%rip), %ymm0 # ymm0 = [16,18,20,22,24,26,28,30]
-	vpaddd	%ymm0, %ymm5, %ymm5
-	vmovdqa	%ymm0, %ymm1
-	vextracti128	$1, %ymm5, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r9d
-	movl	%edx, 1728(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r12d
-	movl	%edx, 1504(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, 1472(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, 1440(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm5, %eax
-	vpextrd	$1, %xmm2, %ecx
-	movl	%ecx, 1360(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1408(%rsp)        # 4-byte Spill
-	vmovd	%xmm5, %eax
-	vmovd	%xmm2, %ecx
-	movl	%ecx, 1352(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1400(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm5, %eax
-	vpextrd	$2, %xmm2, %ecx
-	movl	%ecx, 1312(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1392(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm5, %eax
-	vpextrd	$3, %xmm2, %ecx
-	movl	%ecx, 1280(%rsp)        # 4-byte Spill
-	cltd
-	idivl	%ecx
-	movl	%edx, 1384(%rsp)        # 4-byte Spill
-	movq	2136(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rsi), %eax
-	vmovd	%eax, %xmm0
-	vpbroadcastd	%xmm0, %ymm5
-	vpaddd	%ymm3, %ymm5, %ymm6
-	vmovdqa	%ymm3, %ymm9
-	vextracti128	$1, %ymm6, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r9d
-	movl	%edx, %r15d
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r12d
-	movl	%edx, 1216(%rsp)        # 4-byte Spill
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, %r11d
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, %r13d
-	vpextrd	$1, %xmm6, %eax
-	cltd
-	idivl	1376(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %ecx
-	vmovd	%xmm6, %eax
-	cltd
-	idivl	%edi
-	movl	%edx, %edi
-	vpextrd	$2, %xmm6, %eax
-	cltd
-	idivl	%ebx
-	movl	%edx, %ebx
-	vpextrd	$3, %xmm6, %eax
-	cltd
-	idivl	1368(%rsp)              # 4-byte Folded Reload
-	movl	%edx, 1264(%rsp)        # 4-byte Spill
-	vpaddd	%ymm1, %ymm5, %ymm5
-	vextracti128	$1, %ymm5, %xmm0
-	vpextrd	$1, %xmm0, %eax
-	cltd
-	idivl	%r9d
-	movl	2752(%rsp), %r9d        # 4-byte Reload
-	movl	%edx, 1368(%rsp)        # 4-byte Spill
-	vmovd	%xmm0, %eax
-	cltd
-	idivl	%r12d
-	movl	%edx, %r12d
-	vpextrd	$2, %xmm0, %eax
-	cltd
-	idivl	%r8d
-	movl	%edx, 1376(%rsp)        # 4-byte Spill
-	vpextrd	$3, %xmm0, %eax
-	cltd
-	idivl	%r10d
-	movl	%edx, 1272(%rsp)        # 4-byte Spill
-	vpextrd	$1, %xmm5, %eax
-	cltd
-	idivl	1360(%rsp)              # 4-byte Folded Reload
-	movl	%edx, 1360(%rsp)        # 4-byte Spill
-	vmovd	%xmm5, %eax
-	cltd
-	idivl	1352(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r10d
-	vpextrd	$2, %xmm5, %eax
-	cltd
-	idivl	1312(%rsp)              # 4-byte Folded Reload
-	movl	%edx, %r8d
-	vpextrd	$3, %xmm5, %eax
-	cltd
-	idivl	1280(%rsp)              # 4-byte Folded Reload
-	vmovd	2528(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 2560(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 2496(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 2400(%rsp), %xmm0, %xmm5 # 4-byte Folded Reload
-	vmovd	1824(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1880(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1792(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1760(%rsp), %xmm0, %xmm6 # 4-byte Folded Reload
-	vmovd	1504(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1728(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1472(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1440(%rsp), %xmm0, %xmm2 # 4-byte Folded Reload
-	vmovd	1400(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, 1408(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$2, 1392(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
-	vpinsrd	$3, 1384(%rsp), %xmm0, %xmm10 # 4-byte Folded Reload
-	vmovd	1216(%rsp), %xmm0       # 4-byte Folded Reload
-                                        # xmm0 = mem[0],zero,zero,zero
-	vpinsrd	$1, %r15d, %xmm0, %xmm0
-	vpinsrd	$2, %r11d, %xmm0, %xmm0
-	vpinsrd	$3, %r13d, %xmm0, %xmm0
-	vmovdqa	%xmm0, 2560(%rsp)       # 16-byte Spill
-	vmovd	%edi, %xmm0
-	vpinsrd	$1, %ecx, %xmm0, %xmm0
-	vpinsrd	$2, %ebx, %xmm0, %xmm0
-	vmovdqa	%xmm0, 2528(%rsp)       # 16-byte Spill
-	vmovd	%esi, %xmm0
-	vpbroadcastd	%xmm0, %ymm0
-	vmovdqa	2304(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm12
-	vmovdqa	.LCPI147_5(%rip), %ymm14 # ymm14 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
-	vpshufb	%ymm14, %ymm12, %ymm12
-	vpermq	$232, %ymm12, %ymm12    # ymm12 = ymm12[0,2,2,3]
-	vmovdqa	2272(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm13
-	vpshufb	%ymm14, %ymm13, %ymm13
-	vpermq	$232, %ymm13, %ymm13    # ymm13 = ymm13[0,2,2,3]
-	vmovdqa	.LCPI147_6(%rip), %xmm15 # xmm15 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
-	vpshufb	%xmm15, %xmm13, %xmm3
-	vpshufb	%xmm15, %xmm12, %xmm4
-	vpunpcklqdq	%xmm3, %xmm4, %xmm3 # xmm3 = xmm4[0],xmm3[0]
-	vmovdqa	.LCPI147_7(%rip), %xmm1 # xmm1 = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-	vpxor	%xmm1, %xmm3, %xmm13
-	vmovdqa	1984(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm4
-	vpshufb	%ymm14, %ymm4, %ymm4
-	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
-	vmovdqa	1952(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm12
-	vpshufb	%ymm14, %ymm12, %ymm12
-	vpermq	$232, %ymm12, %ymm12    # ymm12 = ymm12[0,2,2,3]
-	vpshufb	%xmm15, %xmm12, %xmm3
-	vpshufb	%xmm15, %xmm4, %xmm4
-	vpunpcklqdq	%xmm3, %xmm4, %xmm3 # xmm3 = xmm4[0],xmm3[0]
-	vpor	%xmm13, %xmm3, %xmm3
-	vinserti128	$1, %xmm5, %ymm6, %ymm4
-	vpsrad	$31, %ymm4, %ymm5
-	vmovdqa	1056(%rsp), %ymm7       # 32-byte Reload
-	vpand	%ymm5, %ymm7, %ymm5
-	vmovdqa	2240(%rsp), %ymm13      # 32-byte Reload
-	vpaddd	%ymm4, %ymm13, %ymm4
-	vpaddd	%ymm5, %ymm4, %ymm4
-	vpabsd	%xmm4, %xmm5
-	vextracti128	$1, %ymm4, %xmm4
-	vpabsd	%xmm4, %xmm4
-	vinserti128	$1, %xmm4, %ymm5, %ymm4
-	vmovdqa	2208(%rsp), %ymm8       # 32-byte Reload
-	vpsubd	%ymm4, %ymm8, %ymm12
-	movl	1568(%rsp), %edi        # 4-byte Reload
-	vmovd	%edi, %xmm5
-	vpbroadcastd	%xmm5, %ymm6
-	vpaddd	%ymm9, %ymm6, %ymm5
-	vmovdqa	2064(%rsp), %xmm9       # 16-byte Reload
-	vpminsd	%xmm9, %xmm5, %xmm4
-	vextracti128	$1, %ymm5, %xmm5
-	vpminsd	%xmm9, %xmm5, %xmm5
-	vmovdqa	2048(%rsp), %xmm11      # 16-byte Reload
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm5, %xmm5
-	vinserti128	$1, %xmm5, %ymm4, %ymm4
-	vpmovzxbd	%xmm3, %ymm5    # ymm5 = xmm3[0],zero,zero,zero,xmm3[1],zero,zero,zero,xmm3[2],zero,zero,zero,xmm3[3],zero,zero,zero,xmm3[4],zero,zero,zero,xmm3[5],zero,zero,zero,xmm3[6],zero,zero,zero,xmm3[7],zero,zero,zero
-	vpslld	$31, %ymm5, %ymm5
-	vblendvps	%ymm5, %ymm12, %ymm4, %ymm5
-	vinserti128	$1, %xmm2, %ymm10, %ymm2
-	vpsrad	$31, %ymm2, %ymm4
-	vpand	%ymm4, %ymm7, %ymm4
-	vpaddd	%ymm2, %ymm13, %ymm2
-	vpaddd	%ymm4, %ymm2, %ymm2
-	vpabsd	%xmm2, %xmm4
-	vextracti128	$1, %ymm2, %xmm2
-	vpabsd	%xmm2, %xmm2
-	vinserti128	$1, %xmm2, %ymm4, %ymm2
-	vmovdqa	.LCPI147_8(%rip), %ymm10 # ymm10 = [16,18,20,22,24,26,28,30]
-	vpaddd	%ymm10, %ymm6, %ymm4
-	vpminsd	%xmm9, %xmm4, %xmm6
-	vextracti128	$1, %ymm4, %xmm4
-	vpminsd	%xmm9, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm6, %xmm6
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vinserti128	$1, %xmm4, %ymm6, %ymm4
-	vpsubd	%ymm2, %ymm8, %ymm2
-	vpunpckhbw	%xmm3, %xmm3, %xmm3 # xmm3 = xmm3[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm2, %ymm4, %ymm6
-	vmovdqa	2176(%rsp), %ymm2       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm2, %ymm2
-	vpshufb	%ymm14, %ymm2, %ymm2
-	vpermq	$232, %ymm2, %ymm2      # ymm2 = ymm2[0,2,2,3]
-	vmovdqa	2144(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm3
-	vpshufb	%ymm14, %ymm3, %ymm3
-	vpermq	$232, %ymm3, %ymm3      # ymm3 = ymm3[0,2,2,3]
-	vpshufb	%xmm15, %xmm3, %xmm3
-	vpshufb	%xmm15, %xmm2, %xmm2
-	vpunpcklqdq	%xmm3, %xmm2, %xmm2 # xmm2 = xmm2[0],xmm3[0]
-	vpxor	%xmm1, %xmm2, %xmm2
-	vmovdqa	1920(%rsp), %ymm3       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm3, %ymm3
-	vpshufb	%ymm14, %ymm3, %ymm3
-	vpermq	$232, %ymm3, %ymm3      # ymm3 = ymm3[0,2,2,3]
-	vmovdqa	1888(%rsp), %ymm4       # 32-byte Reload
-	vpcmpgtd	%ymm0, %ymm4, %ymm0
-	vpshufb	%ymm14, %ymm0, %ymm0
-	vpermq	$232, %ymm0, %ymm0      # ymm0 = ymm0[0,2,2,3]
-	vpshufb	%xmm15, %xmm0, %xmm0
-	vpshufb	%xmm15, %xmm3, %xmm3
-	vpunpcklqdq	%xmm0, %xmm3, %xmm0 # xmm0 = xmm3[0],xmm0[0]
-	vpor	%xmm2, %xmm0, %xmm0
-	vmovdqa	2528(%rsp), %xmm1       # 16-byte Reload
-	vpinsrd	$3, 1264(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vinserti128	$1, 2560(%rsp), %ymm1, %ymm1 # 16-byte Folded Reload
-	vpsrad	$31, %ymm1, %ymm2
-	vpand	%ymm7, %ymm2, %ymm2
-	vpaddd	%ymm1, %ymm13, %ymm1
-	vpaddd	%ymm2, %ymm1, %ymm1
-	vpabsd	%xmm1, %xmm2
-	vextracti128	$1, %ymm1, %xmm1
-	vpabsd	%xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm2, %ymm1
-	vpsubd	%ymm1, %ymm8, %ymm1
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rsi), %eax
-	vmovd	%eax, %xmm2
-	vpbroadcastd	%xmm2, %ymm2
-	vpaddd	.LCPI147_9(%rip), %ymm2, %ymm3
-	vpminsd	%xmm9, %xmm3, %xmm4
-	vextracti128	$1, %ymm3, %xmm3
-	vpminsd	%xmm9, %xmm3, %xmm3
-	vpmaxsd	%xmm11, %xmm4, %xmm4
-	vpmaxsd	%xmm11, %xmm3, %xmm3
-	vinserti128	$1, %xmm3, %ymm4, %ymm3
-	vpmovzxbd	%xmm0, %ymm4    # ymm4 = xmm0[0],zero,zero,zero,xmm0[1],zero,zero,zero,xmm0[2],zero,zero,zero,xmm0[3],zero,zero,zero,xmm0[4],zero,zero,zero,xmm0[5],zero,zero,zero,xmm0[6],zero,zero,zero,xmm0[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm1, %ymm3, %ymm4
-	vmovd	%r12d, %xmm1
-	vpinsrd	$1, 1368(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vpinsrd	$2, 1376(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vpinsrd	$3, 1272(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
-	vmovd	%r10d, %xmm3
-	movl	2592(%rsp), %ebx        # 4-byte Reload
-	vpinsrd	$1, 1360(%rsp), %xmm3, %xmm3 # 4-byte Folded Reload
-	vpinsrd	$2, %r8d, %xmm3, %xmm3
-	vpinsrd	$3, %edx, %xmm3, %xmm3
-	vinserti128	$1, %xmm1, %ymm3, %ymm1
-	vpsrad	$31, %ymm1, %ymm3
-	vpand	%ymm7, %ymm3, %ymm3
-	vpaddd	%ymm1, %ymm13, %ymm1
-	vpaddd	%ymm3, %ymm1, %ymm1
-	vpabsd	%xmm1, %xmm3
-	vextracti128	$1, %ymm1, %xmm1
-	vpabsd	%xmm1, %xmm1
-	vinserti128	$1, %xmm1, %ymm3, %ymm1
-	vpaddd	%ymm10, %ymm2, %ymm2
-	vpminsd	%xmm9, %xmm2, %xmm3
-	vextracti128	$1, %ymm2, %xmm2
-	vpminsd	%xmm9, %xmm2, %xmm2
-	vpmaxsd	%xmm11, %xmm3, %xmm3
-	vpmaxsd	%xmm11, %xmm2, %xmm2
-	vinserti128	$1, %xmm2, %ymm3, %ymm2
-	vpsubd	%ymm1, %ymm8, %ymm1
-	vpunpckhbw	%xmm0, %xmm0, %xmm0 # xmm0 = xmm0[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpslld	$31, %ymm0, %ymm0
-	vblendvps	%ymm0, %ymm1, %ymm2, %ymm0
-	vmovdqa	960(%rsp), %ymm2        # 32-byte Reload
-	vpaddd	%ymm5, %ymm2, %ymm1
-	vpextrq	$1, %xmm1, %r12
-	movq	%r12, 1504(%rsp)        # 8-byte Spill
-	vmovq	%xmm1, %r15
-	vextracti128	$1, %ymm1, %xmm1
-	vpextrq	$1, %xmm1, %rsi
-	movq	%rsi, 1472(%rsp)        # 8-byte Spill
-	vmovq	%xmm1, %r8
-	movq	%r8, 1440(%rsp)         # 8-byte Spill
-	andb	2624(%rsp), %bl         # 1-byte Folded Reload
-	vpaddd	%ymm6, %ymm2, %ymm1
-	movq	%r15, %rax
-	sarq	$32, %rax
-	movq	%rax, 2528(%rsp)        # 8-byte Spill
-	sarq	$32, %r12
-	sarq	$32, %r8
-	movq	%rsi, %r13
-	sarq	$32, %r13
-	vmovq	%xmm1, %rax
-	andb	2656(%rsp), %r9b        # 1-byte Folded Reload
-	movq	%rax, %rsi
-	sarq	$32, %rsi
-	vpextrq	$1, %xmm1, %rcx
-	movq	%rcx, 1352(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1760(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm1, %xmm1
-	vmovq	%xmm1, %rcx
-	movq	%rcx, 1272(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1728(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rcx
-	movq	%rcx, 1264(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1792(%rsp)        # 8-byte Spill
-	vpaddd	%ymm0, %ymm2, %ymm0
-	vpaddd	%ymm4, %ymm2, %ymm1
-	vmovq	%xmm1, %r11
-	movq	%r11, %rdx
-	sarq	$32, %rdx
-	movq	%rdx, 2560(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rdx
-	movq	%rdx, 1408(%rsp)        # 8-byte Spill
-	sarq	$32, %rdx
-	movq	%rdx, 2624(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm1, %xmm1
-	vmovq	%xmm1, %rdx
-	movq	%rdx, 1400(%rsp)        # 8-byte Spill
-	sarq	$32, %rdx
-	movq	%rdx, 2592(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm1, %rdx
-	movq	%rdx, 1384(%rsp)        # 8-byte Spill
-	sarq	$32, %rdx
-	movq	%rdx, 2656(%rsp)        # 8-byte Spill
-	vmovq	%xmm0, %rdx
-	movq	%rdx, %rcx
-	sarq	$32, %rcx
-	movq	%rcx, 1824(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1360(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 2400(%rsp)        # 8-byte Spill
-	vextracti128	$1, %ymm0, %xmm0
-	vmovq	%xmm0, %rcx
-	movq	%rcx, 1312(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 1880(%rsp)        # 8-byte Spill
-	vpextrq	$1, %xmm0, %rcx
-	movq	%rcx, 1280(%rsp)        # 8-byte Spill
-	sarq	$32, %rcx
-	movq	%rcx, 2496(%rsp)        # 8-byte Spill
-	testl	1696(%rsp), %edi        # 4-byte Folded Reload
-	vpxor	%xmm5, %xmm5, %xmm5
-	setne	%dil
-	cmpl	$1, 104(%rbp)
-	je	.LBB147_438
-# BB#439:                               # %for deinterleaved$3.s0.v15.v15239
-                                        #   in Loop: Header=BB147_437 Depth=4
-	vpxor	%xmm7, %xmm7, %xmm7
-	jmp	.LBB147_440
-	.align	16, 0x90
-.LBB147_438:                            #   in Loop: Header=BB147_437 Depth=4
-	movl	1600(%rsp), %ecx        # 4-byte Reload
-	vmovd	%ecx, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_440:                            # %for deinterleaved$3.s0.v15.v15239
-                                        #   in Loop: Header=BB147_437 Depth=4
-	vmovaps	.LCPI147_10(%rip), %ymm9 # ymm9 = <u,4,u,5,u,6,u,7>
-	vmovaps	.LCPI147_11(%rip), %ymm11 # ymm11 = <4,u,5,u,6,u,7,u>
-	je	.LBB147_441
-# BB#442:                               # %for deinterleaved$3.s0.v15.v15239
-                                        #   in Loop: Header=BB147_437 Depth=4
-	vpxor	%xmm6, %xmm6, %xmm6
-	jmp	.LBB147_443
-	.align	16, 0x90
-.LBB147_441:                            #   in Loop: Header=BB147_437 Depth=4
-	movzbl	%bl, %ecx
-	vmovd	%ecx, %xmm0
-	movzbl	%r9b, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm6
-.LBB147_443:                            # %for deinterleaved$3.s0.v15.v15239
-                                        #   in Loop: Header=BB147_437 Depth=4
-	jne	.LBB147_445
-# BB#444:                               #   in Loop: Header=BB147_437 Depth=4
-	vmovd	%edi, %xmm0
-	vpbroadcastb	%xmm0, %xmm5
-.LBB147_445:                            # %for deinterleaved$3.s0.v15.v15239
-                                        #   in Loop: Header=BB147_437 Depth=4
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_446
-# BB#447:                               # %for deinterleaved$3.s0.v15.v15239
-                                        #   in Loop: Header=BB147_437 Depth=4
-	movl	%edi, 1176(%rsp)        # 4-byte Spill
-	movl	%r9d, 2752(%rsp)        # 4-byte Spill
-	jmp	.LBB147_448
-	.align	16, 0x90
-.LBB147_446:                            #   in Loop: Header=BB147_437 Depth=4
-	movl	%edi, 1176(%rsp)        # 4-byte Spill
-	movl	%r9d, 2752(%rsp)        # 4-byte Spill
-	vmovd	%ebx, %xmm0
-	vpbroadcastb	%xmm0, %xmm7
-.LBB147_448:                            # %for deinterleaved$3.s0.v15.v15239
-                                        #   in Loop: Header=BB147_437 Depth=4
-	movq	1504(%rsp), %rbx        # 8-byte Reload
-	cltq
-	movq	%rax, 1216(%rsp)        # 8-byte Spill
-	movq	2384(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm0
-	movslq	%r15d, %rax
-	movq	%rax, 1376(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm1
-	movslq	%edx, %rax
-	movq	%rax, 1368(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	movslq	%r11d, %rax
-	movq	%rax, 1392(%rsp)        # 8-byte Spill
-	movzwl	(%rcx,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	movslq	%ebx, %r10
-	movq	1440(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r15
-	movq	1472(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rax
-	movq	%rax, 1184(%rsp)        # 8-byte Spill
-	movq	1352(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rbx
-	movq	1272(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rdi
-	movq	1264(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r11
-	vpinsrw	$1, (%rcx,%rsi,2), %xmm0, %xmm0
-	movq	%rsi, 1352(%rsp)        # 8-byte Spill
-	vpinsrw	$2, (%rcx,%rbx,2), %xmm0, %xmm0
-	movq	1760(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm0, %xmm0
-	vpinsrw	$4, (%rcx,%rdi,2), %xmm0, %xmm0
-	movq	1728(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rdx,2), %xmm0, %xmm0
-	vpinsrw	$6, (%rcx,%r11,2), %xmm0, %xmm0
-	movq	1792(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rdx,2), %xmm0, %xmm0
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vcvtdq2ps	%ymm0, %ymm0
-	movq	2528(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rdx,2), %xmm1, %xmm1
-	vpinsrw	$2, (%rcx,%r10,2), %xmm1, %xmm1
-	vpinsrw	$3, (%rcx,%r12,2), %xmm1, %xmm1
-	movq	%r12, 1504(%rsp)        # 8-byte Spill
-	vpinsrw	$4, (%rcx,%r15,2), %xmm1, %xmm1
-	vpinsrw	$5, (%rcx,%r8,2), %xmm1, %xmm1
-	movq	%r8, 1568(%rsp)         # 8-byte Spill
-	vpinsrw	$6, (%rcx,%rax,2), %xmm1, %xmm1
-	vpinsrw	$7, (%rcx,%r13,2), %xmm1, %xmm1
-	movq	%r13, 1440(%rsp)        # 8-byte Spill
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vcvtdq2ps	%ymm1, %ymm1
-	vpmovzxbd	%xmm7, %ymm4    # ymm4 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vpxor	%ymm8, %ymm8, %ymm8
-	vblendvps	%ymm4, %ymm1, %ymm8, %ymm1
-	vpunpckhbw	%xmm7, %xmm7, %xmm4 # xmm4 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm0, %ymm8, %ymm0
-	movq	1408(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r8
-	movq	%r8, 1272(%rsp)         # 8-byte Spill
-	movq	1400(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r13
-	movq	%r13, 1408(%rsp)        # 8-byte Spill
-	movq	1384(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r12
-	movq	%r12, 1472(%rsp)        # 8-byte Spill
-	movq	1360(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rsi
-	movq	1312(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %rax
-	movq	%rax, 1384(%rsp)        # 8-byte Spill
-	movq	1280(%rsp), %rdx        # 8-byte Reload
-	movslq	%edx, %r9
-	movq	%r9, 1400(%rsp)         # 8-byte Spill
-	movq	1824(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpinsrw	$2, (%rcx,%rsi,2), %xmm2, %xmm2
-	movq	2400(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpinsrw	$4, (%rcx,%rax,2), %xmm2, %xmm2
-	movq	1880(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpinsrw	$6, (%rcx,%r9,2), %xmm2, %xmm2
-	movq	2496(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rdx,2), %xmm2, %xmm2
-	vpmovzxwd	%xmm2, %ymm2    # ymm2 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
-	vcvtdq2ps	%ymm2, %ymm2
-	movq	2560(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$1, (%rcx,%rdx,2), %xmm3, %xmm3
-	vpinsrw	$2, (%rcx,%r8,2), %xmm3, %xmm3
-	movq	2624(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$3, (%rcx,%rdx,2), %xmm3, %xmm3
-	vpinsrw	$4, (%rcx,%r13,2), %xmm3, %xmm3
-	movq	2592(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$5, (%rcx,%rdx,2), %xmm3, %xmm3
-	vpinsrw	$6, (%rcx,%r12,2), %xmm3, %xmm3
-	movq	2656(%rsp), %rdx        # 8-byte Reload
-	vpinsrw	$7, (%rcx,%rdx,2), %xmm3, %xmm3
-	movq	%rcx, %rdx
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vcvtdq2ps	%ymm3, %ymm3
-	vmovdqa	1120(%rsp), %xmm7       # 16-byte Reload
-	vpmovzxbd	%xmm7, %ymm4    # ymm4 = xmm7[0],zero,zero,zero,xmm7[1],zero,zero,zero,xmm7[2],zero,zero,zero,xmm7[3],zero,zero,zero,xmm7[4],zero,zero,zero,xmm7[5],zero,zero,zero,xmm7[6],zero,zero,zero,xmm7[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm3, %ymm8, %ymm3
-	vpunpckhbw	%xmm7, %xmm7, %xmm4 # xmm4 = xmm7[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm2, %ymm8, %ymm2
-	vpermps	%ymm2, %ymm9, %ymm4
-	vpermps	%ymm0, %ymm11, %ymm7
-	vblendps	$170, %ymm4, %ymm7, %ymm4 # ymm4 = ymm7[0],ymm4[1],ymm7[2],ymm4[3],ymm7[4],ymm4[5],ymm7[6],ymm4[7]
-	vmovaps	.LCPI147_12(%rip), %ymm7 # ymm7 = <u,0,u,1,u,2,u,3>
-	vmovaps	%ymm7, %ymm8
-	vpermps	%ymm2, %ymm8, %ymm2
-	vmovaps	.LCPI147_13(%rip), %ymm7 # ymm7 = <0,u,1,u,2,u,3,u>
-	vmovaps	%ymm7, %ymm10
-	vpermps	%ymm0, %ymm10, %ymm0
-	vblendps	$170, %ymm2, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm2[1],ymm0[2],ymm2[3],ymm0[4],ymm2[5],ymm0[6],ymm2[7]
-	vpermps	%ymm3, %ymm9, %ymm2
-	vpermps	%ymm1, %ymm11, %ymm7
-	vblendps	$170, %ymm2, %ymm7, %ymm2 # ymm2 = ymm7[0],ymm2[1],ymm7[2],ymm2[3],ymm7[4],ymm2[5],ymm7[6],ymm2[7]
-	vpermps	%ymm3, %ymm8, %ymm3
-	vmovaps	%ymm8, %ymm14
-	vpermps	%ymm1, %ymm10, %ymm1
-	vmovaps	%ymm10, %ymm15
-	vblendps	$170, %ymm3, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm3[1],ymm1[2],ymm3[3],ymm1[4],ymm3[5],ymm1[6],ymm3[7]
-	movq	2688(%rsp), %rcx        # 8-byte Reload
-	vmovups	%ymm1, (%rcx)
-	vmovups	%ymm2, 32(%rcx)
-	vmovups	%ymm0, 64(%rcx)
-	vmovups	%ymm4, 96(%rcx)
-	jne	.LBB147_450
-# BB#449:                               #   in Loop: Header=BB147_437 Depth=4
-	movl	1600(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm0
-	movl	1176(%rsp), %ecx        # 4-byte Reload
-	movzbl	%cl, %ecx
-	vmovd	%ecx, %xmm1
-	vpor	%xmm1, %xmm0, %xmm0
-	vpbroadcastb	%xmm0, %xmm6
-.LBB147_450:                            # %for deinterleaved$3.s0.v15.v15239
-                                        #   in Loop: Header=BB147_437 Depth=4
-	movq	1216(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rdx,%rcx,2), %ecx
-	vmovd	%ecx, %xmm0
-	movq	1352(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$2, (%rdx,%rbx,2), %xmm0, %xmm0
-	movq	1760(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$4, (%rdx,%rdi,2), %xmm0, %xmm0
-	movq	1728(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rcx,2), %xmm0, %xmm0
-	vpinsrw	$6, (%rdx,%r11,2), %xmm0, %xmm0
-	movq	1792(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rcx,2), %xmm0, %xmm0
-	movq	1376(%rsp), %rcx        # 8-byte Reload
-	movzwl	(%rdx,%rcx,2), %ecx
-	vmovd	%ecx, %xmm1
-	movq	2528(%rsp), %rcx        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rcx,2), %xmm1, %xmm1
-	vpinsrw	$2, (%rdx,%r10,2), %xmm1, %xmm1
-	movq	1504(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rax,2), %xmm1, %xmm1
-	vpinsrw	$4, (%rdx,%r15,2), %xmm1, %xmm1
-	movq	1568(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1184(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1440(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rax,2), %xmm1, %xmm1
-	movq	1368(%rsp), %rax        # 8-byte Reload
-	movzwl	(%rdx,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	movq	1824(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rax,2), %xmm2, %xmm2
-	vpinsrw	$2, (%rdx,%rsi,2), %xmm2, %xmm2
-	movq	2400(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1384(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$4, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1880(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1400(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	2496(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rax,2), %xmm2, %xmm2
-	movq	1392(%rsp), %rax        # 8-byte Reload
-	movzwl	(%rdx,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	movq	2560(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$1, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	1272(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$2, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	2624(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$3, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	1408(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$4, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	2592(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$5, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	1472(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$6, (%rdx,%rax,2), %xmm3, %xmm3
-	movq	2656(%rsp), %rax        # 8-byte Reload
-	vpinsrw	$7, (%rdx,%rax,2), %xmm3, %xmm3
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vcvtdq2ps	%ymm0, %ymm7
-	vpmovzxwd	%xmm1, %ymm0    # ymm0 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vcvtdq2ps	%ymm0, %ymm10
-	vpmovzxbd	%xmm6, %ymm0    # ymm0 = xmm6[0],zero,zero,zero,xmm6[1],zero,zero,zero,xmm6[2],zero,zero,zero,xmm6[3],zero,zero,zero,xmm6[4],zero,zero,zero,xmm6[5],zero,zero,zero,xmm6[6],zero,zero,zero,xmm6[7],zero,zero,zero
-	vpslld	$31, %ymm0, %ymm0
-	vxorps	%ymm8, %ymm8, %ymm8
-	vblendvps	%ymm0, %ymm10, %ymm8, %ymm4
-	vpunpckhbw	%xmm6, %xmm6, %xmm0 # xmm0 = xmm6[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpslld	$31, %ymm0, %ymm0
-	vblendvps	%ymm0, %ymm7, %ymm8, %ymm6
-	vpmovzxwd	%xmm2, %ymm0    # ymm0 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
-	vcvtdq2ps	%ymm0, %ymm1
-	vpmovzxwd	%xmm3, %ymm0    # ymm0 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vcvtdq2ps	%ymm0, %ymm0
-	vmovdqa	1104(%rsp), %xmm3       # 16-byte Reload
-	vpmovzxbd	%xmm3, %ymm2    # ymm2 = xmm3[0],zero,zero,zero,xmm3[1],zero,zero,zero,xmm3[2],zero,zero,zero,xmm3[3],zero,zero,zero,xmm3[4],zero,zero,zero,xmm3[5],zero,zero,zero,xmm3[6],zero,zero,zero,xmm3[7],zero,zero,zero
-	vpslld	$31, %ymm2, %ymm2
-	vblendvps	%ymm2, %ymm0, %ymm8, %ymm2
-	vpunpckhbw	%xmm3, %xmm3, %xmm3 # xmm3 = xmm3[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm1, %ymm8, %ymm3
-	vpermps	%ymm3, %ymm9, %ymm12
-	vpermps	%ymm6, %ymm11, %ymm13
-	vblendps	$170, %ymm12, %ymm13, %ymm12 # ymm12 = ymm13[0],ymm12[1],ymm13[2],ymm12[3],ymm13[4],ymm12[5],ymm13[6],ymm12[7]
-	vpermps	%ymm3, %ymm14, %ymm3
-	vpermps	%ymm6, %ymm15, %ymm6
-	vblendps	$170, %ymm3, %ymm6, %ymm3 # ymm3 = ymm6[0],ymm3[1],ymm6[2],ymm3[3],ymm6[4],ymm3[5],ymm6[6],ymm3[7]
-	vpermps	%ymm2, %ymm9, %ymm6
-	vpermps	%ymm4, %ymm11, %ymm13
-	vblendps	$170, %ymm6, %ymm13, %ymm6 # ymm6 = ymm13[0],ymm6[1],ymm13[2],ymm6[3],ymm13[4],ymm6[5],ymm13[6],ymm6[7]
-	vpermps	%ymm2, %ymm14, %ymm2
-	vmovaps	%ymm14, %ymm8
-	vpermps	%ymm4, %ymm15, %ymm4
-	vmovaps	%ymm15, %ymm13
-	vblendps	$170, %ymm2, %ymm4, %ymm2 # ymm2 = ymm4[0],ymm2[1],ymm4[2],ymm2[3],ymm4[4],ymm2[5],ymm4[6],ymm2[7]
-	movq	2376(%rsp), %rax        # 8-byte Reload
-	movq	2688(%rsp), %r12        # 8-byte Reload
-	vmovups	%ymm2, 32(%rax,%r12)
-	vmovups	%ymm6, 64(%rax,%r12)
-	vmovups	%ymm3, 96(%rax,%r12)
-	vmovups	%ymm12, 128(%rax,%r12)
-	movq	%r12, %rcx
-	jne	.LBB147_452
-# BB#451:                               #   in Loop: Header=BB147_437 Depth=4
-	movl	2752(%rsp), %eax        # 4-byte Reload
-	vmovd	%eax, %xmm2
-	vpbroadcastb	%xmm2, %xmm5
-.LBB147_452:                            # %for deinterleaved$3.s0.v15.v15239
-                                        #   in Loop: Header=BB147_437 Depth=4
-	movq	1664(%rsp), %rsi        # 8-byte Reload
-	movl	1632(%rsp), %edx        # 4-byte Reload
-	vpmovzxbd	%xmm5, %ymm2    # ymm2 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
-	vpslld	$31, %ymm2, %ymm2
-	vxorps	%ymm6, %ymm6, %ymm6
-	vblendvps	%ymm2, %ymm10, %ymm6, %ymm2
-	vpunpckhbw	%xmm5, %xmm5, %xmm3 # xmm3 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpslld	$31, %ymm3, %ymm3
-	vblendvps	%ymm3, %ymm7, %ymm6, %ymm3
-	vmovdqa	1152(%rsp), %xmm5       # 16-byte Reload
-	vpmovzxbd	%xmm5, %ymm4    # ymm4 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm0, %ymm6, %ymm0
-	vpunpckhbw	%xmm5, %xmm5, %xmm4 # xmm4 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpslld	$31, %ymm4, %ymm4
-	vblendvps	%ymm4, %ymm1, %ymm6, %ymm1
-	vpermps	%ymm1, %ymm9, %ymm4
-	vpermps	%ymm3, %ymm11, %ymm5
-	vblendps	$170, %ymm4, %ymm5, %ymm4 # ymm4 = ymm5[0],ymm4[1],ymm5[2],ymm4[3],ymm5[4],ymm4[5],ymm5[6],ymm4[7]
-	vpermps	%ymm1, %ymm8, %ymm1
-	vpermps	%ymm3, %ymm13, %ymm3
-	vblendps	$170, %ymm1, %ymm3, %ymm1 # ymm1 = ymm3[0],ymm1[1],ymm3[2],ymm1[3],ymm3[4],ymm1[5],ymm3[6],ymm1[7]
-	vpermps	%ymm0, %ymm9, %ymm3
-	vpermps	%ymm2, %ymm11, %ymm5
-	vblendps	$170, %ymm3, %ymm5, %ymm3 # ymm3 = ymm5[0],ymm3[1],ymm5[2],ymm3[3],ymm5[4],ymm3[5],ymm5[6],ymm3[7]
-	vpermps	%ymm0, %ymm8, %ymm0
-	vpermps	%ymm2, %ymm13, %ymm2
-	vblendps	$170, %ymm0, %ymm2, %ymm0 # ymm0 = ymm2[0],ymm0[1],ymm2[2],ymm0[3],ymm2[4],ymm0[5],ymm2[6],ymm0[7]
-	movq	2352(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm0, (%rax,%rcx)
-	movq	2368(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm3, 96(%rax,%rcx)
-	vmovups	%ymm1, 128(%rax,%rcx)
-	movq	2360(%rsp), %rax        # 8-byte Reload
-	vmovups	%ymm4, (%rax,%rcx)
-	addl	$32, %esi
-	subq	$-128, %rcx
-	movq	%rcx, 2688(%rsp)        # 8-byte Spill
-	addl	$-1, %edx
-	jne	.LBB147_437
-.LBB147_453:                            # %end for deinterleaved$3.s0.v15.v15240
-                                        #   in Loop: Header=BB147_340 Depth=3
-	movq	1136(%rsp), %rax        # 8-byte Reload
-	addl	$1, %eax
-	movq	%rax, 1136(%rsp)        # 8-byte Spill
-	movb	928(%rsp), %cl          # 1-byte Reload
-	addb	$1, %cl
-	cmpl	824(%rsp), %eax         # 4-byte Folded Reload
-	jne	.LBB147_340
-.LBB147_454:                            # %consume deinterleaved$3242
-                                        #   in Loop: Header=BB147_273 Depth=2
-	cmpl	$0, 708(%rsp)           # 4-byte Folded Reload
-	movq	2392(%rsp), %r13        # 8-byte Reload
-	jle	.LBB147_554
-# BB#455:                               # %produce demosaiced$3246.preheader
-                                        #   in Loop: Header=BB147_273 Depth=2
-	movq	2744(%rsp), %rax        # 8-byte Reload
-	cltq
-	movq	568(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rax,%rcx), %rax
-	shlq	$5, %rax
-	movq	448(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rcx,%rax), %rdx
-	movq	456(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rcx,%rax), %rsi
-	movq	464(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rax,%rcx), %rdi
-	movq	584(%rsp), %rax         # 8-byte Reload
-	leaq	(%rax,%rax), %rcx
-	movq	536(%rsp), %rax         # 8-byte Reload
-	addl	%eax, %ecx
-	movq	%rcx, 1368(%rsp)        # 8-byte Spill
-	movq	520(%rsp), %rax         # 8-byte Reload
-	movq	504(%rsp), %rcx         # 8-byte Reload
-	vbroadcastss	8(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1824(%rsp)       # 32-byte Spill
-	vbroadcastss	4(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1792(%rsp)       # 32-byte Spill
-	vbroadcastss	(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1760(%rsp)       # 32-byte Spill
-	movq	528(%rsp), %rcx         # 8-byte Reload
-	vbroadcastss	8(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1728(%rsp)       # 32-byte Spill
-	vbroadcastss	4(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1696(%rsp)       # 32-byte Spill
-	vbroadcastss	(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1664(%rsp)       # 32-byte Spill
-	movq	496(%rsp), %rcx         # 8-byte Reload
-	vbroadcastss	(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1632(%rsp)       # 32-byte Spill
-	movq	488(%rsp), %rcx         # 8-byte Reload
-	vbroadcastss	(%rax,%rcx,4), %ymm0
-	vmovaps	%ymm0, 1600(%rsp)       # 32-byte Spill
-	movq	512(%rsp), %rcx         # 8-byte Reload
-	vpbroadcastd	(%rax,%rcx,4), %ymm0
-	vmovdqa	%ymm0, 1568(%rsp)       # 32-byte Spill
-	movq	544(%rsp), %rax         # 8-byte Reload
-	movq	%rax, 1504(%rsp)        # 8-byte Spill
-	movq	552(%rsp), %rax         # 8-byte Reload
-	movq	%rax, 1472(%rsp)        # 8-byte Spill
-	movl	%r13d, %eax
-	xorl	%ebx, %ebx
-	.align	16, 0x90
-.LBB147_456:                            # %produce demosaiced$3246
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        # =>    This Loop Header: Depth=3
-                                        #         Child Loop BB147_457 Depth 4
-                                        #           Child Loop BB147_458 Depth 5
-                                        #         Child Loop BB147_483 Depth 4
-                                        #           Child Loop BB147_484 Depth 5
-                                        #         Child Loop BB147_507 Depth 4
-                                        #           Child Loop BB147_508 Depth 5
-                                        #         Child Loop BB147_534 Depth 4
-                                        #           Child Loop BB147_535 Depth 5
-	movq	%rbx, 1384(%rsp)        # 8-byte Spill
-	movl	%eax, 1392(%rsp)        # 4-byte Spill
-	movq	%rdi, 1400(%rsp)        # 8-byte Spill
-	movq	%rsi, 1408(%rsp)        # 8-byte Spill
-	movq	%rdx, 1440(%rsp)        # 8-byte Spill
-	cltq
-	leaq	(%rdx,%rax), %rcx
-	leaq	2816(%rsp,%rcx,4), %rcx
-	movq	%rcx, 1376(%rsp)        # 8-byte Spill
-	leaq	(%rsi,%rax), %rcx
-	leaq	2816(%rsp,%rcx,4), %r15
-	leaq	(%rax,%rdi), %rax
-	leaq	2816(%rsp,%rax,4), %r12
-	shll	$5, %ebx
-	addl	%r13d, %ebx
-	movq	%rbx, 1880(%rsp)        # 8-byte Spill
-	xorl	%ecx, %ecx
-	xorl	%ebx, %ebx
-	vmovaps	688(%rsp), %xmm6        # 16-byte Reload
-	vmovaps	672(%rsp), %xmm13       # 16-byte Reload
-	.align	16, 0x90
-.LBB147_457:                            # %for demosaiced$3.s0.v15.v15247
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_456 Depth=3
-                                        # =>      This Loop Header: Depth=4
-                                        #           Child Loop BB147_458 Depth 5
-	movq	%rcx, 2496(%rsp)        # 8-byte Spill
-	movq	1880(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rbx,8), %r10d
-	movl	%eax, %r8d
-	andl	$1, %r8d
-	subl	%r13d, %r10d
-	movl	924(%rsp), %eax         # 4-byte Reload
-	movl	%eax, %esi
-	xorl	%r11d, %r11d
-	movq	%r12, %rdx
-	.align	16, 0x90
-.LBB147_458:                            # %for demosaiced$3.s0.v16251
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_456 Depth=3
-                                        #         Parent Loop BB147_457 Depth=4
-                                        # =>        This Inner Loop Header: Depth=5
-	leal	4(%rsi), %ecx
-	andl	$3, %ecx
-	movq	2808(%rsp), %rdi        # 8-byte Reload
-	imull	%edi, %ecx
-	movq	2744(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%r11), %r13d
-	addl	%r10d, %ecx
-	leal	2(%rsi), %r9d
-	andl	$3, %r9d
-	imull	%edi, %r9d
-	movl	%r13d, %eax
-	andl	$3, %eax
-	imull	%edi, %eax
-	addl	%r10d, %r9d
-	addl	%r10d, %eax
-	movslq	%ecx, %rcx
-	vmovups	(%r14,%rcx,4), %xmm8
-	vmovups	16(%r14,%rcx,4), %xmm9
-	vshufps	$221, %xmm9, %xmm8, %xmm1 # xmm1 = xmm8[1,3],xmm9[1,3]
-	vsubps	%xmm13, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm6, %xmm14
-	movslq	%r9d, %rdi
-	vmovups	(%r14,%rdi,4), %xmm5
-	vmovups	16(%r14,%rdi,4), %xmm7
-	vshufps	$221, %xmm7, %xmm5, %xmm2 # xmm2 = xmm5[1,3],xmm7[1,3]
-	vsubps	%xmm13, %xmm2, %xmm2
-	vmulps	%xmm2, %xmm6, %xmm4
-	vmovups	8(%r14,%rcx,4), %xmm1
-	vmovups	24(%r14,%rcx,4), %xmm0
-	vmovaps	%xmm0, 2656(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm0, %xmm1, %xmm2 # xmm2 = xmm1[0,2],xmm0[0,2]
-	vsubps	%xmm13, %xmm2, %xmm2
-	vmovaps	%xmm6, %xmm3
-	vmulps	%xmm2, %xmm3, %xmm6
-	vmovups	8(%r14,%rdi,4), %xmm0
-	vmovaps	%xmm0, 2560(%rsp)       # 16-byte Spill
-	vmovups	24(%r14,%rdi,4), %xmm2
-	vmovaps	%xmm2, 2528(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm2, %xmm0, %xmm2 # xmm2 = xmm0[0,2],xmm2[0,2]
-	vsubps	%xmm13, %xmm2, %xmm2
-	vmulps	%xmm2, %xmm3, %xmm0
-	vbroadcastss	.LCPI147_14(%rip), %xmm12
-	vminps	%xmm12, %xmm0, %xmm0
-	vxorps	%xmm10, %xmm10, %xmm10
-	vmaxps	%xmm10, %xmm0, %xmm2
-	vminps	%xmm12, %xmm6, %xmm0
-	vmaxps	%xmm10, %xmm0, %xmm15
-	vbroadcastss	.LCPI147_15(%rip), %xmm6
-	vminps	%xmm12, %xmm4, %xmm0
-	vmaxps	%xmm10, %xmm0, %xmm11
-	vminps	%xmm12, %xmm14, %xmm0
-	vmaxps	%xmm10, %xmm0, %xmm0
-	vbroadcastss	.LCPI147_16(%rip), %xmm4
-	testl	%r8d, %r8d
-	je	.LBB147_459
-# BB#460:                               # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm0, 2624(%rsp)       # 16-byte Spill
-	vmovaps	%xmm1, 2688(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm7, %xmm5, %xmm0 # xmm0 = xmm5[0,2],xmm7[0,2]
-	vsubps	%xmm13, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm3, %xmm0
-	vminps	%xmm12, %xmm0, %xmm0
-	vmaxps	%xmm10, %xmm0, %xmm0
-	vaddps	%xmm2, %xmm0, %xmm0
-	vmovaps	%xmm2, 2592(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm9, %xmm8, %xmm1 # xmm1 = xmm8[0,2],xmm9[0,2]
-	vsubps	%xmm13, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm3, %xmm1
-	vminps	%xmm12, %xmm1, %xmm1
-	vmaxps	%xmm10, %xmm1, %xmm1
-	vaddps	%xmm15, %xmm1, %xmm1
-	vaddps	%xmm0, %xmm1, %xmm0
-	vmovaps	%xmm6, 2752(%rsp)       # 16-byte Spill
-	vmulps	%xmm6, %xmm0, %xmm2
-	jmp	.LBB147_461
-	.align	16, 0x90
-.LBB147_459:                            #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm2, 2592(%rsp)       # 16-byte Spill
-	vmovaps	%xmm1, 2688(%rsp)       # 16-byte Spill
-	vmovaps	%xmm6, 2752(%rsp)       # 16-byte Spill
-	vmovaps	%xmm0, 2624(%rsp)       # 16-byte Spill
-	vaddps	%xmm11, %xmm0, %xmm0
-	vmulps	%xmm4, %xmm0, %xmm2
-.LBB147_461:                            # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	cltq
-	vmovups	(%r14,%rax,4), %xmm1
-	vmovups	16(%r14,%rax,4), %xmm8
-	vshufps	$221, %xmm8, %xmm1, %xmm0 # xmm0 = xmm1[1,3],xmm8[1,3]
-	vsubps	%xmm13, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm3, %xmm6
-	vmovaps	%xmm13, %xmm14
-	vmovups	8(%r14,%rax,4), %xmm13
-	vmovups	24(%r14,%rax,4), %xmm0
-	vshufps	$136, %xmm0, %xmm13, %xmm5 # xmm5 = xmm13[0,2],xmm0[0,2]
-	vsubps	%xmm14, %xmm5, %xmm5
-	vmulps	%xmm5, %xmm3, %xmm5
-	vminps	%xmm12, %xmm5, %xmm5
-	vmaxps	%xmm10, %xmm5, %xmm5
-	vminps	%xmm12, %xmm6, %xmm6
-	vmaxps	%xmm10, %xmm6, %xmm9
-	vxorps	%xmm6, %xmm6, %xmm6
-	vmovaps	%xmm9, %xmm7
-	vmovaps	%xmm4, %xmm10
-	je	.LBB147_463
-# BB#462:                               # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vshufps	$136, %xmm8, %xmm1, %xmm1 # xmm1 = xmm1[0,2],xmm8[0,2]
-	vsubps	%xmm14, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm3, %xmm1
-	vminps	%xmm12, %xmm1, %xmm1
-	vmaxps	%xmm6, %xmm1, %xmm1
-	vaddps	%xmm5, %xmm1, %xmm1
-	vmulps	%xmm10, %xmm1, %xmm7
-.LBB147_463:                            # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	jne	.LBB147_464
-# BB#465:                               # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	2560(%rsp), %xmm1       # 16-byte Reload
-	vshufps	$221, 2528(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-                                        # xmm1 = xmm1[1,3],mem[1,3]
-	vsubps	%xmm14, %xmm1, %xmm1
-	vmovaps	%xmm3, %xmm6
-	vmulps	%xmm1, %xmm6, %xmm1
-	vminps	%xmm12, %xmm1, %xmm1
-	vxorps	%xmm3, %xmm3, %xmm3
-	vmaxps	%xmm3, %xmm1, %xmm1
-	vaddps	%xmm1, %xmm11, %xmm1
-	vmovaps	2688(%rsp), %xmm4       # 16-byte Reload
-	vshufps	$221, 2656(%rsp), %xmm4, %xmm4 # 16-byte Folded Reload
-                                        # xmm4 = xmm4[1,3],mem[1,3]
-	vsubps	%xmm14, %xmm4, %xmm4
-	vmulps	%xmm4, %xmm6, %xmm4
-	vminps	%xmm12, %xmm4, %xmm4
-	vmaxps	%xmm3, %xmm4, %xmm4
-	vaddps	2624(%rsp), %xmm4, %xmm4 # 16-byte Folded Reload
-	vaddps	%xmm1, %xmm4, %xmm1
-	vmulps	2752(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-	jmp	.LBB147_466
-	.align	16, 0x90
-.LBB147_464:                            #   in Loop: Header=BB147_458 Depth=5
-	vaddps	2592(%rsp), %xmm15, %xmm1 # 16-byte Folded Reload
-	vmulps	%xmm10, %xmm1, %xmm1
-	vmovaps	%xmm3, %xmm6
-	vxorps	%xmm3, %xmm3, %xmm3
-.LBB147_466:                            # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	jne	.LBB147_468
-# BB#467:                               # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vshufps	$221, %xmm0, %xmm13, %xmm0 # xmm0 = xmm13[1,3],xmm0[1,3]
-	vsubps	%xmm14, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm6, %xmm0
-	vminps	%xmm12, %xmm0, %xmm0
-	vmaxps	%xmm3, %xmm0, %xmm0
-	vaddps	%xmm0, %xmm9, %xmm0
-	vmulps	%xmm10, %xmm0, %xmm5
-.LBB147_468:                            # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm7, %xmm0
-	andl	$1, %r13d
-	je	.LBB147_470
-# BB#469:                               # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm2, %xmm0
-.LBB147_470:                            # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm14, %xmm13
-	je	.LBB147_472
-# BB#471:                               # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm7, %xmm2
-.LBB147_472:                            # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm5, %xmm3
-	je	.LBB147_474
-# BB#473:                               # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm1, %xmm3
-.LBB147_474:                            # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	testl	%r13d, %r13d
-	je	.LBB147_476
-# BB#475:                               # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm5, %xmm1
-.LBB147_476:                            # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_478
-# BB#477:                               # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm0, %xmm2
-.LBB147_478:                            # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	je	.LBB147_480
-# BB#479:                               # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	%xmm3, %xmm1
-.LBB147_480:                            # %for demosaiced$3.s0.v16251
-                                        #   in Loop: Header=BB147_458 Depth=5
-	vmovaps	.LCPI147_12(%rip), %ymm0 # ymm0 = <u,0,u,1,u,2,u,3>
-	vpermps	%ymm1, %ymm0, %ymm0
-	vmovaps	.LCPI147_13(%rip), %ymm1 # ymm1 = <0,u,1,u,2,u,3,u>
-	vpermps	%ymm2, %ymm1, %ymm1
-	vblendps	$170, %ymm0, %ymm1, %ymm0 # ymm0 = ymm1[0],ymm0[1],ymm1[2],ymm0[3],ymm1[4],ymm0[5],ymm1[6],ymm0[7]
-	vmovups	%ymm0, (%rdx)
-	subq	$-128, %rdx
-	movl	%r11d, %eax
-	leal	1(%r11), %ecx
-	addl	$1, %esi
-	movl	%ecx, %r11d
-	cmpl	$2, %ecx
-	jne	.LBB147_458
-# BB#481:                               # %end for demosaiced$3.s0.v16252
-                                        #   in Loop: Header=BB147_457 Depth=4
-	vmovaps	%xmm10, %xmm15
-	movq	2496(%rsp), %rcx        # 8-byte Reload
-	addq	$1, %rcx
-	addl	$1, %ebx
-	addq	$32, %r12
-	cmpq	$4, %rcx
-	movq	2392(%rsp), %r13        # 8-byte Reload
-	jne	.LBB147_457
-# BB#482:                               # %for demosaiced$3.s0.v15.v15254.preheader
-                                        #   in Loop: Header=BB147_456 Depth=3
-	movq	2744(%rsp), %rcx        # 8-byte Reload
-	leal	1(%rcx,%rax), %eax
-	movl	%eax, 2688(%rsp)        # 4-byte Spill
-	xorl	%eax, %eax
-	xorl	%ecx, %ecx
-	vmovaps	656(%rsp), %xmm9        # 16-byte Reload
-	vmovaps	640(%rsp), %xmm10       # 16-byte Reload
-	vxorps	%xmm11, %xmm11, %xmm11
-	vmovaps	2752(%rsp), %xmm2       # 16-byte Reload
-	.align	16, 0x90
-.LBB147_483:                            # %for demosaiced$3.s0.v15.v15254
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_456 Depth=3
-                                        # =>      This Loop Header: Depth=4
-                                        #           Child Loop BB147_484 Depth 5
-	movq	%rcx, 2592(%rsp)        # 8-byte Spill
-	movq	%rax, 2624(%rsp)        # 8-byte Spill
-	movq	%r15, 2656(%rsp)        # 8-byte Spill
-	movq	1880(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rcx,8), %r12d
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	subl	%eax, %r12d
-	addl	1036(%rsp), %r12d       # 4-byte Folded Reload
-	movq	2480(%rsp), %rax        # 8-byte Reload
-	movl	%eax, %r13d
-	movq	2488(%rsp), %rax        # 8-byte Reload
-	movq	%r15, %rsi
-	movq	1536(%rsp), %r9         # 8-byte Reload
-	.align	16, 0x90
-.LBB147_484:                            # %for demosaiced$3.s0.v16258
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_456 Depth=3
-                                        #         Parent Loop BB147_483 Depth=4
-                                        # =>        This Inner Loop Header: Depth=5
-	movl	%r9d, %ecx
-	andl	$3, %ecx
-	movq	2808(%rsp), %rbx        # 8-byte Reload
-	imull	%ebx, %ecx
-	movl	%eax, %edx
-	andl	$3, %edx
-	imull	%ebx, %edx
-	leal	(%rcx,%r12), %ecx
-	leal	(%rdx,%r12), %edi
-	leal	1(%r9), %r15d
-	movl	%r13d, %edx
-	andl	$3, %edx
-	imull	%ebx, %edx
-	leal	(%rdx,%r12), %edx
-	movslq	%ecx, %rcx
-	vmovups	40(%r14,%rcx,4), %xmm8
-	vmovups	56(%r14,%rcx,4), %xmm4
-	vshufps	$136, %xmm4, %xmm8, %xmm0 # xmm0 = xmm8[0,2],xmm4[0,2]
-	vsubps	%xmm10, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm9, %xmm0
-	movslq	%edx, %r10
-	vmovups	32(%r14,%r10,4), %xmm1
-	vshufps	$221, 48(%r14,%r10,4), %xmm1, %xmm1 # xmm1 = xmm1[1,3],mem[1,3]
-	vsubps	%xmm10, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm9, %xmm1
-	vminps	%xmm12, %xmm1, %xmm1
-	vmaxps	%xmm11, %xmm1, %xmm1
-	movslq	%edi, %r11
-	vmovups	32(%r14,%r11,4), %xmm5
-	vshufps	$221, 48(%r14,%r11,4), %xmm5, %xmm5 # xmm5 = xmm5[1,3],mem[1,3]
-	vsubps	%xmm10, %xmm5, %xmm5
-	vmulps	%xmm5, %xmm9, %xmm5
-	vminps	%xmm12, %xmm5, %xmm5
-	vmaxps	%xmm11, %xmm5, %xmm5
-	vaddps	%xmm5, %xmm1, %xmm1
-	vminps	%xmm12, %xmm0, %xmm0
-	vmaxps	%xmm11, %xmm0, %xmm5
-	vmovups	32(%r14,%rcx,4), %xmm0
-	vmovups	48(%r14,%rcx,4), %xmm6
-	vshufps	$136, %xmm6, %xmm0, %xmm7 # xmm7 = xmm0[0,2],xmm6[0,2]
-	vsubps	%xmm10, %xmm7, %xmm7
-	vmulps	%xmm7, %xmm9, %xmm7
-	vminps	%xmm12, %xmm7, %xmm7
-	vmaxps	%xmm11, %xmm7, %xmm7
-	vaddps	%xmm7, %xmm5, %xmm7
-	vaddps	%xmm7, %xmm1, %xmm1
-	vshufps	$221, %xmm6, %xmm0, %xmm0 # xmm0 = xmm0[1,3],xmm6[1,3]
-	vsubps	%xmm10, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm9, %xmm0
-	vmulps	%xmm2, %xmm1, %xmm1
-	vminps	%xmm12, %xmm0, %xmm0
-	vmaxps	%xmm11, %xmm0, %xmm6
-	vmovaps	%xmm6, %xmm0
-	testl	%r8d, %r8d
-	je	.LBB147_486
-# BB#485:                               # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm1, %xmm0
-.LBB147_486:                            # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	je	.LBB147_488
-# BB#487:                               # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm6, %xmm1
-.LBB147_488:                            # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovups	40(%r14,%r10,4), %xmm7
-	vshufps	$136, 56(%r14,%r10,4), %xmm7, %xmm7 # xmm7 = xmm7[0,2],mem[0,2]
-	vsubps	%xmm10, %xmm7, %xmm7
-	vmulps	%xmm7, %xmm9, %xmm7
-	vminps	%xmm12, %xmm7, %xmm7
-	vmaxps	%xmm11, %xmm7, %xmm7
-	vmovups	40(%r14,%r11,4), %xmm3
-	vshufps	$136, 56(%r14,%r11,4), %xmm3, %xmm3 # xmm3 = xmm3[0,2],mem[0,2]
-	vsubps	%xmm10, %xmm3, %xmm3
-	vmulps	%xmm3, %xmm9, %xmm3
-	vminps	%xmm12, %xmm3, %xmm3
-	vmaxps	%xmm11, %xmm3, %xmm3
-	vaddps	%xmm3, %xmm7, %xmm3
-	vshufps	$221, %xmm4, %xmm8, %xmm4 # xmm4 = xmm8[1,3],xmm4[1,3]
-	vsubps	%xmm10, %xmm4, %xmm4
-	vmulps	%xmm4, %xmm9, %xmm4
-	vminps	%xmm12, %xmm4, %xmm4
-	vmaxps	%xmm11, %xmm4, %xmm4
-	vaddps	%xmm6, %xmm4, %xmm4
-	vaddps	%xmm3, %xmm4, %xmm3
-	vmulps	%xmm2, %xmm3, %xmm4
-	vmovaps	%xmm5, %xmm3
-	jne	.LBB147_490
-# BB#489:                               # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm4, %xmm3
-.LBB147_490:                            # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	jne	.LBB147_492
-# BB#491:                               # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm5, %xmm4
-.LBB147_492:                            # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm1, %xmm5
-	andl	$1, %r9d
-	je	.LBB147_494
-# BB#493:                               # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm0, %xmm5
-.LBB147_494:                            # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm4, %xmm6
-	je	.LBB147_496
-# BB#495:                               # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm3, %xmm6
-.LBB147_496:                            # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	je	.LBB147_498
-# BB#497:                               # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm4, %xmm3
-.LBB147_498:                            # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	testl	%r9d, %r9d
-	je	.LBB147_500
-# BB#499:                               # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm1, %xmm0
-.LBB147_500:                            # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_502
-# BB#501:                               # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm5, %xmm0
-.LBB147_502:                            # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	je	.LBB147_504
-# BB#503:                               # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	%xmm6, %xmm3
-.LBB147_504:                            # %for demosaiced$3.s0.v16258
-                                        #   in Loop: Header=BB147_484 Depth=5
-	vmovaps	.LCPI147_12(%rip), %ymm1 # ymm1 = <u,0,u,1,u,2,u,3>
-	vpermps	%ymm3, %ymm1, %ymm1
-	vmovaps	.LCPI147_13(%rip), %ymm3 # ymm3 = <0,u,1,u,2,u,3,u>
-	vpermps	%ymm0, %ymm3, %ymm0
-	vblendps	$170, %ymm1, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm1[1],ymm0[2],ymm1[3],ymm0[4],ymm1[5],ymm0[6],ymm1[7]
-	vmovups	%ymm0, (%rsi)
-	subq	$-128, %rsi
-	addl	$1, %eax
-	addl	$1, %r13d
-	movl	%r15d, %r9d
-	cmpl	%r15d, 2688(%rsp)       # 4-byte Folded Reload
-	jne	.LBB147_484
-# BB#505:                               # %end for demosaiced$3.s0.v16259
-                                        #   in Loop: Header=BB147_483 Depth=4
-	movq	2624(%rsp), %rax        # 8-byte Reload
-	addq	$1, %rax
-	movq	2592(%rsp), %rcx        # 8-byte Reload
-	addl	$1, %ecx
-	movq	2656(%rsp), %r15        # 8-byte Reload
-	addq	$32, %r15
-	cmpq	$4, %rax
-	jne	.LBB147_483
-# BB#506:                               # %for demosaiced$3.s0.v15.v15261.preheader
-                                        #   in Loop: Header=BB147_456 Depth=3
-	movq	2744(%rsp), %rax        # 8-byte Reload
-	movl	%eax, %r11d
-	subl	2688(%rsp), %r11d       # 4-byte Folded Reload
-	xorl	%r9d, %r9d
-	xorl	%r10d, %r10d
-	vmovaps	784(%rsp), %xmm14       # 16-byte Reload
-	vmovaps	768(%rsp), %xmm9        # 16-byte Reload
-	movq	1376(%rsp), %r12        # 8-byte Reload
-	vmovaps	%xmm15, %xmm10
-	vmovaps	%xmm10, 2400(%rsp)      # 16-byte Spill
-	.align	16, 0x90
-.LBB147_507:                            # %for demosaiced$3.s0.v15.v15261
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_456 Depth=3
-                                        # =>      This Loop Header: Depth=4
-                                        #           Child Loop BB147_508 Depth 5
-	movq	1880(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%r10,8), %r15d
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	subl	%eax, %r15d
-	movq	1040(%rsp), %rax        # 8-byte Reload
-	addl	%eax, %r15d
-	xorl	%edx, %edx
-	movq	%r12, %rdi
-	.align	16, 0x90
-.LBB147_508:                            # %for demosaiced$3.s0.v16265
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_456 Depth=3
-                                        #         Parent Loop BB147_507 Depth=4
-                                        # =>        This Inner Loop Header: Depth=5
-	movq	2744(%rsp), %rax        # 8-byte Reload
-	leal	(%rax,%rdx), %r13d
-	movl	%r13d, %eax
-	andl	$3, %eax
-	movq	2808(%rsp), %rbx        # 8-byte Reload
-	imull	%ebx, %eax
-	movq	2488(%rsp), %rcx        # 8-byte Reload
-	leal	(%rcx,%rdx), %ecx
-	andl	$3, %ecx
-	imull	%ebx, %ecx
-	leal	(%rax,%r15), %esi
-	leal	(%rcx,%r15), %eax
-	movq	2480(%rsp), %rcx        # 8-byte Reload
-	leal	(%rcx,%rdx), %ecx
-	andl	$3, %ecx
-	imull	%ebx, %ecx
-	leal	(%rcx,%r15), %ecx
-	movslq	%esi, %rsi
-	vmovups	72(%r14,%rsi,4), %xmm5
-	vmovups	88(%r14,%rsi,4), %xmm6
-	vshufps	$136, %xmm6, %xmm5, %xmm0 # xmm0 = xmm5[0,2],xmm6[0,2]
-	vsubps	%xmm9, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm14, %xmm3
-	vmovups	64(%r14,%rsi,4), %xmm0
-	vmovups	80(%r14,%rsi,4), %xmm1
-	vshufps	$221, %xmm1, %xmm0, %xmm4 # xmm4 = xmm0[1,3],xmm1[1,3]
-	vsubps	%xmm9, %xmm4, %xmm4
-	vmulps	%xmm4, %xmm14, %xmm4
-	vminps	%xmm12, %xmm4, %xmm4
-	vmaxps	%xmm11, %xmm4, %xmm4
-	vminps	%xmm12, %xmm3, %xmm3
-	vmaxps	%xmm11, %xmm3, %xmm13
-	testl	%r8d, %r8d
-	je	.LBB147_509
-# BB#510:                               # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%xmm6, 2624(%rsp)       # 16-byte Spill
-	vmovaps	%xmm5, 2656(%rsp)       # 16-byte Spill
-	vmovaps	%xmm4, %xmm0
-	vmovaps	%xmm4, 2592(%rsp)       # 16-byte Spill
-	jmp	.LBB147_511
-	.align	16, 0x90
-.LBB147_509:                            #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%xmm4, 2592(%rsp)       # 16-byte Spill
-	vmovaps	%xmm6, 2624(%rsp)       # 16-byte Spill
-	vmovaps	%xmm5, 2656(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[0,2],xmm1[0,2]
-	vsubps	%xmm9, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm14, %xmm0
-	vminps	%xmm12, %xmm0, %xmm0
-	vmaxps	%xmm11, %xmm0, %xmm0
-	vaddps	%xmm0, %xmm13, %xmm0
-	vmulps	%xmm10, %xmm0, %xmm0
-.LBB147_511:                            # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%ymm0, 2688(%rsp)       # 32-byte Spill
-	vxorps	%xmm15, %xmm15, %xmm15
-	cltq
-	vmovups	72(%r14,%rax,4), %xmm0
-	vmovaps	%xmm0, 2560(%rsp)       # 16-byte Spill
-	vmovups	88(%r14,%rax,4), %xmm1
-	vmovaps	%xmm1, 2528(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[0,2],xmm1[0,2]
-	vsubps	%xmm9, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm14, %xmm5
-	movslq	%ecx, %rcx
-	vmovups	72(%r14,%rcx,4), %xmm3
-	vmovups	88(%r14,%rcx,4), %xmm0
-	vshufps	$136, %xmm0, %xmm3, %xmm1 # xmm1 = xmm3[0,2],xmm0[0,2]
-	vsubps	%xmm9, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm14, %xmm4
-	vmovups	64(%r14,%rax,4), %xmm6
-	vmovups	80(%r14,%rax,4), %xmm10
-	vshufps	$221, %xmm10, %xmm6, %xmm1 # xmm1 = xmm6[1,3],xmm10[1,3]
-	vsubps	%xmm9, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm14, %xmm1
-	vmovups	64(%r14,%rcx,4), %xmm11
-	vmovups	80(%r14,%rcx,4), %xmm8
-	vshufps	$221, %xmm8, %xmm11, %xmm7 # xmm7 = xmm11[1,3],xmm8[1,3]
-	vsubps	%xmm9, %xmm7, %xmm7
-	vmulps	%xmm7, %xmm14, %xmm7
-	vminps	%xmm12, %xmm7, %xmm7
-	vmaxps	%xmm15, %xmm7, %xmm2
-	vminps	%xmm12, %xmm1, %xmm1
-	vmaxps	%xmm15, %xmm1, %xmm7
-	vminps	%xmm12, %xmm4, %xmm1
-	vmaxps	%xmm15, %xmm1, %xmm4
-	vminps	%xmm12, %xmm5, %xmm1
-	vmaxps	%xmm15, %xmm1, %xmm5
-	je	.LBB147_512
-# BB#513:                               # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vaddps	%xmm2, %xmm7, %xmm1
-	vmovaps	%xmm7, 2496(%rsp)       # 16-byte Spill
-	vmovaps	2400(%rsp), %xmm10      # 16-byte Reload
-	vmulps	%xmm10, %xmm1, %xmm8
-	vxorps	%xmm11, %xmm11, %xmm11
-	vmovaps	2752(%rsp), %xmm6       # 16-byte Reload
-	jmp	.LBB147_514
-	.align	16, 0x90
-.LBB147_512:                            #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%xmm7, 2496(%rsp)       # 16-byte Spill
-	vshufps	$136, %xmm8, %xmm11, %xmm1 # xmm1 = xmm11[0,2],xmm8[0,2]
-	vsubps	%xmm9, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm14, %xmm1
-	vminps	%xmm12, %xmm1, %xmm1
-	vmaxps	%xmm15, %xmm1, %xmm1
-	vaddps	%xmm1, %xmm4, %xmm1
-	vshufps	$136, %xmm10, %xmm6, %xmm6 # xmm6 = xmm6[0,2],xmm10[0,2]
-	vsubps	%xmm9, %xmm6, %xmm6
-	vmulps	%xmm6, %xmm14, %xmm6
-	vminps	%xmm12, %xmm6, %xmm6
-	vmaxps	%xmm15, %xmm6, %xmm6
-	vaddps	%xmm6, %xmm5, %xmm6
-	vaddps	%xmm1, %xmm6, %xmm1
-	vmovaps	2752(%rsp), %xmm6       # 16-byte Reload
-	vmulps	%xmm6, %xmm1, %xmm8
-	vxorps	%xmm11, %xmm11, %xmm11
-	vmovaps	2400(%rsp), %xmm10      # 16-byte Reload
-.LBB147_514:                            # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	je	.LBB147_516
-# BB#515:                               #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	2656(%rsp), %xmm1       # 16-byte Reload
-	vshufps	$221, 2624(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-                                        # xmm1 = xmm1[1,3],mem[1,3]
-	vsubps	%xmm9, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm14, %xmm1
-	vminps	%xmm12, %xmm1, %xmm1
-	vmaxps	%xmm11, %xmm1, %xmm1
-	vaddps	2592(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-	vmulps	%xmm10, %xmm1, %xmm13
-.LBB147_516:                            # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	jne	.LBB147_517
-# BB#518:                               # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vaddps	%xmm4, %xmm5, %xmm0
-	vmulps	%xmm10, %xmm0, %xmm3
-	jmp	.LBB147_519
-	.align	16, 0x90
-.LBB147_517:                            #   in Loop: Header=BB147_508 Depth=5
-	vshufps	$221, %xmm0, %xmm3, %xmm0 # xmm0 = xmm3[1,3],xmm0[1,3]
-	vsubps	%xmm9, %xmm0, %xmm0
-	vmulps	%xmm0, %xmm14, %xmm0
-	vminps	%xmm12, %xmm0, %xmm0
-	vmaxps	%xmm11, %xmm0, %xmm0
-	vaddps	%xmm2, %xmm0, %xmm0
-	vmovaps	2560(%rsp), %xmm1       # 16-byte Reload
-	vshufps	$221, 2528(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-                                        # xmm1 = xmm1[1,3],mem[1,3]
-	vsubps	%xmm9, %xmm1, %xmm1
-	vmulps	%xmm1, %xmm14, %xmm1
-	vminps	%xmm12, %xmm1, %xmm1
-	vmaxps	%xmm11, %xmm1, %xmm1
-	vaddps	2496(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
-	vaddps	%xmm0, %xmm1, %xmm0
-	vmulps	%xmm6, %xmm0, %xmm3
-.LBB147_519:                            # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	2688(%rsp), %ymm4       # 32-byte Reload
-	vmovaps	%xmm8, %xmm0
-	andl	$1, %r13d
-	je	.LBB147_521
-# BB#520:                               # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%xmm4, %xmm0
-.LBB147_521:                            # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%xmm3, %xmm1
-	je	.LBB147_523
-# BB#522:                               # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%xmm13, %xmm1
-.LBB147_523:                            # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	je	.LBB147_525
-# BB#524:                               # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%xmm3, %xmm13
-.LBB147_525:                            # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	testl	%r13d, %r13d
-	je	.LBB147_527
-# BB#526:                               # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%xmm8, %xmm4
-.LBB147_527:                            # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	cmpl	$0, 104(%rbp)
-	je	.LBB147_529
-# BB#528:                               # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%xmm0, %xmm4
-.LBB147_529:                            # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	je	.LBB147_531
-# BB#530:                               # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	%xmm1, %xmm13
-.LBB147_531:                            # %for demosaiced$3.s0.v16265
-                                        #   in Loop: Header=BB147_508 Depth=5
-	vmovaps	.LCPI147_12(%rip), %ymm0 # ymm0 = <u,0,u,1,u,2,u,3>
-	vpermps	%ymm13, %ymm0, %ymm0
-	vmovaps	.LCPI147_13(%rip), %ymm1 # ymm1 = <0,u,1,u,2,u,3,u>
-	vpermps	%ymm4, %ymm1, %ymm1
-	vblendps	$170, %ymm0, %ymm1, %ymm0 # ymm0 = ymm1[0],ymm0[1],ymm1[2],ymm0[3],ymm1[4],ymm0[5],ymm1[6],ymm0[7]
-	vmovups	%ymm0, (%rdi)
-	subq	$-128, %rdi
+	movslq	%ecx, %rdx
+	leaq	1(%rdx), %rbp
+	subq	%r10, %rbp
+	movq	%rbp, 176(%rsp)         # 8-byte Spill
+	movl	$31, %ecx
+	subl	%r14d, %ecx
+	subl	%r15d, %ecx
+	movl	%r14d, %esi
+	notl	%esi
+	movl	%esi, 132(%rsp)         # 4-byte Spill
+	cmpl	%esi, %ecx
+	cmovll	%esi, %ecx
+	notl	%ecx
+	movslq	%ecx, %rsi
+	movq	%rdi, %rcx
+	subq	%rsi, %rcx
+	imulq	%rbp, %rcx
+	cmpl	$31, %r15d
+	movl	$32, %esi
+	cmovgl	%r15d, %esi
 	addl	$1, %edx
-	movl	%r11d, %eax
-	addl	%edx, %eax
-	jne	.LBB147_508
-# BB#532:                               # %end for demosaiced$3.s0.v16266
-                                        #   in Loop: Header=BB147_507 Depth=4
-	addq	$1, %r9
-	addl	$1, %r10d
-	addq	$32, %r12
-	cmpq	$4, %r9
-	jne	.LBB147_507
-# BB#533:                               #   in Loop: Header=BB147_456 Depth=3
-	vmovaps	%xmm9, 768(%rsp)        # 16-byte Spill
-	vmovaps	%xmm14, 784(%rsp)       # 16-byte Spill
-	movq	1504(%rsp), %r8         # 8-byte Reload
-	movq	1472(%rsp), %r9         # 8-byte Reload
-	xorl	%r10d, %r10d
-	movq	1048(%rsp), %rdi        # 8-byte Reload
-	movq	1024(%rsp), %r15        # 8-byte Reload
-	movq	728(%rsp), %r12         # 8-byte Reload
-	movq	1368(%rsp), %r13        # 8-byte Reload
-	.align	16, 0x90
-.LBB147_534:                            # %for f2.s0.v16.v18.yii269
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_456 Depth=3
-                                        # =>      This Loop Header: Depth=4
-                                        #           Child Loop BB147_535 Depth 5
-	leal	(%r13,%r10), %ecx
-	movslq	%ecx, %rcx
-	subq	1536(%rsp), %rcx        # 8-byte Folded Reload
-	shlq	$7, %rcx
-	vmovaps	2816(%rsp,%rcx), %ymm11
-	vmovaps	%ymm11, 2400(%rsp)      # 32-byte Spill
-	vmovaps	2848(%rsp,%rcx), %ymm10
-	vmovaps	%ymm10, 2496(%rsp)      # 32-byte Spill
-	vmovaps	2880(%rsp,%rcx), %ymm14
-	vmovaps	%ymm14, 2528(%rsp)      # 32-byte Spill
-	vmovaps	2912(%rsp,%rcx), %ymm4
-	vmovaps	%ymm4, 2592(%rsp)       # 32-byte Spill
-	vmovaps	3072(%rsp,%rcx), %ymm15
-	vmovaps	%ymm15, 2560(%rsp)      # 32-byte Spill
-	vmovaps	3104(%rsp,%rcx), %ymm1
-	vmovaps	3136(%rsp,%rcx), %ymm3
-	vmovaps	3168(%rsp,%rcx), %ymm12
-	vmovaps	3360(%rsp,%rcx), %ymm0
-	vmovaps	3392(%rsp,%rcx), %ymm5
-	vmovaps	3424(%rsp,%rcx), %ymm6
-	vmovaps	1760(%rsp), %ymm2       # 32-byte Reload
-	vmulps	%ymm2, %ymm4, %ymm7
-	vmulps	%ymm2, %ymm14, %ymm8
-	vmulps	%ymm2, %ymm10, %ymm9
-	vmovaps	%ymm10, %ymm4
-	vmulps	%ymm2, %ymm11, %ymm10
-	vmovaps	%ymm11, %ymm13
-	vmovaps	1792(%rsp), %ymm2       # 32-byte Reload
-	vmovaps	%ymm2, %ymm11
-	vfmadd213ps	%ymm10, %ymm15, %ymm11
-	vmovaps	%ymm2, %ymm10
-	vfmadd213ps	%ymm9, %ymm1, %ymm10
-	vmovaps	%ymm2, %ymm9
-	vfmadd213ps	%ymm8, %ymm3, %ymm9
-	vmovaps	%ymm2, %ymm8
-	vfmadd213ps	%ymm7, %ymm12, %ymm8
-	vmovaps	1824(%rsp), %ymm2       # 32-byte Reload
-	vmovaps	%ymm2, %ymm7
-	vfmadd213ps	%ymm8, %ymm6, %ymm7
-	vmovaps	%ymm7, 2752(%rsp)       # 32-byte Spill
-	vmovaps	%ymm2, %ymm7
-	vfmadd213ps	%ymm9, %ymm5, %ymm7
-	vmovaps	%ymm7, 2688(%rsp)       # 32-byte Spill
-	vmovaps	%ymm2, %ymm7
-	vfmadd213ps	%ymm10, %ymm0, %ymm7
-	vmovaps	%ymm7, 2656(%rsp)       # 32-byte Spill
-	vmovaps	3328(%rsp,%rcx), %ymm15
-	vfmadd213ps	%ymm11, %ymm15, %ymm2
-	vmovaps	%ymm2, 2624(%rsp)       # 32-byte Spill
-	vmovaps	1664(%rsp), %ymm10      # 32-byte Reload
-	vmulps	%ymm10, %ymm13, %ymm7
-	vmovaps	1696(%rsp), %ymm2       # 32-byte Reload
-	vmovaps	%ymm2, %ymm13
-	vmovaps	2560(%rsp), %ymm9       # 32-byte Reload
-	vfmadd213ps	%ymm7, %ymm9, %ymm13
-	vmulps	%ymm10, %ymm4, %ymm7
-	vmovaps	%ymm2, %ymm8
-	vfmadd213ps	%ymm7, %ymm1, %ymm8
-	vmulps	%ymm10, %ymm14, %ymm7
-	vmovaps	%ymm2, %ymm14
-	vfmadd213ps	%ymm7, %ymm3, %ymm14
-	vmulps	2592(%rsp), %ymm10, %ymm7 # 32-byte Folded Reload
-	vmovaps	%ymm2, %ymm11
-	vfmadd213ps	%ymm7, %ymm12, %ymm11
-	vmovaps	1728(%rsp), %ymm2       # 32-byte Reload
-	vmovaps	%ymm2, %ymm10
-	vfmadd213ps	%ymm11, %ymm6, %ymm10
-	vmovaps	%ymm2, %ymm11
-	vfmadd213ps	%ymm14, %ymm5, %ymm11
-	vmovaps	%ymm2, %ymm7
-	vfmadd213ps	%ymm8, %ymm0, %ymm7
-	vmovaps	%ymm2, %ymm8
-	vfmadd213ps	%ymm13, %ymm15, %ymm8
-	vmovaps	1568(%rsp), %ymm13      # 32-byte Reload
-	vmulps	2400(%rsp), %ymm13, %ymm4 # 32-byte Folded Reload
-	vmovaps	1600(%rsp), %ymm2       # 32-byte Reload
-	vfmadd213ps	%ymm4, %ymm2, %ymm9
-	vmovaps	%ymm9, %ymm14
-	vmulps	2496(%rsp), %ymm13, %ymm4 # 32-byte Folded Reload
-	vfmadd213ps	%ymm4, %ymm2, %ymm1
-	vmulps	2528(%rsp), %ymm13, %ymm4 # 32-byte Folded Reload
-	vfmadd213ps	%ymm4, %ymm2, %ymm3
-	vmulps	2592(%rsp), %ymm13, %ymm4 # 32-byte Folded Reload
-	vfmadd213ps	%ymm4, %ymm2, %ymm12
-	vmovaps	1632(%rsp), %ymm2       # 32-byte Reload
-	vfmadd213ps	%ymm12, %ymm2, %ymm6
-	vfmadd213ps	%ymm3, %ymm2, %ymm5
-	vfmadd213ps	%ymm1, %ymm2, %ymm0
-	vmovaps	%ymm0, %ymm9
-	vfmadd213ps	%ymm14, %ymm2, %ymm15
-	xorl	%ebx, %ebx
-	movl	$3, %r11d
-	movq	%r8, %rdx
-	movq	%r9, %rsi
-	vmovdqa	992(%rsp), %ymm14       # 32-byte Reload
-	.align	16, 0x90
-.LBB147_535:                            # %for f2.s0.v17272
-                                        #   Parent Loop BB147_133 Depth=1
-                                        #     Parent Loop BB147_273 Depth=2
-                                        #       Parent Loop BB147_456 Depth=3
-                                        #         Parent Loop BB147_534 Depth=4
-                                        # =>        This Inner Loop Header: Depth=5
-	vmovaps	%ymm8, %ymm0
-	cmpl	$1, %ebx
-	je	.LBB147_537
-# BB#536:                               # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	2624(%rsp), %ymm0       # 32-byte Reload
-.LBB147_537:                            # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm7, %ymm1
-	je	.LBB147_539
-# BB#538:                               # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	2656(%rsp), %ymm1       # 32-byte Reload
-.LBB147_539:                            # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm11, %ymm4
-	je	.LBB147_541
-# BB#540:                               # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	2688(%rsp), %ymm4       # 32-byte Reload
-.LBB147_541:                            # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm10, %ymm12
-	je	.LBB147_543
-# BB#542:                               # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	2752(%rsp), %ymm12      # 32-byte Reload
-.LBB147_543:                            # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm6, %ymm3
-	testl	%ebx, %ebx
-	je	.LBB147_545
-# BB#544:                               # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm12, %ymm3
-.LBB147_545:                            # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm5, %ymm12
-	je	.LBB147_547
-# BB#546:                               # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm4, %ymm12
-.LBB147_547:                            # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm9, %ymm4
-	je	.LBB147_549
-# BB#548:                               # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm1, %ymm4
-.LBB147_549:                            # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm15, %ymm1
-	je	.LBB147_551
-# BB#550:                               # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vmovaps	%ymm0, %ymm1
-.LBB147_551:                            # %for f2.s0.v17272
-                                        #   in Loop: Header=BB147_535 Depth=5
-	vbroadcastss	.LCPI147_17(%rip), %ymm0
-	vminps	%ymm0, %ymm1, %ymm1
-	vminps	%ymm0, %ymm4, %ymm4
-	vminps	%ymm0, %ymm12, %ymm12
-	vminps	%ymm0, %ymm3, %ymm0
-	vxorps	%ymm2, %ymm2, %ymm2
-	vmaxps	%ymm2, %ymm1, %ymm1
-	vmaxps	%ymm2, %ymm4, %ymm3
-	vmaxps	%ymm2, %ymm12, %ymm4
-	vmaxps	%ymm2, %ymm0, %ymm0
-	vcvttps2dq	%ymm1, %ymm1
-	vmovdqa	.LCPI147_5(%rip), %ymm2 # ymm2 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
-	vpshufb	%ymm2, %ymm1, %ymm1
-	vpermq	$232, %ymm1, %ymm1      # ymm1 = ymm1[0,2,2,3]
-	vcvttps2dq	%ymm3, %ymm3
-	vpshufb	%ymm2, %ymm3, %ymm3
-	vpermq	$232, %ymm3, %ymm3      # ymm3 = ymm3[0,2,2,3]
-	vcvttps2dq	%ymm4, %ymm4
-	vpshufb	%ymm2, %ymm4, %ymm4
-	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
-	vcvttps2dq	%ymm0, %ymm0
-	vpshufb	%ymm2, %ymm0, %ymm0
-	vpermq	$232, %ymm0, %ymm0      # ymm0 = ymm0[0,2,2,3]
-	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
-	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
-	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
-	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
-	vpmulld	%ymm14, %ymm1, %ymm12
-	vpmulld	%ymm14, %ymm3, %ymm1
-	vpmulld	%ymm14, %ymm4, %ymm3
-	vpmulld	%ymm14, %ymm0, %ymm0
-	vmovd	%ebx, %xmm4
-	vpsubd	2432(%rsp), %ymm4, %ymm4 # 32-byte Folded Reload
-	vpbroadcastd	%xmm4, %ymm13
-	vpaddd	%ymm0, %ymm13, %ymm4
-	vpaddd	%ymm3, %ymm13, %ymm3
-	vpaddd	%ymm1, %ymm13, %ymm1
-	vpaddd	%ymm12, %ymm13, %ymm0
-	vmovq	%xmm4, %rcx
-	movslq	%ecx, %rax
-	movzwl	(%rdi,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	vpextrq	$1, %xmm4, %rax
-	sarq	$32, %rcx
-	vpinsrw	$1, (%rdi,%rcx,2), %xmm2, %xmm2
-	movslq	%eax, %rcx
-	sarq	$32, %rax
-	vextracti128	$1, %ymm4, %xmm4
-	vpinsrw	$2, (%rdi,%rcx,2), %xmm2, %xmm2
-	vmovq	%xmm4, %rcx
-	vpinsrw	$3, (%rdi,%rax,2), %xmm2, %xmm2
-	movslq	%ecx, %rax
-	vpinsrw	$4, (%rdi,%rax,2), %xmm2, %xmm2
-	vpextrq	$1, %xmm4, %rax
-	sarq	$32, %rcx
-	vpinsrw	$5, (%rdi,%rcx,2), %xmm2, %xmm2
-	movslq	%eax, %rcx
-	vpinsrw	$6, (%rdi,%rcx,2), %xmm2, %xmm2
-	vmovq	%xmm3, %rcx
-	sarq	$32, %rax
-	vpinsrw	$7, (%rdi,%rax,2), %xmm2, %xmm4
-	movslq	%ecx, %rax
-	movzwl	(%rdi,%rax,2), %eax
-	vmovd	%eax, %xmm2
-	vpextrq	$1, %xmm3, %rax
-	sarq	$32, %rcx
-	vpinsrw	$1, (%rdi,%rcx,2), %xmm2, %xmm2
-	movslq	%eax, %rcx
-	sarq	$32, %rax
-	vextracti128	$1, %ymm3, %xmm3
-	vpinsrw	$2, (%rdi,%rcx,2), %xmm2, %xmm2
-	vmovq	%xmm3, %rcx
-	vpinsrw	$3, (%rdi,%rax,2), %xmm2, %xmm2
-	movslq	%ecx, %rax
-	vpinsrw	$4, (%rdi,%rax,2), %xmm2, %xmm2
-	vpextrq	$1, %xmm3, %rax
-	sarq	$32, %rcx
-	vpinsrw	$5, (%rdi,%rcx,2), %xmm2, %xmm2
-	movslq	%eax, %rcx
-	vpinsrw	$6, (%rdi,%rcx,2), %xmm2, %xmm2
-	vmovq	%xmm1, %rcx
-	sarq	$32, %rax
-	vpinsrw	$7, (%rdi,%rax,2), %xmm2, %xmm2
-	movslq	%ecx, %rax
-	movzwl	(%rdi,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	vpextrq	$1, %xmm1, %rax
-	sarq	$32, %rcx
-	vpinsrw	$1, (%rdi,%rcx,2), %xmm3, %xmm3
-	movslq	%eax, %rcx
-	sarq	$32, %rax
-	vextracti128	$1, %ymm1, %xmm1
-	vpinsrw	$2, (%rdi,%rcx,2), %xmm3, %xmm3
-	vmovq	%xmm1, %rcx
-	vpinsrw	$3, (%rdi,%rax,2), %xmm3, %xmm3
-	movslq	%ecx, %rax
-	vpinsrw	$4, (%rdi,%rax,2), %xmm3, %xmm3
-	vpextrq	$1, %xmm1, %rax
-	sarq	$32, %rcx
-	vpinsrw	$5, (%rdi,%rcx,2), %xmm3, %xmm1
-	movslq	%eax, %rcx
-	vpinsrw	$6, (%rdi,%rcx,2), %xmm1, %xmm1
-	vmovq	%xmm0, %rcx
-	sarq	$32, %rax
-	vpinsrw	$7, (%rdi,%rax,2), %xmm1, %xmm1
-	movslq	%ecx, %rax
-	movzwl	(%rdi,%rax,2), %eax
-	vmovd	%eax, %xmm3
-	vpextrq	$1, %xmm0, %rax
-	sarq	$32, %rcx
-	vpinsrw	$1, (%rdi,%rcx,2), %xmm3, %xmm3
-	movslq	%eax, %rcx
-	sarq	$32, %rax
-	vextracti128	$1, %ymm0, %xmm0
-	vpinsrw	$2, (%rdi,%rcx,2), %xmm3, %xmm3
-	vmovq	%xmm0, %rcx
-	vpinsrw	$3, (%rdi,%rax,2), %xmm3, %xmm3
-	movslq	%ecx, %rax
-	vpinsrw	$4, (%rdi,%rax,2), %xmm3, %xmm3
-	vpextrq	$1, %xmm0, %rax
-	sarq	$32, %rcx
-	vpinsrw	$5, (%rdi,%rcx,2), %xmm3, %xmm0
-	movslq	%eax, %rcx
-	vpinsrw	$6, (%rdi,%rcx,2), %xmm0, %xmm0
-	sarq	$32, %rax
-	vpinsrw	$7, (%rdi,%rax,2), %xmm0, %xmm0
-	vinserti128	$1, %xmm4, %ymm2, %ymm2
-	vinserti128	$1, %xmm1, %ymm0, %ymm0
-	vmovdqu	%ymm0, (%rdx)
-	vmovdqu	%ymm2, (%rsi)
-	addq	%r15, %rsi
-	addq	%r15, %rdx
-	addl	$1, %ebx
-	addq	$-1, %r11
-	jne	.LBB147_535
-# BB#552:                               # %end for f2.s0.v17273
-                                        #   in Loop: Header=BB147_534 Depth=4
-	addq	$1, %r10
-	addq	%r12, %r9
-	addq	%r12, %r8
-	cmpq	$2, %r10
-	jne	.LBB147_534
-# BB#553:                               # %end for f2.s0.v16.v18.yii270
-                                        #   in Loop: Header=BB147_456 Depth=3
-	movq	1384(%rsp), %rbx        # 8-byte Reload
-	addq	$1, %rbx
-	movq	1400(%rsp), %rdi        # 8-byte Reload
-	addq	$-32, %rdi
-	movl	1392(%rsp), %eax        # 4-byte Reload
-	addl	$32, %eax
-	movq	1408(%rsp), %rsi        # 8-byte Reload
-	addq	$-32, %rsi
-	movq	1440(%rsp), %rdx        # 8-byte Reload
-	addq	$-32, %rdx
-	addq	$64, 1472(%rsp)         # 8-byte Folded Spill
-	addq	$64, 1504(%rsp)         # 8-byte Folded Spill
-	cmpl	708(%rsp), %ebx         # 4-byte Folded Reload
-	movq	2392(%rsp), %r13        # 8-byte Reload
-	jne	.LBB147_456
-.LBB147_554:                            # %end for f2.s0.v15.v15244
-                                        #   in Loop: Header=BB147_273 Depth=2
-	movq	584(%rsp), %rdi         # 8-byte Reload
-	addq	$1, %rdi
-	movq	2744(%rsp), %rax        # 8-byte Reload
-	addl	$2, %eax
-	movq	%rax, 2744(%rsp)        # 8-byte Spill
-	movl	580(%rsp), %esi         # 4-byte Reload
-	addb	$2, %sil
-	addq	$-2, 568(%rsp)          # 8-byte Folded Spill
-	addl	$2, 924(%rsp)           # 4-byte Folded Spill
-	movq	2488(%rsp), %rax        # 8-byte Reload
-	addl	$2, %eax
-	movq	%rax, 2488(%rsp)        # 8-byte Spill
-	movq	2480(%rsp), %rax        # 8-byte Reload
-	addl	$2, %eax
-	movq	%rax, 2480(%rsp)        # 8-byte Spill
-	movq	480(%rsp), %rax         # 8-byte Reload
-	addq	%rax, 552(%rsp)         # 8-byte Folded Spill
-	addq	%rax, 544(%rsp)         # 8-byte Folded Spill
-	cmpq	$16, %rdi
-	jne	.LBB147_273
-# BB#277:                               # %call_destructor.exit314
-                                        #   in Loop: Header=BB147_133 Depth=1
-	xorl	%edi, %edi
-	movq	%r14, %rsi
-	vzeroupper
-	callq	halide_free@PLT
-	movq	376(%rsp), %rdi         # 8-byte Reload
-	addl	$1, %edi
-	movl	372(%rsp), %esi         # 4-byte Reload
-	addl	$-32, %esi
-	cmpl	352(%rsp), %edi         # 4-byte Folded Reload
-	jne	.LBB147_133
-# BB#278:
-	movq	%r13, %r11
-.LBB147_279:                            # %for f3.s0.v17.preheader
-	movq	264(%rsp), %rax         # 8-byte Reload
-	testl	%eax, %eax
-	movq	272(%rsp), %r9          # 8-byte Reload
-	movq	408(%rsp), %r10         # 8-byte Reload
-	jle	.LBB147_555
-# BB#280:                               # %for f3.s0.v16.preheader.us
-	movzbl	96(%rbp), %eax
-	andl	$1, %eax
-	testl	%r9d, %r9d
-	jle	.LBB147_555
-# BB#281:                               # %for f3.s0.v15.preheader.us.us.preheader
-	movq	432(%rsp), %r8          # 8-byte Reload
-	movslq	%r8d, %rsi
-	addq	%rax, %rax
-	movl	%r9d, %edx
-	andl	$3, %edx
-	movl	%edx, 2808(%rsp)        # 4-byte Spill
-	movq	424(%rsp), %rcx         # 8-byte Reload
-	addq	%rcx, %rcx
-	movq	%rcx, 424(%rsp)         # 8-byte Spill
-	imulq	248(%rsp), %rax         # 8-byte Folded Reload
-	movq	400(%rsp), %rbx         # 8-byte Reload
-	addq	$1, %rbx
-	subq	%r10, %rbx
-	movq	%rbx, 400(%rsp)         # 8-byte Spill
-	subq	360(%rsp), %rsi         # 8-byte Folded Reload
-	imulq	%rbx, %rsi
-	movq	%rsi, 2528(%rsp)        # 8-byte Spill
-	leaq	(%rsi,%rsi), %rcx
-	movq	%rcx, 2488(%rsp)        # 8-byte Spill
-	leaq	(%rcx,%rax,2), %rcx
-	movq	440(%rsp), %rdi         # 8-byte Reload
-	leaq	(%rcx,%rdi), %rdi
-	leaq	(%rbx,%rbx), %rcx
-	movq	%rcx, 2752(%rsp)        # 8-byte Spill
-	negl	%edx
-	movl	%edx, 2560(%rsp)        # 4-byte Spill
-	imulq	$-6, %r10, %rdx
-	movq	%rdx, 2496(%rsp)        # 8-byte Spill
-	movq	256(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rcx,%rdx), %r14
-	leaq	(%rax,%rsi), %rdx
-	leaq	3(%rax,%rsi), %rbx
-	subq	%r10, %rbx
-	movq	%rbx, 2656(%rsp)        # 8-byte Spill
-	leaq	2(%rax,%rsi), %rbx
-	subq	%r10, %rbx
-	movq	%rbx, 2624(%rsp)        # 8-byte Spill
-	subq	%r10, %rdx
-	movq	%rdx, 2688(%rsp)        # 8-byte Spill
-	leaq	1(%rax,%rsi), %r13
-	subq	%r10, %r13
-	leal	(%r11,%r9), %eax
-	movl	%eax, 2592(%rsp)        # 4-byte Spill
-	movq	%r11, 2392(%rsp)        # 8-byte Spill
-	movq	%rcx, %rbx
-	movl	%r8d, %r9d
-	.align	16, 0x90
-.LBB147_283:                            # %for f3.s0.v15.preheader.us.us
-                                        # =>This Loop Header: Depth=1
-                                        #     Child Loop BB147_284 Depth 2
-                                        #     Child Loop BB147_287 Depth 2
-	movq	%rdi, 2744(%rsp)        # 8-byte Spill
-	movl	2560(%rsp), %ecx        # 4-byte Reload
-	movq	%rbx, %rsi
-	movq	%r10, %rdx
-	movq	2392(%rsp), %rax        # 8-byte Reload
-	movl	%eax, %r15d
-	cmpl	$0, 2808(%rsp)          # 4-byte Folded Reload
-	je	.LBB147_285
-	.align	16, 0x90
-.LBB147_284:                            # %for f3.s0.v15.us.us.prol
-                                        #   Parent Loop BB147_283 Depth=1
-                                        # =>  This Inner Loop Header: Depth=2
-	movw	(%rdi), %ax
-	movw	%ax, (%rsi)
-	addl	$1, %r15d
-	addq	$1, %rdx
-	addq	$6, %rsi
-	addq	$2, %rdi
-	addl	$1, %ecx
-	jne	.LBB147_284
-.LBB147_285:                            # %for f3.s0.v15.preheader.us.us.split
-                                        #   in Loop: Header=BB147_283 Depth=1
-	cmpl	$3, 396(%rsp)           # 4-byte Folded Reload
-	movq	%r14, %rsi
-	jb	.LBB147_282
-# BB#286:                               # %for f3.s0.v15.preheader.us.us.split.split
-                                        #   in Loop: Header=BB147_283 Depth=1
+	subl	%ebx, %edx
+	imull	%esi, %edx
+	leal	(%rbx,%r13), %esi
+	movl	%esi, 200(%rsp)         # 4-byte Spill
+	movq	%r13, 144(%rsp)         # 8-byte Spill
+	movslq	%edx, %rdx
+	imulq	%rax, %rdx
 	leaq	(%rdx,%rdx), %rax
-	leaq	(%rax,%rax,2), %r10
-	movq	2656(%rsp), %rax        # 8-byte Reload
-	leaq	(%rdx,%rax), %rax
-	movq	440(%rsp), %rcx         # 8-byte Reload
-	leaq	(%rcx,%rax,2), %r11
-	movq	2624(%rsp), %rax        # 8-byte Reload
-	leaq	(%rdx,%rax), %rax
-	leaq	(%rcx,%rax,2), %r14
-	movq	2688(%rsp), %rax        # 8-byte Reload
-	leaq	(%rdx,%rax), %rax
-	leaq	(%rcx,%rax,2), %r12
-	addq	%r13, %rdx
-	leaq	(%rcx,%rdx,2), %rdx
-	movl	2592(%rsp), %r8d        # 4-byte Reload
-	subl	%r15d, %r8d
-	movq	%rsi, %rcx
+	leaq	(%rax,%rcx,2), %rax
+	movq	216(%rsp), %rsi         # 8-byte Reload
+	leaq	(%rax,%rsi), %rbx
+	leaq	(%rbp,%rbp), %rax
+	movq	%rax, 168(%rsp)         # 8-byte Spill
+	negl	%r9d
+	movl	%r9d, 160(%rsp)         # 4-byte Spill
+	leaq	(%rcx,%rdx), %rdi
+	leaq	3(%rcx,%rdx), %rbp
+	leaq	2(%rcx,%rdx), %rsi
+	leaq	1(%rcx,%rdx), %rcx
+	imulq	$-6, %r10, %rax
+	movq	%rax, 208(%rsp)         # 8-byte Spill
+	subq	%r10, %rbp
+	movq	%rbp, 192(%rsp)         # 8-byte Spill
+	subq	%r10, %rsi
+	movq	%rsi, 184(%rsp)         # 8-byte Spill
+	subq	%r10, %rdi
+	subq	%r10, %rcx
+	movq	%rcx, %r10
+	leaq	(%r8,%rax), %rsi
+	movq	%r8, %r15
+	movl	%r14d, %eax
 	.align	16, 0x90
-.LBB147_287:                            # %for f3.s0.v15.us.us
-                                        #   Parent Loop BB147_283 Depth=1
-                                        # =>  This Inner Loop Header: Depth=2
-	movw	(%r12), %ax
-	movw	%ax, (%r10,%rcx)
-	movw	(%rdx), %ax
-	movw	%ax, 6(%r10,%rcx)
-	movw	(%r14), %ax
-	movw	%ax, 12(%r10,%rcx)
-	movw	(%r11), %ax
-	movw	%ax, 18(%r10,%rcx)
-	addq	$24, %rcx
-	addq	$8, %r11
-	addq	$8, %r14
-	addq	$8, %r12
-	addq	$8, %rdx
-	addl	$-4, %r8d
-	jne	.LBB147_287
-.LBB147_282:                            # %end for f3.s0.v15.us.us
-                                        #   in Loop: Header=BB147_283 Depth=1
-	addl	$1, %r9d
-	movq	424(%rsp), %rax         # 8-byte Reload
-	addq	%rax, %rbx
-	movq	2744(%rsp), %rdi        # 8-byte Reload
-	addq	2752(%rsp), %rdi        # 8-byte Folded Reload
-	addq	%rax, %rsi
-	movq	%rsi, %r14
-	movq	400(%rsp), %rax         # 8-byte Reload
-	addq	%rax, 2656(%rsp)        # 8-byte Folded Spill
-	addq	%rax, 2624(%rsp)        # 8-byte Folded Spill
-	addq	%rax, 2688(%rsp)        # 8-byte Folded Spill
-	addq	%rax, %r13
-	movq	416(%rsp), %rax         # 8-byte Reload
-	cmpl	%eax, %r9d
-	movq	408(%rsp), %r10         # 8-byte Reload
-	jne	.LBB147_283
-# BB#557:                               # %for f3.s0.v16.preheader.us.1
-	movq	272(%rsp), %rax         # 8-byte Reload
-	testl	%eax, %eax
-	jle	.LBB147_556
-# BB#558:                               # %for f3.s0.v15.preheader.us.us.1.preheader
-	movq	256(%rsp), %rcx         # 8-byte Reload
-	leaq	2(%rcx), %rbx
-	movq	248(%rsp), %rsi         # 8-byte Reload
-	leaq	(%rsi,%rsi), %rax
-	movq	2528(%rsp), %rdi        # 8-byte Reload
-	leaq	(%rax,%rdi,2), %rax
-	movq	440(%rsp), %rdx         # 8-byte Reload
-	leaq	(%rax,%rdx), %r9
-	movl	2808(%rsp), %eax        # 4-byte Reload
-	negl	%eax
-	movl	%eax, 2624(%rsp)        # 4-byte Spill
-	movq	2496(%rsp), %rax        # 8-byte Reload
-	leaq	(%rcx,%rax), %rax
-	movq	%rax, 2688(%rsp)        # 8-byte Spill
-	leaq	(%rsi,%rdi), %r14
-	leaq	3(%rsi,%rdi), %rax
-	subq	%r10, %rax
-	movq	%rax, 2656(%rsp)        # 8-byte Spill
-	leaq	2(%rsi,%rdi), %r15
-	subq	%r10, %r15
-	leaq	1(%rsi,%rdi), %r8
-	subq	%r10, %r8
-	subq	%r10, %r14
-	movq	432(%rsp), %rax         # 8-byte Reload
-	movl	%eax, %r10d
-	.align	16, 0x90
-.LBB147_559:                            # %for f3.s0.v15.preheader.us.us.1
+.LBB147_133:                            # %for f3.s0.v15.preheader.us.us
                                         # =>This Loop Header: Depth=1
-                                        #     Child Loop BB147_560 Depth 2
-                                        #     Child Loop BB147_563 Depth 2
-	movq	%rbx, 2744(%rsp)        # 8-byte Spill
-	movl	2624(%rsp), %eax        # 4-byte Reload
-	movq	%r9, %rcx
+                                        #     Child Loop BB147_134 Depth 2
+                                        #     Child Loop BB147_137 Depth 2
+	movq	%rbx, 224(%rsp)         # 8-byte Spill
+	movl	160(%rsp), %ecx         # 4-byte Reload
 	movq	%rbx, %rdx
-	movq	408(%rsp), %r12         # 8-byte Reload
-	movq	2392(%rsp), %rsi        # 8-byte Reload
-	movl	%esi, %edi
-	cmpl	$0, 2808(%rsp)          # 4-byte Folded Reload
-	je	.LBB147_561
+	movq	%r15, %rbp
+	movq	256(%rsp), %r11         # 8-byte Reload
+	movq	280(%rsp), %rbx         # 8-byte Reload
+	movl	%ebx, %r14d
+	cmpl	$0, 248(%rsp)           # 4-byte Folded Reload
+	je	.LBB147_135
 	.align	16, 0x90
-.LBB147_560:                            # %for f3.s0.v15.us.us.1.prol
-                                        #   Parent Loop BB147_559 Depth=1
-                                        # =>  This Inner Loop Header: Depth=2
-	movw	(%rcx), %si
-	movw	%si, (%rdx)
-	addl	$1, %edi
-	addq	$1, %r12
-	addq	$6, %rdx
-	addq	$2, %rcx
-	addl	$1, %eax
-	jne	.LBB147_560
-.LBB147_561:                            # %for f3.s0.v15.preheader.us.us.1.split
-                                        #   in Loop: Header=BB147_559 Depth=1
-	cmpl	$3, 396(%rsp)           # 4-byte Folded Reload
-	jb	.LBB147_564
-# BB#562:                               # %for f3.s0.v15.preheader.us.us.1.split.split
-                                        #   in Loop: Header=BB147_559 Depth=1
-	leaq	(%r12,%r12), %rax
-	leaq	(%rax,%rax,2), %r11
-	movq	2656(%rsp), %rax        # 8-byte Reload
-	leaq	(%r12,%rax), %rax
-	movq	440(%rsp), %rcx         # 8-byte Reload
-	movq	%rcx, %rdx
-	leaq	(%rdx,%rax,2), %rax
-	leaq	(%r12,%r15), %rcx
-	leaq	(%rdx,%rcx,2), %rsi
-	leaq	(%r12,%r8), %rcx
-	leaq	(%rdx,%rcx,2), %r13
-	addq	%r14, %r12
-	leaq	(%rdx,%r12,2), %rdx
-	movl	2592(%rsp), %ecx        # 4-byte Reload
-	subl	%edi, %ecx
-	movq	2688(%rsp), %rdi        # 8-byte Reload
-	.align	16, 0x90
-.LBB147_563:                            # %for f3.s0.v15.us.us.1
-                                        #   Parent Loop BB147_559 Depth=1
+.LBB147_134:                            # %for f3.s0.v15.us.us.prol
+                                        #   Parent Loop BB147_133 Depth=1
                                         # =>  This Inner Loop Header: Depth=2
 	movw	(%rdx), %bx
-	movw	%bx, 2(%r11,%rdi)
-	movw	(%r13), %bx
-	movw	%bx, 8(%r11,%rdi)
-	movw	(%rsi), %bx
-	movw	%bx, 14(%r11,%rdi)
-	movw	(%rax), %bx
-	movw	%bx, 20(%r11,%rdi)
-	addq	$24, %rdi
-	addq	$8, %rax
-	addq	$8, %rsi
+	movw	%bx, (%rbp)
+	addl	$1, %r14d
+	addq	$1, %r11
+	addq	$6, %rbp
+	addq	$2, %rdx
+	addl	$1, %ecx
+	jne	.LBB147_134
+.LBB147_135:                            # %for f3.s0.v15.preheader.us.us.split
+                                        #   in Loop: Header=BB147_133 Depth=1
+	cmpl	$3, 244(%rsp)           # 4-byte Folded Reload
+	jb	.LBB147_132
+# BB#136:                               # %for f3.s0.v15.preheader.us.us.split.split
+                                        #   in Loop: Header=BB147_133 Depth=1
+	leaq	(%r11,%r11), %rcx
+	leaq	(%rcx,%rcx,2), %r12
+	movq	192(%rsp), %rcx         # 8-byte Reload
+	leaq	(%r11,%rcx), %rcx
+	movq	216(%rsp), %rdx         # 8-byte Reload
+	leaq	(%rdx,%rcx,2), %r8
+	movq	184(%rsp), %rcx         # 8-byte Reload
+	leaq	(%r11,%rcx), %rcx
+	leaq	(%rdx,%rcx,2), %r9
+	leaq	(%r11,%rdi), %rcx
+	leaq	(%rdx,%rcx,2), %r13
+	addq	%r10, %r11
+	leaq	(%rdx,%r11,2), %rdx
+	movl	200(%rsp), %ecx         # 4-byte Reload
+	subl	%r14d, %ecx
+	movq	%rsi, %rbx
+	.align	16, 0x90
+.LBB147_137:                            # %for f3.s0.v15.us.us
+                                        #   Parent Loop BB147_133 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+	movw	(%r13), %bp
+	movw	%bp, (%r12,%rbx)
+	movw	(%rdx), %bp
+	movw	%bp, 6(%r12,%rbx)
+	movw	(%r9), %bp
+	movw	%bp, 12(%r12,%rbx)
+	movw	(%r8), %bp
+	movw	%bp, 18(%r12,%rbx)
+	addq	$24, %rbx
+	addq	$8, %r8
+	addq	$8, %r9
 	addq	$8, %r13
 	addq	$8, %rdx
 	addl	$-4, %ecx
-	jne	.LBB147_563
-.LBB147_564:                            # %end for f3.s0.v15.us.us.1
-                                        #   in Loop: Header=BB147_559 Depth=1
-	addl	$1, %r10d
-	movq	424(%rsp), %rax         # 8-byte Reload
-	movq	2744(%rsp), %rbx        # 8-byte Reload
-	addq	%rax, %rbx
-	addq	2752(%rsp), %r9         # 8-byte Folded Reload
-	addq	%rax, 2688(%rsp)        # 8-byte Folded Spill
-	movq	400(%rsp), %rax         # 8-byte Reload
-	addq	%rax, 2656(%rsp)        # 8-byte Folded Spill
-	addq	%rax, %r15
-	addq	%rax, %r8
-	addq	%rax, %r14
-	movq	416(%rsp), %rax         # 8-byte Reload
-	cmpl	%eax, %r10d
-	jne	.LBB147_559
-# BB#565:                               # %for f3.s0.v16.preheader.us.2
-	testb	$1, 96(%rbp)
-	sete	%al
-	movzbl	%al, %eax
+	jne	.LBB147_137
+.LBB147_132:                            # %end for f3.s0.v15.us.us
+                                        #   in Loop: Header=BB147_133 Depth=1
+	addl	$1, %eax
 	movq	272(%rsp), %rcx         # 8-byte Reload
-	testl	%ecx, %ecx
-	movq	408(%rsp), %rbx         # 8-byte Reload
-	jle	.LBB147_556
-# BB#566:                               # %for f3.s0.v15.preheader.us.us.2.preheader
-	addq	%rax, %rax
-	imulq	248(%rsp), %rax         # 8-byte Folded Reload
-	movq	2488(%rsp), %rcx        # 8-byte Reload
-	leaq	(%rcx,%rax,2), %rcx
-	movq	440(%rsp), %rdx         # 8-byte Reload
-	leaq	(%rcx,%rdx), %r12
-	movl	2808(%rsp), %ecx        # 4-byte Reload
-	negl	%ecx
-	movl	%ecx, 2656(%rsp)        # 4-byte Spill
-	movq	256(%rsp), %rcx         # 8-byte Reload
-	leaq	4(%rcx), %r13
-	movq	2496(%rsp), %rdx        # 8-byte Reload
-	leaq	(%rdx,%rcx), %rcx
-	movq	%rcx, 2744(%rsp)        # 8-byte Spill
-	movq	2528(%rsp), %rcx        # 8-byte Reload
-	leaq	(%rax,%rcx), %r11
-	leaq	3(%rax,%rcx), %rdx
-	subq	%rbx, %rdx
-	movq	%rdx, 2688(%rsp)        # 8-byte Spill
-	leaq	2(%rax,%rcx), %r14
-	subq	%rbx, %r14
-	leaq	1(%rax,%rcx), %r15
-	subq	%rbx, %r15
-	subq	%rbx, %r11
-	.align	16, 0x90
-.LBB147_567:                            # %for f3.s0.v15.preheader.us.us.2
-                                        # =>This Loop Header: Depth=1
-                                        #     Child Loop BB147_568 Depth 2
-                                        #     Child Loop BB147_571 Depth 2
-	movl	2656(%rsp), %eax        # 4-byte Reload
-	movq	%r12, %rsi
-	movq	%r13, %rdi
-	movq	%rbx, %rcx
-	movq	2392(%rsp), %rdx        # 8-byte Reload
-	cmpl	$0, 2808(%rsp)          # 4-byte Folded Reload
-	je	.LBB147_569
-	.align	16, 0x90
-.LBB147_568:                            # %for f3.s0.v15.us.us.2.prol
-                                        #   Parent Loop BB147_567 Depth=1
-                                        # =>  This Inner Loop Header: Depth=2
-	movw	(%rsi), %bx
-	movw	%bx, (%rdi)
-	addl	$1, %edx
-	addq	$1, %rcx
-	addq	$6, %rdi
-	addq	$2, %rsi
-	addl	$1, %eax
-	jne	.LBB147_568
-.LBB147_569:                            # %for f3.s0.v15.preheader.us.us.2.split
-                                        #   in Loop: Header=BB147_567 Depth=1
-	cmpl	$3, 396(%rsp)           # 4-byte Folded Reload
-	jb	.LBB147_572
-# BB#570:                               # %for f3.s0.v15.preheader.us.us.2.split.split
-                                        #   in Loop: Header=BB147_567 Depth=1
-	leaq	(%rcx,%rcx), %rax
-	leaq	(%rax,%rax,2), %r10
-	movq	2688(%rsp), %rax        # 8-byte Reload
-	leaq	(%rcx,%rax), %rax
-	movq	440(%rsp), %rsi         # 8-byte Reload
-	movq	%rsi, %rbx
-	leaq	(%rbx,%rax,2), %rax
-	leaq	(%rcx,%r14), %rsi
-	leaq	(%rbx,%rsi,2), %rdi
-	leaq	(%rcx,%r15), %rsi
-	leaq	(%rbx,%rsi,2), %rsi
-	addq	%r11, %rcx
-	leaq	(%rbx,%rcx,2), %rcx
-	movl	2592(%rsp), %r8d        # 4-byte Reload
-	subl	%edx, %r8d
-	movq	2744(%rsp), %rdx        # 8-byte Reload
-	.align	16, 0x90
-.LBB147_571:                            # %for f3.s0.v15.us.us.2
-                                        #   Parent Loop BB147_567 Depth=1
-                                        # =>  This Inner Loop Header: Depth=2
-	movw	(%rcx), %r9w
-	movw	%r9w, 4(%r10,%rdx)
-	movw	(%rsi), %bx
-	movw	%bx, 10(%r10,%rdx)
-	movw	(%rdi), %bx
-	movw	%bx, 16(%r10,%rdx)
-	movw	(%rax), %bx
-	movw	%bx, 22(%r10,%rdx)
-	addq	$24, %rdx
-	addq	$8, %rax
-	addq	$8, %rdi
-	addq	$8, %rsi
-	addq	$8, %rcx
-	addl	$-4, %r8d
-	jne	.LBB147_571
-.LBB147_572:                            # %end for f3.s0.v15.us.us.2
-                                        #   in Loop: Header=BB147_567 Depth=1
-	movq	432(%rsp), %rax         # 8-byte Reload
-	addl	$1, %eax
-	movq	%rax, 432(%rsp)         # 8-byte Spill
-	movq	424(%rsp), %rcx         # 8-byte Reload
-	addq	%rcx, %r13
-	addq	2752(%rsp), %r12        # 8-byte Folded Reload
-	addq	%rcx, 2744(%rsp)        # 8-byte Folded Spill
-	movq	400(%rsp), %rcx         # 8-byte Reload
-	addq	%rcx, 2688(%rsp)        # 8-byte Folded Spill
-	addq	%rcx, %r14
 	addq	%rcx, %r15
-	addq	%rcx, %r11
-	movq	416(%rsp), %rcx         # 8-byte Reload
+	movq	224(%rsp), %rbx         # 8-byte Reload
+	addq	168(%rsp), %rbx         # 8-byte Folded Reload
+	addq	%rcx, %rsi
+	movq	176(%rsp), %rcx         # 8-byte Reload
+	addq	%rcx, 192(%rsp)         # 8-byte Folded Spill
+	addq	%rcx, 184(%rsp)         # 8-byte Folded Spill
+	addq	%rcx, %rdi
+	addq	%rcx, %r10
+	movq	264(%rsp), %rcx         # 8-byte Reload
 	cmpl	%ecx, %eax
-	movq	408(%rsp), %rbx         # 8-byte Reload
-	jne	.LBB147_567
-	jmp	.LBB147_556
-.LBB147_134:                            # %assert failed201
-	leaq	.Lstr.160(%rip), %rsi
-	xorl	%edi, %edi
-	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
-	movq	240(%rsp), %rdx         # 8-byte Reload
-	vzeroupper
-	callq	halide_error_buffer_allocation_too_large@PLT
-	movl	%eax, %r14d
-	jmp	.LBB147_3
-.LBB147_136:                            # %assert failed203
-	xorl	%edi, %edi
-	callq	halide_error_out_of_memory@PLT
-	movl	%eax, %r14d
-.LBB147_3:                              # %call_destructor.exit
-	cmpq	$0, 440(%rsp)           # 8-byte Folded Reload
-	je	.LBB147_6
-# BB#4:                                 # %call_destructor.exit
-	testl	%r14d, %r14d
-	jne	.LBB147_5
-	jmp	.LBB147_6
+	jne	.LBB147_133
+# BB#140:                               # %for f3.s0.v16.preheader.us.1
+	movq	144(%rsp), %rax         # 8-byte Reload
+	testl	%eax, %eax
+	jle	.LBB147_139
+# BB#141:                               # %for f3.s0.v15.preheader.us.us.1.preheader
+	movq	280(%rsp), %rsi         # 8-byte Reload
+	leal	-1(%rsi,%rax), %eax
+	movl	96(%rsp), %ecx          # 4-byte Reload
+	cmpl	%ecx, %eax
+	cmovll	%ecx, %eax
+	cltq
+	leaq	1(%rax), %rdi
+	movq	256(%rsp), %rbx         # 8-byte Reload
+	subq	%rbx, %rdi
+	movq	%rdi, 192(%rsp)         # 8-byte Spill
+	movl	$31, %ecx
+	movq	232(%rsp), %r9          # 8-byte Reload
+	subl	%r9d, %ecx
+	movq	8(%rsp), %rbp           # 8-byte Reload
+	subl	%ebp, %ecx
+	movl	132(%rsp), %edx         # 4-byte Reload
+	cmpl	%edx, %ecx
+	cmovll	%edx, %ecx
+	notl	%ecx
+	movslq	%ecx, %rcx
+	movq	136(%rsp), %rdx         # 8-byte Reload
+	subq	%rcx, %rdx
+	imulq	%rdi, %rdx
+	cmpl	$31, %ebp
+	movl	$32, %ecx
+	cmovgl	%ebp, %ecx
+	addl	$1, %eax
+	subl	%esi, %eax
+	imull	%ecx, %eax
+	movq	152(%rsp), %rsi         # 8-byte Reload
+	leaq	2(%rsi), %r13
+	cltq
+	leaq	(%rax,%rax), %rcx
+	leaq	(%rcx,%rdx,2), %rcx
+	movq	216(%rsp), %rbp         # 8-byte Reload
+	leaq	(%rcx,%rbp), %r8
+	leaq	(%rdi,%rdi), %rcx
+	movq	%rcx, 184(%rsp)         # 8-byte Spill
+	movl	248(%rsp), %ecx         # 4-byte Reload
+	negl	%ecx
+	movl	%ecx, 176(%rsp)         # 4-byte Spill
+	movq	208(%rsp), %rcx         # 8-byte Reload
+	leaq	(%rsi,%rcx), %rsi
+	leaq	(%rdx,%rax), %r10
+	leaq	3(%rdx,%rax), %rcx
+	subq	%rbx, %rcx
+	movq	%rcx, 224(%rsp)         # 8-byte Spill
+	leaq	2(%rdx,%rax), %r15
+	subq	%rbx, %r15
+	leaq	1(%rdx,%rax), %r11
+	subq	%rbx, %r11
+	subq	%rbx, %r10
+	.align	16, 0x90
+.LBB147_142:                            # %for f3.s0.v15.preheader.us.us.1
+                                        # =>This Loop Header: Depth=1
+                                        #     Child Loop BB147_143 Depth 2
+                                        #     Child Loop BB147_146 Depth 2
+	movl	176(%rsp), %eax         # 4-byte Reload
+	movq	%r8, %rdx
+	movq	%r13, %rbp
+	movq	256(%rsp), %rbx         # 8-byte Reload
+	movq	280(%rsp), %rcx         # 8-byte Reload
+	movl	%ecx, %edi
+	cmpl	$0, 248(%rsp)           # 4-byte Folded Reload
+	je	.LBB147_144
+	.align	16, 0x90
+.LBB147_143:                            # %for f3.s0.v15.us.us.1.prol
+                                        #   Parent Loop BB147_142 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+	movw	(%rdx), %cx
+	movw	%cx, (%rbp)
+	addl	$1, %edi
+	addq	$1, %rbx
+	addq	$6, %rbp
+	addq	$2, %rdx
+	addl	$1, %eax
+	jne	.LBB147_143
+.LBB147_144:                            # %for f3.s0.v15.preheader.us.us.1.split
+                                        #   in Loop: Header=BB147_142 Depth=1
+	cmpl	$3, 244(%rsp)           # 4-byte Folded Reload
+	jb	.LBB147_147
+# BB#145:                               # %for f3.s0.v15.preheader.us.us.1.split.split
+                                        #   in Loop: Header=BB147_142 Depth=1
+	leaq	(%rbx,%rbx), %rax
+	leaq	(%rax,%rax,2), %rdx
+	movq	224(%rsp), %rax         # 8-byte Reload
+	leaq	(%rbx,%rax), %rax
+	movq	216(%rsp), %rcx         # 8-byte Reload
+	movq	%rsi, %r14
+	movq	%rcx, %rsi
+	leaq	(%rsi,%rax,2), %r12
+	leaq	(%rbx,%r15), %rax
+	leaq	(%rsi,%rax,2), %rax
+	leaq	(%rbx,%r11), %rcx
+	leaq	(%rsi,%rcx,2), %rbp
+	addq	%r10, %rbx
+	leaq	(%rsi,%rbx,2), %rbx
+	movq	%r14, %rsi
+	movl	200(%rsp), %r14d        # 4-byte Reload
+	subl	%edi, %r14d
+	movq	%rsi, %rdi
+	.align	16, 0x90
+.LBB147_146:                            # %for f3.s0.v15.us.us.1
+                                        #   Parent Loop BB147_142 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+	movw	(%rbx), %cx
+	movw	%cx, 2(%rdx,%rdi)
+	movw	(%rbp), %cx
+	movw	%cx, 8(%rdx,%rdi)
+	movw	(%rax), %cx
+	movw	%cx, 14(%rdx,%rdi)
+	movw	(%r12), %cx
+	movw	%cx, 20(%rdx,%rdi)
+	addq	$24, %rdi
+	addq	$8, %r12
+	addq	$8, %rax
+	addq	$8, %rbp
+	addq	$8, %rbx
+	addl	$-4, %r14d
+	jne	.LBB147_146
+.LBB147_147:                            # %end for f3.s0.v15.us.us.1
+                                        #   in Loop: Header=BB147_142 Depth=1
+	addl	$1, %r9d
+	movq	272(%rsp), %rax         # 8-byte Reload
+	addq	%rax, %r13
+	addq	184(%rsp), %r8          # 8-byte Folded Reload
+	addq	%rax, %rsi
+	movq	192(%rsp), %rax         # 8-byte Reload
+	addq	%rax, 224(%rsp)         # 8-byte Folded Spill
+	addq	%rax, %r15
+	addq	%rax, %r11
+	addq	%rax, %r10
+	movq	264(%rsp), %rax         # 8-byte Reload
+	cmpl	%eax, %r9d
+	jne	.LBB147_142
+# BB#148:                               # %for f3.s0.v16.preheader.us.2
+	testb	$1, 111(%rsp)           # 1-byte Folded Reload
+	sete	%al
+	movzbl	%al, %r9d
+	movq	144(%rsp), %rcx         # 8-byte Reload
+	testl	%ecx, %ecx
+	jle	.LBB147_139
+# BB#149:                               # %for f3.s0.v15.preheader.us.us.2.preheader
+	addq	%r9, %r9
+	movq	152(%rsp), %r8          # 8-byte Reload
+	leaq	4(%r8), %r15
+	movq	280(%rsp), %rax         # 8-byte Reload
+	leal	-1(%rax,%rcx), %ecx
+	movl	96(%rsp), %edx          # 4-byte Reload
+	cmpl	%edx, %ecx
+	cmovgel	%ecx, %edx
+	movslq	%edx, %rcx
+	leaq	1(%rcx), %rsi
+	movq	256(%rsp), %rbx         # 8-byte Reload
+	subq	%rbx, %rsi
+	movq	%rsi, 224(%rsp)         # 8-byte Spill
+	movl	$31, %edx
+	movq	232(%rsp), %rdi         # 8-byte Reload
+	subl	%edi, %edx
+	movq	8(%rsp), %rdi           # 8-byte Reload
+	subl	%edi, %edx
+	movl	132(%rsp), %ebp         # 4-byte Reload
+	cmpl	%ebp, %edx
+	cmovll	%ebp, %edx
+	notl	%edx
+	movslq	%edx, %rdx
+	movq	136(%rsp), %rbp         # 8-byte Reload
+	subq	%rdx, %rbp
+	imulq	%rsi, %rbp
+	cmpl	$31, %edi
+	movl	$32, %edx
+	cmovgl	%edi, %edx
+	addl	$1, %ecx
+	subl	%eax, %ecx
+	imull	%edx, %ecx
+	movslq	%ecx, %rcx
+	imulq	%r9, %rcx
+	leaq	(%rcx,%rcx), %rax
+	leaq	(%rax,%rbp,2), %rax
+	movq	216(%rsp), %rdx         # 8-byte Reload
+	leaq	(%rax,%rdx), %r10
+	leaq	(%rsi,%rsi), %rax
+	movq	%rax, 192(%rsp)         # 8-byte Spill
+	addq	%r8, 208(%rsp)          # 8-byte Folded Spill
+	leaq	(%rbp,%rcx), %r12
+	leaq	3(%rbp,%rcx), %r14
+	leaq	2(%rbp,%rcx), %r13
+	leaq	1(%rbp,%rcx), %r11
+	movl	248(%rsp), %eax         # 4-byte Reload
+	negl	%eax
+	movl	%eax, 184(%rsp)         # 4-byte Spill
+	subq	%rbx, %r14
+	subq	%rbx, %r13
+	subq	%rbx, %r11
+	subq	%rbx, %r12
+	.align	16, 0x90
+.LBB147_150:                            # %for f3.s0.v15.preheader.us.us.2
+                                        # =>This Loop Header: Depth=1
+                                        #     Child Loop BB147_151 Depth 2
+                                        #     Child Loop BB147_154 Depth 2
+	movl	184(%rsp), %eax         # 4-byte Reload
+	movq	%r10, %rdi
+	movq	%r15, %rbp
+	movq	256(%rsp), %rsi         # 8-byte Reload
+	movq	280(%rsp), %rcx         # 8-byte Reload
+	cmpl	$0, 248(%rsp)           # 4-byte Folded Reload
+	je	.LBB147_152
+	.align	16, 0x90
+.LBB147_151:                            # %for f3.s0.v15.us.us.2.prol
+                                        #   Parent Loop BB147_150 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+	movw	(%rdi), %bx
+	movw	%bx, (%rbp)
+	addl	$1, %ecx
+	addq	$1, %rsi
+	addq	$6, %rbp
+	addq	$2, %rdi
+	addl	$1, %eax
+	jne	.LBB147_151
+.LBB147_152:                            # %for f3.s0.v15.preheader.us.us.2.split
+                                        #   in Loop: Header=BB147_150 Depth=1
+	cmpl	$3, 244(%rsp)           # 4-byte Folded Reload
+	jb	.LBB147_155
+# BB#153:                               # %for f3.s0.v15.preheader.us.us.2.split.split
+                                        #   in Loop: Header=BB147_150 Depth=1
+	leaq	(%rsi,%rsi), %rax
+	leaq	(%rax,%rax,2), %rdi
+	leaq	(%rsi,%r14), %rax
+	movq	216(%rsp), %rdx         # 8-byte Reload
+	leaq	(%rdx,%rax,2), %rbp
+	leaq	(%rsi,%r13), %rax
+	leaq	(%rdx,%rax,2), %rax
+	leaq	(%rsi,%r11), %rbx
+	leaq	(%rdx,%rbx,2), %rbx
+	addq	%r12, %rsi
+	leaq	(%rdx,%rsi,2), %rsi
+	movl	200(%rsp), %r8d         # 4-byte Reload
+	subl	%ecx, %r8d
+	movq	208(%rsp), %rcx         # 8-byte Reload
+	.align	16, 0x90
+.LBB147_154:                            # %for f3.s0.v15.us.us.2
+                                        #   Parent Loop BB147_150 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+	movw	(%rsi), %r9w
+	movw	%r9w, 4(%rdi,%rcx)
+	movw	(%rbx), %dx
+	movw	%dx, 10(%rdi,%rcx)
+	movw	(%rax), %dx
+	movw	%dx, 16(%rdi,%rcx)
+	movw	(%rbp), %dx
+	movw	%dx, 22(%rdi,%rcx)
+	addq	$24, %rcx
+	addq	$8, %rbp
+	addq	$8, %rax
+	addq	$8, %rbx
+	addq	$8, %rsi
+	addl	$-4, %r8d
+	jne	.LBB147_154
+.LBB147_155:                            # %end for f3.s0.v15.us.us.2
+                                        #   in Loop: Header=BB147_150 Depth=1
+	movq	232(%rsp), %rax         # 8-byte Reload
+	addl	$1, %eax
+	movq	%rax, 232(%rsp)         # 8-byte Spill
+	movq	272(%rsp), %rcx         # 8-byte Reload
+	addq	%rcx, %r15
+	addq	192(%rsp), %r10         # 8-byte Folded Reload
+	addq	%rcx, 208(%rsp)         # 8-byte Folded Spill
+	movq	224(%rsp), %rcx         # 8-byte Reload
+	addq	%rcx, %r14
+	addq	%rcx, %r13
+	addq	%rcx, %r11
+	addq	%rcx, %r12
+	movq	264(%rsp), %rcx         # 8-byte Reload
+	cmpl	%ecx, %eax
+	jne	.LBB147_150
+	jmp	.LBB147_139
 .LBB147_1:                              # %assert failed
 	leaq	.Lstr(%rip), %rsi
 	jmp	.LBB147_2
-.LBB147_9:                              # %assert failed10
+.LBB147_8:                              # %assert failed10
+	leaq	.Lstr.137(%rip), %rsi
+	jmp	.LBB147_2
+.LBB147_10:                             # %assert failed29
 	leaq	.Lstr.138(%rip), %rsi
 	jmp	.LBB147_2
-.LBB147_11:                             # %assert failed29
+.LBB147_12:                             # %assert failed48
 	leaq	.Lstr.139(%rip), %rsi
 	jmp	.LBB147_2
-.LBB147_13:                             # %assert failed48
+.LBB147_14:                             # %assert failed67
 	leaq	.Lstr.140(%rip), %rsi
 	jmp	.LBB147_2
-.LBB147_15:                             # %assert failed67
+.LBB147_16:                             # %assert failed86
 	leaq	.Lstr.141(%rip), %rsi
-	jmp	.LBB147_2
-.LBB147_17:                             # %assert failed86
-	leaq	.Lstr.142(%rip), %rsi
 .LBB147_2:                              # %assert failed
 	xorl	%edi, %edi
-	callq	halide_error_buffer_argument_is_null@PLT
-	jmp	.LBB147_7
-.LBB147_555:                            # %end for f3.s0.v17
-	xorl	%r14d, %r14d
-	cmpq	$0, 440(%rsp)           # 8-byte Folded Reload
-	je	.LBB147_6
-.LBB147_556:                            # %if.then.i.284
-	xorl	%r14d, %r14d
-.LBB147_5:                              # %if.then.i.281
+	addq	$472, %rsp              # imm = 0x1D8
+	popq	%rbx
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	popq	%rbp
+	jmp	halide_error_buffer_argument_is_null@PLT # TAILCALL
+.LBB147_138:                            # %end for f3.s0.v17
+	xorl	%ebp, %ebp
+	cmpq	$0, 216(%rsp)           # 8-byte Folded Reload
+	je	.LBB147_5
+.LBB147_139:                            # %if.then.i.204
+	xorl	%ebp, %ebp
+.LBB147_4:                              # %if.then.i
 	xorl	%edi, %edi
-	movq	440(%rsp), %rsi         # 8-byte Reload
+	movq	216(%rsp), %rsi         # 8-byte Reload
 	callq	halide_free@PLT
-.LBB147_6:                              # %call_destructor.exit282
-	movl	%r14d, %eax
-.LBB147_7:                              # %call_destructor.exit282
-	leaq	-40(%rbp), %rsp
+.LBB147_5:                              # %call_destructor.exit
+	movl	%ebp, %eax
+.LBB147_6:                              # %call_destructor.exit
+	addq	$472, %rsp              # imm = 0x1D8
 	popq	%rbx
 	popq	%r12
 	popq	%r13
@@ -18146,306 +10233,7899 @@ __f3:                                   # @__f3
 	popq	%rbp
 	vzeroupper
 	retq
-.LBB147_28:                             # %assert failed117
-	leaq	.Lstr.143(%rip), %rsi
-	leaq	.Lstr.144(%rip), %rdx
+.LBB147_27:                             # %assert failed117
+	leaq	.Lstr.142(%rip), %rsi
+	leaq	.Lstr.143(%rip), %rdx
 	xorl	%edi, %edi
 	movl	$4, %r8d
-	jmp	.LBB147_34
-.LBB147_30:                             # %assert failed119
-	leaq	.Lstr.145(%rip), %rsi
-	leaq	.Lstr.146(%rip), %rdx
-	xorl	%edi, %edi
-	movl	$2, %r8d
-	movl	%ebx, %ecx
-	vzeroupper
-	callq	halide_error_bad_elem_size@PLT
-	jmp	.LBB147_7
-.LBB147_32:                             # %assert failed121
-	leaq	.Lstr.147(%rip), %rsi
 	jmp	.LBB147_33
-.LBB147_37:                             # %assert failed123
-	leaq	.Lstr.148(%rip), %rsi
-.LBB147_33:                             # %assert failed121
-	leaq	.Lstr.146(%rip), %rdx
+.LBB147_29:                             # %assert failed119
+	leaq	.Lstr.144(%rip), %rsi
+	leaq	.Lstr.145(%rip), %rdx
 	xorl	%edi, %edi
 	movl	$2, %r8d
-.LBB147_34:                             # %assert failed121
+	movl	%r12d, %ecx
+	jmp	.LBB147_34
+.LBB147_31:                             # %assert failed121
+	leaq	.Lstr.146(%rip), %rsi
+	jmp	.LBB147_32
+.LBB147_36:                             # %assert failed123
+	leaq	.Lstr.147(%rip), %rsi
+.LBB147_32:                             # %assert failed121
+	leaq	.Lstr.145(%rip), %rdx
+	xorl	%edi, %edi
+	movl	$2, %r8d
+.LBB147_33:                             # %assert failed121
 	movl	%eax, %ecx
+.LBB147_34:                             # %assert failed121
+	addq	$472, %rsp              # imm = 0x1D8
+	popq	%rbx
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	popq	%rbp
 	vzeroupper
-	callq	halide_error_bad_elem_size@PLT
-	jmp	.LBB147_7
-.LBB147_40:                             # %assert failed125
-	leal	-1(%r14,%r15), %eax
+	jmp	halide_error_bad_elem_size@PLT # TAILCALL
+.LBB147_39:                             # %assert failed125
+	leal	-1(%rdi,%rbx), %eax
 	movl	%eax, (%rsp)
-	leaq	.Lstr.143(%rip), %rsi
+	leaq	.Lstr.142(%rip), %rsi
 	xorl	%edi, %edi
 	xorl	%edx, %edx
-	jmp	.LBB147_41
-.LBB147_43:                             # %assert failed127
-	leaq	.Lstr.143(%rip), %rsi
-	xorl	%edi, %edi
-	xorl	%edx, %edx
-	movl	%r14d, %ecx
+	xorl	%ecx, %ecx
+	movl	$2, %r8d
+	movl	%ebx, %r9d
 	vzeroupper
-	callq	halide_error_buffer_extents_negative@PLT
-	jmp	.LBB147_7
-.LBB147_46:                             # %assert failed129
-	leal	-1(%r13,%rdx), %eax
+	callq	halide_error_access_out_of_bounds@PLT
+	jmp	.LBB147_6
+.LBB147_41:                             # %assert failed127
+	leaq	.Lstr.142(%rip), %rsi
+	movq	%rdi, %rcx
+	jmp	.LBB147_73
+.LBB147_44:                             # %assert failed129
+	leal	-1(%r10,%rdx), %eax
 	movl	%eax, (%rsp)
-	leaq	.Lstr.143(%rip), %rsi
+	leaq	.Lstr.142(%rip), %rsi
 	movq	%rdx, %r9
 	xorl	%edi, %edi
 	movl	$1, %edx
-	jmp	.LBB147_73
-.LBB147_48:                             # %assert failed131
-	leaq	.Lstr.143(%rip), %rsi
+	jmp	.LBB147_69
+.LBB147_46:                             # %assert failed131
+	leaq	.Lstr.142(%rip), %rsi
 	xorl	%edi, %edi
 	movl	$1, %edx
-	movl	%r13d, %ecx
-	vzeroupper
-	callq	halide_error_buffer_extents_negative@PLT
-	jmp	.LBB147_7
-.LBB147_50:                             # %assert failed133
-	leaq	.Lstr.145(%rip), %rsi
+	movl	%r10d, %ecx
+	jmp	.LBB147_74
+.LBB147_48:                             # %assert failed133
+	leaq	.Lstr.144(%rip), %rsi
 	xorl	%edi, %edi
 	xorl	%edx, %edx
-	movl	%r10d, %ecx
-	vzeroupper
-	callq	halide_error_buffer_extents_negative@PLT
-	jmp	.LBB147_7
-.LBB147_52:                             # %assert failed135
-	leaq	.Lstr.145(%rip), %rsi
+	movl	%r13d, %ecx
+	jmp	.LBB147_74
+.LBB147_50:                             # %assert failed135
+	leaq	.Lstr.144(%rip), %rsi
 	xorl	%edi, %edi
 	movl	$1, %edx
-	movl	%r11d, %ecx
-	vzeroupper
-	callq	halide_error_buffer_extents_negative@PLT
-	jmp	.LBB147_7
-.LBB147_55:                             # %assert failed137
-	leal	-1(%rbx,%r15), %eax
+	movl	%r8d, %ecx
+	jmp	.LBB147_74
+.LBB147_53:                             # %assert failed137
+	leal	-1(%r11,%rbp), %eax
 	movl	%eax, (%rsp)
-	leaq	.Lstr.145(%rip), %rsi
+	leaq	.Lstr.144(%rip), %rsi
 	xorl	%edi, %edi
 	movl	$2, %edx
-.LBB147_41:                             # %assert failed125
 	xorl	%ecx, %ecx
 	movl	$2, %r8d
-	movl	%r15d, %r9d
+	movl	%ebp, %r9d
 	vzeroupper
 	callq	halide_error_access_out_of_bounds@PLT
-	jmp	.LBB147_7
-.LBB147_57:                             # %assert failed139
-	leaq	.Lstr.145(%rip), %rsi
+	jmp	.LBB147_6
+.LBB147_55:                             # %assert failed139
+	leaq	.Lstr.144(%rip), %rsi
 	xorl	%edi, %edi
 	movl	$2, %edx
-	jmp	.LBB147_58
-.LBB147_62:                             # %assert failed141
-	movl	2744(%rsp), %r8d        # 4-byte Reload
+	movl	%r11d, %ecx
+	jmp	.LBB147_74
+.LBB147_58:                             # %assert failed141
+	movl	216(%rsp), %r8d         # 4-byte Reload
 	addl	$-1, %r8d
-	movl	2064(%rsp), %eax        # 4-byte Reload
+	movl	20(%rsp), %eax          # 4-byte Reload
 	movl	%eax, (%rsp)
-	leaq	.Lstr.147(%rip), %rsi
+	leaq	.Lstr.146(%rip), %rsi
 	xorl	%edi, %edi
 	xorl	%edx, %edx
-	movl	2808(%rsp), %ecx        # 4-byte Reload
+	movl	244(%rsp), %ecx         # 4-byte Reload
 	vzeroupper
 	callq	halide_error_access_out_of_bounds@PLT
-	jmp	.LBB147_7
-.LBB147_64:                             # %assert failed143
-	leaq	.Lstr.147(%rip), %rsi
-	xorl	%edi, %edi
-	xorl	%edx, %edx
-	movq	2656(%rsp), %rcx        # 8-byte Reload
-	vzeroupper
-	callq	halide_error_buffer_extents_negative@PLT
-	jmp	.LBB147_7
-.LBB147_67:                             # %assert failed145
-	addl	$-1, %r8d
-	movl	744(%rsp), %eax         # 4-byte Reload
+	jmp	.LBB147_6
+.LBB147_60:                             # %assert failed143
+	movq	%rsi, %rcx
+	leaq	.Lstr.146(%rip), %rsi
+	jmp	.LBB147_73
+.LBB147_63:                             # %assert failed145
+	addl	$-1, %r14d
+	movl	16(%rsp), %eax          # 4-byte Reload
 	movl	%eax, (%rsp)
-	leaq	.Lstr.147(%rip), %rsi
+	leaq	.Lstr.146(%rip), %rsi
 	xorl	%edi, %edi
 	movl	$1, %edx
+	movl	%r14d, %r8d
 	vzeroupper
 	callq	halide_error_access_out_of_bounds@PLT
-	jmp	.LBB147_7
-.LBB147_69:                             # %assert failed147
-	leaq	.Lstr.147(%rip), %rsi
+	jmp	.LBB147_6
+.LBB147_65:                             # %assert failed147
+	leaq	.Lstr.146(%rip), %rsi
 	xorl	%edi, %edi
 	movl	$1, %edx
-	movl	%r12d, %ecx
-	vzeroupper
-	callq	halide_error_buffer_extents_negative@PLT
-	jmp	.LBB147_7
-.LBB147_72:                             # %assert failed149
+	movl	%r15d, %ecx
+	jmp	.LBB147_74
+.LBB147_68:                             # %assert failed149
 	leal	-1(%rcx,%r9), %eax
 	movl	%eax, (%rsp)
-	leaq	.Lstr.148(%rip), %rsi
+	leaq	.Lstr.147(%rip), %rsi
 	xorl	%edi, %edi
 	xorl	%edx, %edx
-.LBB147_73:                             # %assert failed149
+.LBB147_69:                             # %assert failed149
 	xorl	%ecx, %ecx
 	movl	$2, %r8d
 	vzeroupper
 	callq	halide_error_access_out_of_bounds@PLT
-	jmp	.LBB147_7
-.LBB147_76:                             # %assert failed151
-	leaq	.Lstr.148(%rip), %rsi
+	jmp	.LBB147_6
+.LBB147_72:                             # %assert failed151
+	leaq	.Lstr.147(%rip), %rsi
+.LBB147_73:                             # %assert failed151
 	xorl	%edi, %edi
 	xorl	%edx, %edx
-	vzeroupper
-	callq	halide_error_buffer_extents_negative@PLT
-	jmp	.LBB147_7
-.LBB147_79:                             # %assert failed153
-	leal	-1(%rbx,%r8), %eax
+	jmp	.LBB147_74
+.LBB147_77:                             # %assert failed153
+	leal	-1(%r14,%r11), %eax
 	movl	%eax, (%rsp)
-	leaq	.Lstr.148(%rip), %rsi
+	leaq	.Lstr.147(%rip), %rsi
 	xorl	%edi, %edi
 	movl	$1, %edx
 	xorl	%ecx, %ecx
-	movq	%r8, %r9
 	movl	$4095, %r8d             # imm = 0xFFF
+	movl	%r11d, %r9d
 	vzeroupper
 	callq	halide_error_access_out_of_bounds@PLT
-	jmp	.LBB147_7
-.LBB147_81:                             # %assert failed155
-	leaq	.Lstr.148(%rip), %rsi
+	jmp	.LBB147_6
+.LBB147_79:                             # %assert failed155
+	leaq	.Lstr.147(%rip), %rsi
 	xorl	%edi, %edi
 	movl	$1, %edx
-.LBB147_58:                             # %assert failed139
-	movl	%ebx, %ecx
+	movl	%r14d, %ecx
+.LBB147_74:                             # %assert failed151
+	addq	$472, %rsp              # imm = 0x1D8
+	popq	%rbx
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	popq	%rbp
 	vzeroupper
-	callq	halide_error_buffer_extents_negative@PLT
-	jmp	.LBB147_7
-.LBB147_83:                             # %assert failed157
-	leaq	.Lstr.149(%rip), %rsi
-	jmp	.LBB147_84
-.LBB147_88:                             # %assert failed159
-	leaq	.Lstr.151(%rip), %rsi
-	leaq	.Lstr.152(%rip), %rcx
+	jmp	halide_error_buffer_extents_negative@PLT # TAILCALL
+.LBB147_81:                             # %assert failed157
+	leaq	.Lstr.148(%rip), %rsi
+	jmp	.LBB147_82
+.LBB147_86:                             # %assert failed159
+	leaq	.Lstr.150(%rip), %rsi
+	leaq	.Lstr.151(%rip), %rcx
 	xorl	%edi, %edi
 	movl	$3, %r8d
-	jmp	.LBB147_85
-.LBB147_90:                             # %assert failed161
-	leaq	.Lstr.153(%rip), %rsi
-.LBB147_84:                             # %assert failed157
-	leaq	.Lstr.150(%rip), %rcx
+	jmp	.LBB147_83
+.LBB147_88:                             # %assert failed161
+	leaq	.Lstr.152(%rip), %rsi
+.LBB147_82:                             # %assert failed157
+	leaq	.Lstr.149(%rip), %rcx
 	xorl	%edi, %edi
 	movl	$1, %r8d
-.LBB147_85:                             # %assert failed157
-	movl	%eax, %edx
-	vzeroupper
-	callq	halide_error_constraint_violated@PLT
-	jmp	.LBB147_7
-.LBB147_92:                             # %assert failed163
-	leaq	.Lstr.154(%rip), %rsi
-	leaq	.Lstr.155(%rip), %rcx
+.LBB147_83:                             # %assert failed157
+	movl	%ebp, %edx
+	jmp	.LBB147_84
+.LBB147_90:                             # %assert failed163
+	leaq	.Lstr.153(%rip), %rsi
+	leaq	.Lstr.154(%rip), %rcx
 	xorl	%edi, %edi
 	xorl	%r8d, %r8d
-	movl	%r15d, %edx
-	vzeroupper
-	callq	halide_error_constraint_violated@PLT
-	jmp	.LBB147_7
-.LBB147_94:                             # %assert failed165
-	leaq	.Lstr.156(%rip), %rsi
-	leaq	.Lstr.152(%rip), %rcx
+	movl	%ebx, %edx
+	jmp	.LBB147_84
+.LBB147_92:                             # %assert failed165
+	leaq	.Lstr.155(%rip), %rsi
+	leaq	.Lstr.151(%rip), %rcx
 	xorl	%edi, %edi
 	movl	$3, %r8d
 	movl	%eax, %edx
-	vzeroupper
-	callq	halide_error_constraint_violated@PLT
-	jmp	.LBB147_7
-.LBB147_96:                             # %assert failed167
+	jmp	.LBB147_84
+.LBB147_94:                             # %assert failed167
+	leaq	.Lstr.156(%rip), %rsi
+	jmp	.LBB147_95
+.LBB147_97:                             # %assert failed169
 	leaq	.Lstr.157(%rip), %rsi
-	jmp	.LBB147_97
-.LBB147_99:                             # %assert failed169
-	leaq	.Lstr.158(%rip), %rsi
-.LBB147_97:                             # %assert failed167
-	leaq	.Lstr.150(%rip), %rcx
+.LBB147_95:                             # %assert failed167
+	leaq	.Lstr.149(%rip), %rcx
 	xorl	%edi, %edi
 	movl	$1, %r8d
+.LBB147_84:                             # %assert failed157
+	addq	$472, %rsp              # imm = 0x1D8
+	popq	%rbx
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	popq	%rbp
 	vzeroupper
-	callq	halide_error_constraint_violated@PLT
-	jmp	.LBB147_7
-.LBB147_101:                            # %assert failed173
-	leaq	.Lstr.140(%rip), %rsi
-	jmp	.LBB147_102
-.LBB147_105:                            # %assert failed175
-	leaq	.Lstr.140(%rip), %rsi
+	jmp	halide_error_constraint_violated@PLT # TAILCALL
+.LBB147_99:                             # %assert failed173
+	leaq	.Lstr.139(%rip), %rsi
+	jmp	.LBB147_100
+.LBB147_103:                            # %assert failed175
+	leaq	.Lstr.139(%rip), %rsi
 	xorl	%edi, %edi
 	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
-	movq	%r13, %rdx
-	vzeroupper
-	callq	halide_error_buffer_extents_too_large@PLT
-	jmp	.LBB147_7
-.LBB147_107:                            # %assert failed177
-	leaq	.Lstr.142(%rip), %rsi
-	jmp	.LBB147_102
-.LBB147_109:                            # %assert failed179
-	leaq	.Lstr.142(%rip), %rsi
+	movq	%r10, %rdx
+	jmp	.LBB147_112
+.LBB147_105:                            # %assert failed177
+	leaq	.Lstr.141(%rip), %rsi
+	jmp	.LBB147_100
+.LBB147_107:                            # %assert failed179
+	leaq	.Lstr.141(%rip), %rsi
+	jmp	.LBB147_108
+.LBB147_114:                            # %assert failed183
+	leaq	(%rdx,%rdx,2), %rdx
+.LBB147_110:                            # %assert failed181
+	leaq	.Lstr.141(%rip), %rsi
+	jmp	.LBB147_111
+.LBB147_116:                            # %assert failed187
+	leaq	.Lstr(%rip), %rsi
+.LBB147_108:                            # %assert failed179
 	xorl	%edi, %edi
 	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
 	movq	%rax, %rdx
-	vzeroupper
-	callq	halide_error_buffer_allocation_too_large@PLT
-	jmp	.LBB147_7
-.LBB147_115:                            # %assert failed183
-	leaq	(%rdx,%rdx,2), %rdx
+	jmp	.LBB147_101
+.LBB147_118:                            # %assert failed189
+	leaq	.Lstr(%rip), %rsi
 .LBB147_111:                            # %assert failed181
-	leaq	.Lstr.142(%rip), %rsi
+	xorl	%edi, %edi
+	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
 	jmp	.LBB147_112
-.LBB147_117:                            # %assert failed187
-	leaq	.Lstr(%rip), %rsi
-	jmp	.LBB147_102
-.LBB147_119:                            # %assert failed189
-	leaq	.Lstr(%rip), %rsi
+.LBB147_120:                            # %assert failed193
+	leaq	.Lstr.140(%rip), %rsi
+.LBB147_100:                            # %assert failed173
+	xorl	%edi, %edi
+	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
+	jmp	.LBB147_101
+.LBB147_122:                            # %assert failed195
+	leaq	.Lstr.140(%rip), %rsi
+	xorl	%edi, %edi
+	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
+	movq	%r14, %rdx
 .LBB147_112:                            # %assert failed181
+	addq	$472, %rsp              # imm = 0x1D8
+	popq	%rbx
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	popq	%rbp
+	vzeroupper
+	jmp	halide_error_buffer_extents_too_large@PLT # TAILCALL
+.LBB147_125:                            # %assert failed197
+	leaq	.Lstr.158(%rip), %rsi
 	xorl	%edi, %edi
 	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
+	movq	%rbp, %rdx
+.LBB147_101:                            # %assert failed173
+	addq	$472, %rsp              # imm = 0x1D8
+	popq	%rbx
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	popq	%rbp
 	vzeroupper
-	callq	halide_error_buffer_extents_too_large@PLT
-	jmp	.LBB147_7
-.LBB147_121:                            # %assert failed193
-	leaq	.Lstr.141(%rip), %rsi
-.LBB147_102:                            # %assert failed173
+	jmp	halide_error_buffer_allocation_too_large@PLT # TAILCALL
+.LBB147_3:                              # %destructor_block
+	cmpq	$0, 216(%rsp)           # 8-byte Folded Reload
+	jne	.LBB147_4
+	jmp	.LBB147_5
+.LBB147_156:                            # %assert failed199
 	xorl	%edi, %edi
-	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
-	vzeroupper
-	callq	halide_error_buffer_allocation_too_large@PLT
-	jmp	.LBB147_7
-.LBB147_123:                            # %assert failed195
-	leaq	.Lstr.141(%rip), %rsi
-	xorl	%edi, %edi
-	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
-	movq	%rbx, %rdx
-	vzeroupper
-	callq	halide_error_buffer_extents_too_large@PLT
-	jmp	.LBB147_7
-.LBB147_126:                            # %assert failed197
-	leaq	.Lstr.159(%rip), %rsi
-	xorl	%edi, %edi
-	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
-	movq	%r13, %rdx
-	vzeroupper
-	callq	halide_error_buffer_allocation_too_large@PLT
-	jmp	.LBB147_7
-.LBB147_131:                            # %assert succeeded200.for f3.s0.v17.preheader_crit_edge
-	movq	%r12, %r11
-	movq	1880(%rsp), %rax        # 8-byte Reload
-	cltq
-	movq	%rax, 248(%rsp)         # 8-byte Spill
-	movslq	2032(%rsp), %rax        # 4-byte Folded Reload
-	movq	%rax, 400(%rsp)         # 8-byte Spill
-	movslq	2040(%rsp), %rax        # 4-byte Folded Reload
-	movq	%rax, 360(%rsp)         # 8-byte Spill
-	jmp	.LBB147_279
-.LBB147_129:                            # %assert failed199
-	xorl	%edi, %edi
-	callq	halide_error_out_of_memory@PLT
-	jmp	.LBB147_7
+	addq	$472, %rsp              # imm = 0x1D8
+	popq	%rbx
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	popq	%rbp
+	jmp	halide_error_out_of_memory@PLT # TAILCALL
 .Lfunc_end147:
 	.size	__f3, .Lfunc_end147-__f3
+
+	.section	.rodata,"a",@progbits
+	.align	32
+.LCPI148_0:
+	.long	0                       # 0x0
+	.long	4294967294              # 0xfffffffe
+	.long	4294967292              # 0xfffffffc
+	.long	4294967290              # 0xfffffffa
+	.long	4294967288              # 0xfffffff8
+	.long	4294967286              # 0xfffffff6
+	.long	4294967284              # 0xfffffff4
+	.long	4294967282              # 0xfffffff2
+.LCPI148_1:
+	.long	4294967280              # 0xfffffff0
+	.long	4294967278              # 0xffffffee
+	.long	4294967276              # 0xffffffec
+	.long	4294967274              # 0xffffffea
+	.long	4294967272              # 0xffffffe8
+	.long	4294967270              # 0xffffffe6
+	.long	4294967268              # 0xffffffe4
+	.long	4294967266              # 0xffffffe2
+.LCPI148_3:
+	.byte	0                       # 0x0
+	.byte	1                       # 0x1
+	.byte	4                       # 0x4
+	.byte	5                       # 0x5
+	.byte	8                       # 0x8
+	.byte	9                       # 0x9
+	.byte	12                      # 0xc
+	.byte	13                      # 0xd
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	0                       # 0x0
+	.byte	1                       # 0x1
+	.byte	4                       # 0x4
+	.byte	5                       # 0x5
+	.byte	8                       # 0x8
+	.byte	9                       # 0x9
+	.byte	12                      # 0xc
+	.byte	13                      # 0xd
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+	.byte	128                     # 0x80
+.LCPI148_6:
+	.long	16                      # 0x10
+	.long	18                      # 0x12
+	.long	20                      # 0x14
+	.long	22                      # 0x16
+	.long	24                      # 0x18
+	.long	26                      # 0x1a
+	.long	28                      # 0x1c
+	.long	30                      # 0x1e
+.LCPI148_7:
+	.long	0                       # 0x0
+	.long	2                       # 0x2
+	.long	4                       # 0x4
+	.long	6                       # 0x6
+	.long	8                       # 0x8
+	.long	10                      # 0xa
+	.long	12                      # 0xc
+	.long	14                      # 0xe
+.LCPI148_8:
+	.zero	4
+	.long	4                       # 0x4
+	.zero	4
+	.long	5                       # 0x5
+	.zero	4
+	.long	6                       # 0x6
+	.zero	4
+	.long	7                       # 0x7
+.LCPI148_9:
+	.long	4                       # 0x4
+	.zero	4
+	.long	5                       # 0x5
+	.zero	4
+	.long	6                       # 0x6
+	.zero	4
+	.long	7                       # 0x7
+	.zero	4
+.LCPI148_10:
+	.zero	4
+	.long	0                       # 0x0
+	.zero	4
+	.long	1                       # 0x1
+	.zero	4
+	.long	2                       # 0x2
+	.zero	4
+	.long	3                       # 0x3
+.LCPI148_11:
+	.long	0                       # 0x0
+	.zero	4
+	.long	1                       # 0x1
+	.zero	4
+	.long	2                       # 0x2
+	.zero	4
+	.long	3                       # 0x3
+	.zero	4
+.LCPI148_17:
+	.byte	0                       # 0x0
+	.byte	1                       # 0x1
+	.byte	4                       # 0x4
+	.byte	5                       # 0x5
+	.byte	8                       # 0x8
+	.byte	9                       # 0x9
+	.byte	12                      # 0xc
+	.byte	13                      # 0xd
+	.byte	2                       # 0x2
+	.byte	3                       # 0x3
+	.byte	6                       # 0x6
+	.byte	7                       # 0x7
+	.byte	10                      # 0xa
+	.byte	11                      # 0xb
+	.byte	14                      # 0xe
+	.byte	15                      # 0xf
+	.byte	16                      # 0x10
+	.byte	17                      # 0x11
+	.byte	20                      # 0x14
+	.byte	21                      # 0x15
+	.byte	24                      # 0x18
+	.byte	25                      # 0x19
+	.byte	28                      # 0x1c
+	.byte	29                      # 0x1d
+	.byte	18                      # 0x12
+	.byte	19                      # 0x13
+	.byte	22                      # 0x16
+	.byte	23                      # 0x17
+	.byte	26                      # 0x1a
+	.byte	27                      # 0x1b
+	.byte	30                      # 0x1e
+	.byte	31                      # 0x1f
+.LCPI148_18:
+	.byte	2                       # 0x2
+	.byte	3                       # 0x3
+	.byte	6                       # 0x6
+	.byte	7                       # 0x7
+	.byte	10                      # 0xa
+	.byte	11                      # 0xb
+	.byte	14                      # 0xe
+	.byte	15                      # 0xf
+	.byte	0                       # 0x0
+	.byte	1                       # 0x1
+	.byte	4                       # 0x4
+	.byte	5                       # 0x5
+	.byte	8                       # 0x8
+	.byte	9                       # 0x9
+	.byte	12                      # 0xc
+	.byte	13                      # 0xd
+	.byte	18                      # 0x12
+	.byte	19                      # 0x13
+	.byte	22                      # 0x16
+	.byte	23                      # 0x17
+	.byte	26                      # 0x1a
+	.byte	27                      # 0x1b
+	.byte	30                      # 0x1e
+	.byte	31                      # 0x1f
+	.byte	16                      # 0x10
+	.byte	17                      # 0x11
+	.byte	20                      # 0x14
+	.byte	21                      # 0x15
+	.byte	24                      # 0x18
+	.byte	25                      # 0x19
+	.byte	28                      # 0x1c
+	.byte	29                      # 0x1d
+	.section	.rodata.cst4,"aM",@progbits,4
+	.align	4
+.LCPI148_2:
+	.long	1                       # 0x1
+.LCPI148_12:
+	.long	1199570688              # float 65535
+.LCPI148_13:
+	.long	1065353216              # float 1
+.LCPI148_14:
+	.long	1056964608              # float 0.5
+.LCPI148_15:
+	.long	1048576000              # float 0.25
+.LCPI148_16:
+	.long	1166012416              # float 4095
+	.section	.rodata.cst16,"aM",@progbits,16
+	.align	16
+.LCPI148_4:
+	.byte	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	4                       # 0x4
+	.byte	6                       # 0x6
+	.byte	8                       # 0x8
+	.byte	10                      # 0xa
+	.byte	12                      # 0xc
+	.byte	14                      # 0xe
+	.zero	1
+	.zero	1
+	.zero	1
+	.zero	1
+	.zero	1
+	.zero	1
+	.zero	1
+	.zero	1
+.LCPI148_5:
+	.zero	16,1
+	.section	.text.par_for___f3_f2.s0.v16.v19,"ax",@progbits
+	.align	16, 0x90
+	.type	par_for___f3_f2.s0.v16.v19,@function
+par_for___f3_f2.s0.v16.v19:             # @par_for___f3_f2.s0.v16.v19
+# BB#0:                                 # %entry
+	pushq	%rbp
+	movq	%rsp, %rbp
+	pushq	%r15
+	pushq	%r14
+	pushq	%r13
+	pushq	%r12
+	pushq	%rbx
+	andq	$-32, %rsp
+	subq	$3392, %rsp             # imm = 0xD40
+	movl	60(%rdx), %r8d
+	movq	%r8, 792(%rsp)          # 8-byte Spill
+	movl	64(%rdx), %r9d
+	movq	%r9, 720(%rsp)          # 8-byte Spill
+	movl	68(%rdx), %ebx
+	movq	%rbx, 2168(%rsp)        # 8-byte Spill
+	movl	72(%rdx), %ecx
+	movq	%rcx, 728(%rsp)         # 8-byte Spill
+	shll	$5, %esi
+	movq	%rsi, 712(%rsp)         # 8-byte Spill
+	leal	(%rcx,%rsi), %eax
+	leal	-32(%r9,%rcx), %ecx
+	cmpl	%eax, %ecx
+	cmovgl	%eax, %ecx
+	movq	%rcx, 400(%rsp)         # 8-byte Spill
+	leal	31(%r8), %eax
+	movl	%eax, 856(%rsp)         # 4-byte Spill
+	andl	$-32, %eax
+	leal	(%rax,%rbx), %ecx
+	leal	-32(%rax,%rcx), %ecx
+	leal	30(%rax,%rbx), %eax
+	cmpl	%eax, %ecx
+	cmovgel	%ecx, %eax
+	subl	%ebx, %eax
+	movq	%rax, 904(%rsp)         # 8-byte Spill
+	leal	2(%rax), %eax
+	movq	%rax, 2552(%rsp)        # 8-byte Spill
+	shlq	$4, %rax
+	leaq	(%rax,%rax,2), %rax
+	cmpq	$2147483647, %rax       # imm = 0x7FFFFFFF
+	ja	.LBB148_2
+# BB#1:                                 # %entry
+	movb	$1, %cl
+	testb	%cl, %cl
+	je	.LBB148_2
+# BB#3:                                 # %assert succeeded
+	vmovss	(%rdx), %xmm0           # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 476(%rsp)        # 4-byte Spill
+	vmovss	4(%rdx), %xmm0          # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 528(%rsp)        # 4-byte Spill
+	vmovss	8(%rdx), %xmm0          # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 592(%rsp)        # 4-byte Spill
+	movl	12(%rdx), %ecx
+	movl	%ecx, 440(%rsp)         # 4-byte Spill
+	movl	16(%rdx), %ecx
+	movl	%ecx, 464(%rsp)         # 4-byte Spill
+	movslq	20(%rdx), %rcx
+	movq	%rcx, 544(%rsp)         # 8-byte Spill
+	vmovss	24(%rdx), %xmm0         # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 480(%rsp)        # 4-byte Spill
+	vmovss	28(%rdx), %xmm0         # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 512(%rsp)        # 4-byte Spill
+	vmovss	32(%rdx), %xmm0         # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 412(%rsp)        # 4-byte Spill
+	vmovss	36(%rdx), %xmm0         # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 472(%rsp)        # 4-byte Spill
+	vmovss	40(%rdx), %xmm0         # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 456(%rsp)        # 4-byte Spill
+	vmovss	44(%rdx), %xmm0         # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 392(%rsp)        # 4-byte Spill
+	movslq	48(%rdx), %rcx
+	movq	%rcx, 504(%rsp)         # 8-byte Spill
+	movslq	52(%rdx), %rcx
+	movq	%rcx, 944(%rsp)         # 8-byte Spill
+	movslq	56(%rdx), %rcx
+	movq	%rcx, 584(%rsp)         # 8-byte Spill
+	movl	76(%rdx), %ecx
+	movq	%rcx, 872(%rsp)         # 8-byte Spill
+	movl	80(%rdx), %r12d
+	movl	84(%rdx), %ecx
+	movq	%rcx, 936(%rsp)         # 8-byte Spill
+	movslq	88(%rdx), %rcx
+	movq	%rcx, 664(%rsp)         # 8-byte Spill
+	movl	92(%rdx), %r14d
+	movl	96(%rdx), %ecx
+	movl	%ecx, 416(%rsp)         # 4-byte Spill
+	movl	100(%rdx), %ecx
+	movl	%ecx, 432(%rsp)         # 4-byte Spill
+	vmovss	108(%rdx), %xmm0        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 640(%rsp)        # 4-byte Spill
+	vmovss	112(%rdx), %xmm0        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 448(%rsp)        # 4-byte Spill
+	vmovss	116(%rdx), %xmm0        # xmm0 = mem[0],zero,zero,zero
+	vmovss	%xmm0, 384(%rsp)        # 4-byte Spill
+	movl	104(%rdx), %ecx
+	movl	%ecx, 424(%rsp)         # 4-byte Spill
+	movq	120(%rdx), %rcx
+	movq	%rcx, 576(%rsp)         # 8-byte Spill
+	movq	136(%rdx), %rcx
+	movq	%rcx, 864(%rsp)         # 8-byte Spill
+	movq	152(%rdx), %rcx
+	movq	%rcx, 1736(%rsp)        # 8-byte Spill
+	movq	168(%rdx), %r15
+	orq	$4, %rax
+	movq	%rdi, 280(%rsp)         # 8-byte Spill
+	movq	%rax, %rsi
+	callq	halide_malloc@PLT
+	movq	%rax, %r13
+	testq	%r13, %r13
+	je	.LBB148_4
+# BB#6:                                 # %assert succeeded2
+	movl	856(%rsp), %ecx         # 4-byte Reload
+	sarl	$5, %ecx
+	movl	%ecx, 564(%rsp)         # 4-byte Spill
+	movq	792(%rsp), %rbx         # 8-byte Reload
+	addl	$63, %ebx
+	sarl	$5, %ebx
+	movq	%rbx, 792(%rsp)         # 8-byte Spill
+	leal	(%r12,%r12), %eax
+	leal	-2(%r12,%r12), %edx
+	movl	%edx, 628(%rsp)         # 4-byte Spill
+	movl	$2, %esi
+	subl	%eax, %esi
+	cmpl	$1, %eax
+	cmovgl	%edx, %esi
+	movl	%esi, 624(%rsp)         # 4-byte Spill
+	movl	%r14d, %eax
+	movl	%r14d, 788(%rsp)        # 4-byte Spill
+	movq	664(%rsp), %rdx         # 8-byte Reload
+	imull	%edx, %eax
+	movq	2168(%rsp), %r14        # 8-byte Reload
+	movslq	%r14d, %rsi
+	movq	%rsi, 880(%rsp)         # 8-byte Spill
+	movq	936(%rsp), %r9          # 8-byte Reload
+	addl	%r9d, %eax
+	vmovd	%eax, %xmm0
+	vmovaps	%ymm0, 736(%rsp)        # 32-byte Spill
+	movq	872(%rsp), %rdx         # 8-byte Reload
+	leal	(%r9,%rdx), %eax
+	subl	%r14d, %eax
+	movq	%rax, 800(%rsp)         # 8-byte Spill
+	leal	1(%rax), %eax
+	vmovd	%eax, %xmm0
+	movl	%r9d, %eax
+	subl	%r14d, %eax
+	movq	%rax, 496(%rsp)         # 8-byte Spill
+	leal	1(%rax), %eax
+	vmovd	%eax, %xmm1
+	leal	-2(%rdx,%rdx), %eax
+	vmovd	%eax, %xmm2
+	vmovd	%eax, %xmm3
+	leal	-1(%r9,%rdx), %eax
+	vmovd	%eax, %xmm4
+	movl	%r14d, %eax
+	andl	$1, %eax
+	movl	%eax, 784(%rsp)         # 4-byte Spill
+	movl	%r14d, %r11d
+	subl	%r9d, %r11d
+	movq	%r11, 1912(%rsp)        # 8-byte Spill
+	movl	%ecx, %eax
+	shll	$6, %eax
+	movq	%rax, 568(%rsp)         # 8-byte Spill
+	leal	-32(%r14,%rax), %eax
+	shll	$5, %ecx
+	movq	%rcx, 552(%rsp)         # 8-byte Spill
+	leal	30(%r14,%rcx), %edx
+	cmpl	%edx, %eax
+	cmovgel	%eax, %edx
+	movq	%r12, %r10
+	movslq	%edx, %r12
+	movq	%r12, %rdx
+	shlq	$5, %rdx
+	leaq	160(%rdx), %rax
+	movq	%rsi, %r8
+	shlq	$5, %r8
+	movq	%r8, 672(%rsp)          # 8-byte Spill
+	subq	%r8, %rax
+	movq	%rax, 1016(%rsp)        # 8-byte Spill
+	leaq	2(%r12), %rax
+	subq	%rsi, %rax
+	shlq	$2, %rax
+	movq	%rax, 896(%rsp)         # 8-byte Spill
+	movq	728(%rsp), %rsi         # 8-byte Reload
+	movl	%esi, %eax
+	notl	%eax
+	movq	%rax, 1976(%rsp)        # 8-byte Spill
+	movl	%eax, %ecx
+	movq	712(%rsp), %rax         # 8-byte Reload
+	subl	%eax, %ecx
+	movl	%ecx, 860(%rsp)         # 4-byte Spill
+	movl	$31, %eax
+	movq	720(%rsp), %rdi         # 8-byte Reload
+	subl	%edi, %eax
+	subl	%esi, %eax
+	cmpl	%eax, %ecx
+	cmovgel	%ecx, %eax
+	movl	$-2, %esi
+	subl	%eax, %esi
+	vpbroadcastd	%xmm0, %ymm0
+	vmovdqa	.LCPI148_0(%rip), %ymm5 # ymm5 = [0,4294967294,4294967292,4294967290,4294967288,4294967286,4294967284,4294967282]
+	vpaddd	%ymm5, %ymm0, %ymm6
+	vmovdqa	%ymm6, 1856(%rsp)       # 32-byte Spill
+	vmovdqa	.LCPI148_1(%rip), %ymm6 # ymm6 = [4294967280,4294967278,4294967276,4294967274,4294967272,4294967270,4294967268,4294967266]
+	vpaddd	%ymm6, %ymm0, %ymm0
+	vmovdqa	%ymm0, 1824(%rsp)       # 32-byte Spill
+	vpbroadcastd	%xmm1, %ymm0
+	vpaddd	%ymm5, %ymm0, %ymm1
+	vmovdqa	%ymm1, 1664(%rsp)       # 32-byte Spill
+	vpaddd	%ymm6, %ymm0, %ymm0
+	vmovdqa	%ymm0, 1632(%rsp)       # 32-byte Spill
+	vmovd	%r9d, %xmm0
+	vpbroadcastd	%xmm0, %ymm0
+	movq	872(%rsp), %rax         # 8-byte Reload
+	vmovd	%eax, %xmm1
+	vpbroadcastd	%xmm1, %ymm1
+	vbroadcastss	%xmm3, %ymm3
+	vmovaps	%ymm3, 1920(%rsp)       # 32-byte Spill
+	vbroadcastss	%xmm2, %xmm2
+	vmovaps	%xmm2, 912(%rsp)        # 16-byte Spill
+	vpbroadcastd	.LCPI148_2(%rip), %ymm2
+	vpsubd	%ymm1, %ymm2, %ymm2
+	vmovdqa	%ymm2, 2112(%rsp)       # 32-byte Spill
+	vpaddd	%ymm0, %ymm1, %ymm0
+	vpcmpeqd	%ymm1, %ymm1, %ymm1
+	vpaddd	%ymm1, %ymm0, %ymm0
+	vmovdqa	%ymm0, 2048(%rsp)       # 32-byte Spill
+	vbroadcastss	%xmm4, %xmm0
+	vmovaps	%xmm0, 2032(%rsp)       # 16-byte Spill
+	vmovd	%r9d, %xmm0
+	vbroadcastss	%xmm0, %xmm0
+	vmovaps	%xmm0, 2096(%rsp)       # 16-byte Spill
+	movq	800(%rsp), %rax         # 8-byte Reload
+	vmovd	%eax, %xmm0
+	vpbroadcastd	%xmm0, %ymm0
+	vpaddd	%ymm5, %ymm0, %ymm1
+	vmovdqa	%ymm1, 1792(%rsp)       # 32-byte Spill
+	vpaddd	%ymm6, %ymm0, %ymm0
+	vmovdqa	%ymm0, 1760(%rsp)       # 32-byte Spill
+	movq	496(%rsp), %rax         # 8-byte Reload
+	vmovd	%eax, %xmm0
+	vpbroadcastd	%xmm0, %ymm0
+	vpaddd	%ymm5, %ymm0, %ymm1
+	vmovdqa	%ymm1, 1600(%rsp)       # 32-byte Spill
+	vpaddd	%ymm6, %ymm0, %ymm0
+	vmovdqa	%ymm0, 1568(%rsp)       # 32-byte Spill
+	subq	%r8, %rdx
+	movq	%rdx, 1024(%rsp)        # 8-byte Spill
+	shlq	$4, %r12
+	movq	880(%rsp), %r8          # 8-byte Reload
+	shlq	$4, %r8
+	movq	%r8, 488(%rsp)          # 8-byte Spill
+	subq	%r8, %r12
+	movq	%r12, 960(%rsp)         # 8-byte Spill
+	movq	400(%rsp), %rax         # 8-byte Reload
+	leal	-1(%rax), %ecx
+	movq	%rcx, 1088(%rsp)        # 8-byte Spill
+	leal	2(%rax), %eax
+	movl	%eax, 892(%rsp)         # 4-byte Spill
+	movq	664(%rsp), %rcx         # 8-byte Reload
+	leal	(%rcx,%r10), %eax
+	movl	%eax, 660(%rsp)         # 4-byte Spill
+	leal	-1(%r10,%rcx), %eax
+	movl	%eax, 620(%rsp)         # 4-byte Spill
+	leal	-1(%rcx,%r10), %eax
+	movl	%eax, 616(%rsp)         # 4-byte Spill
+	leal	-1(%r14), %eax
+	movq	%rax, 1752(%rsp)        # 8-byte Spill
+	leal	-1(%r11), %eax
+	movq	%rax, 1744(%rsp)        # 8-byte Spill
+	leaq	64(%rdx), %rax
+	movq	%rax, 1008(%rsp)        # 8-byte Spill
+	movq	%r10, 632(%rsp)         # 8-byte Spill
+	movq	1736(%rsp), %r8         # 8-byte Reload
+	.align	16, 0x90
+.LBB148_7:                              # %for deinterleaved$3.s0.v16
+                                        # =>This Loop Header: Depth=1
+                                        #     Child Loop BB148_9 Depth 2
+	movl	%esi, 952(%rsp)         # 4-byte Spill
+	movzbl	%sil, %esi
+	andl	$3, %esi
+	testl	%ebx, %ebx
+	jle	.LBB148_39
+# BB#8:                                 # %for deinterleaved$3.s0.v15.v15.preheader
+                                        #   in Loop: Header=BB148_7 Depth=1
+	imulq	896(%rsp), %rsi         # 8-byte Folded Reload
+	movq	1088(%rsp), %rbx        # 8-byte Reload
+	movl	%ebx, %eax
+	movq	664(%rsp), %rcx         # 8-byte Reload
+	subl	%ecx, %eax
+	cltd
+	idivl	628(%rsp)               # 4-byte Folded Reload
+	leaq	(%rsi,%r13), %rdi
+	movl	%edx, %eax
+	sarl	$31, %eax
+	andl	624(%rsp), %eax         # 4-byte Folded Reload
+	movq	632(%rsp), %rsi         # 8-byte Reload
+	subl	%esi, %edx
+	leal	(%rdx,%rax), %esi
+	leal	1(%rdx,%rax), %eax
+	cmpl	$-2, %esi
+	notl	%esi
+	cmovgl	%eax, %esi
+	movl	620(%rsp), %eax         # 4-byte Reload
+	subl	%esi, %eax
+	movl	616(%rsp), %edx         # 4-byte Reload
+	cmpl	%ebx, %edx
+	cmovgl	%ebx, %edx
+	cmpl	%ecx, %edx
+	cmovll	%ecx, %edx
+	cmpl	%ebx, 660(%rsp)         # 4-byte Folded Reload
+	cmovlel	%eax, %edx
+	cmpl	%ecx, %ebx
+	cmovll	%eax, %edx
+	movl	784(%rsp), %ecx         # 4-byte Reload
+	testl	%ecx, %ecx
+	setne	%r9b
+	sete	%sil
+	imull	788(%rsp), %edx         # 4-byte Folded Reload
+	movl	%ebx, %r10d
+	andl	$1, %r10d
+	movl	%r10d, 1080(%rsp)       # 4-byte Spill
+	vmovd	%edx, %xmm1
+	vpabsd	912(%rsp), %xmm0        # 16-byte Folded Reload
+	vinserti128	$1, %xmm0, %ymm0, %ymm0
+	vmovdqa	%ymm0, 2304(%rsp)       # 32-byte Spill
+	vpsubd	736(%rsp), %ymm1, %ymm1 # 32-byte Folded Reload
+	vpbroadcastd	%xmm1, %ymm0
+	vmovdqa	%ymm0, 2272(%rsp)       # 32-byte Spill
+	sete	%al
+	movb	%r10b, %dl
+	andb	%sil, %dl
+	movb	%dl, 1064(%rsp)         # 1-byte Spill
+	testl	%ebx, %ecx
+	setne	%dl
+	movl	%ebx, %esi
+	movq	2168(%rsp), %rcx        # 8-byte Reload
+	orl	%ecx, %esi
+	testb	$1, %sil
+	sete	%bl
+	orb	%dl, %bl
+	movb	%bl, 1056(%rsp)         # 1-byte Spill
+	andb	%r9b, %al
+	movb	%al, 1072(%rsp)         # 1-byte Spill
+	xorl	%ecx, %ecx
+	movq	792(%rsp), %rax         # 8-byte Reload
+	.align	16, 0x90
+.LBB148_9:                              # %for deinterleaved$3.s0.v15.v15
+                                        #   Parent Loop BB148_7 Depth=1
+                                        # =>  This Inner Loop Header: Depth=2
+	movq	%rcx, 2560(%rsp)        # 8-byte Spill
+	movl	%eax, 2208(%rsp)        # 4-byte Spill
+	movq	%rdi, 2240(%rsp)        # 8-byte Spill
+	testl	%r10d, %r10d
+	sete	2176(%rsp)              # 1-byte Folded Spill
+	setne	1712(%rsp)              # 1-byte Folded Spill
+	movq	1744(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rcx), %eax
+	vmovd	%eax, %xmm1
+	vpbroadcastd	%xmm1, %ymm1
+	vmovdqa	.LCPI148_7(%rip), %ymm12 # ymm12 = [0,2,4,6,8,10,12,14]
+	vpaddd	%ymm12, %ymm1, %ymm3
+	vextracti128	$1, %ymm3, %xmm4
+	vpextrd	$1, %xmm4, %eax
+	vmovdqa	1920(%rsp), %ymm0       # 32-byte Reload
+	vextracti128	$1, %ymm0, %xmm5
+	vpextrd	$1, %xmm5, %ebx
+	movl	%ebx, 1488(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ebx
+	movl	%edx, %r9d
+	vmovd	%xmm4, %eax
+	vmovd	%xmm5, %r12d
+	movl	%r12d, 1480(%rsp)       # 4-byte Spill
+	cltd
+	idivl	%r12d
+	movl	%edx, %esi
+	vpextrd	$2, %xmm4, %eax
+	vpextrd	$2, %xmm5, %r10d
+	movl	%r10d, 1472(%rsp)       # 4-byte Spill
+	cltd
+	idivl	%r10d
+	movl	%edx, %r14d
+	vpextrd	$3, %xmm4, %eax
+	vpextrd	$3, %xmm5, %ecx
+	movl	%ecx, 2336(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ecx
+	movl	%edx, 2528(%rsp)        # 4-byte Spill
+	vpextrd	$1, %xmm3, %eax
+	vpextrd	$1, %xmm0, %edi
+	movl	%edi, 1216(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	movl	%edx, %edi
+	vmovd	%esi, %xmm4
+	vmovd	%xmm3, %eax
+	vmovd	%xmm0, %esi
+	movl	%esi, 1184(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r11d
+	vpinsrd	$1, %r9d, %xmm4, %xmm4
+	vpextrd	$2, %xmm3, %eax
+	vpextrd	$2, %xmm0, %esi
+	movl	%esi, 1152(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r9d
+	vpinsrd	$2, %r14d, %xmm4, %xmm5
+	vpextrd	$3, %xmm3, %eax
+	vpextrd	$3, %xmm0, %esi
+	movl	%esi, 1120(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r14d
+	vmovdqa	.LCPI148_6(%rip), %ymm9 # ymm9 = [16,18,20,22,24,26,28,30]
+	vpaddd	%ymm9, %ymm1, %ymm4
+	vextracti128	$1, %ymm4, %xmm6
+	vpextrd	$1, %xmm6, %eax
+	cltd
+	idivl	%ebx
+	movl	%edx, %esi
+	vpinsrd	$3, 2528(%rsp), %xmm5, %xmm15 # 4-byte Folded Reload
+	vmovd	%r11d, %xmm3
+	vmovd	%xmm6, %eax
+	cltd
+	idivl	%r12d
+	movl	%edx, %ebx
+	vpinsrd	$1, %edi, %xmm3, %xmm3
+	vpinsrd	$2, %r9d, %xmm3, %xmm3
+	vpextrd	$2, %xmm6, %eax
+	cltd
+	idivl	%r10d
+	movl	%edx, %edi
+	vpinsrd	$3, %r14d, %xmm3, %xmm3
+	vmovd	%ebx, %xmm5
+	vpextrd	$3, %xmm6, %eax
+	cltd
+	idivl	%ecx
+	movl	%edx, %ebx
+	vpinsrd	$1, %esi, %xmm5, %xmm5
+	vpextrd	$1, %xmm4, %eax
+	vpextrd	$1, %xmm0, %ecx
+	movl	%ecx, 1280(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ecx
+	movl	%edx, %esi
+	vpinsrd	$2, %edi, %xmm5, %xmm5
+	vmovd	%xmm4, %eax
+	vmovd	%xmm0, %ecx
+	movl	%ecx, 1248(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ecx
+	movl	%edx, %edi
+	vpinsrd	$3, %ebx, %xmm5, %xmm6
+	vpextrd	$2, %xmm4, %eax
+	vpextrd	$2, %xmm0, %ecx
+	movl	%ecx, 1464(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ecx
+	movl	%edx, %ebx
+	vmovd	%edi, %xmm5
+	vpextrd	$3, %xmm4, %eax
+	vpextrd	$3, %xmm0, %ecx
+	movl	%ecx, 1456(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ecx
+	vpinsrd	$1, %esi, %xmm5, %xmm4
+	movq	2560(%rsp), %rcx        # 8-byte Reload
+	vpinsrd	$2, %ebx, %xmm4, %xmm7
+	vmovd	%ecx, %xmm4
+	vpbroadcastd	%xmm4, %ymm5
+	vmovdqa	1856(%rsp), %ymm0       # 32-byte Reload
+	vpcmpgtd	%ymm5, %ymm0, %ymm4
+	vmovdqa	.LCPI148_3(%rip), %ymm0 # ymm0 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
+	vmovdqa	%ymm0, %ymm10
+	vpshufb	%ymm10, %ymm4, %ymm4
+	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
+	vmovdqa	1824(%rsp), %ymm0       # 32-byte Reload
+	vpcmpgtd	%ymm5, %ymm0, %ymm8
+	vpshufb	%ymm10, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vmovdqa	.LCPI148_4(%rip), %xmm0 # xmm0 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
+	vmovdqa	%xmm0, %xmm1
+	vpshufb	%xmm1, %xmm8, %xmm0
+	vpshufb	%xmm1, %xmm4, %xmm4
+	vpunpcklqdq	%xmm0, %xmm4, %xmm0 # xmm0 = xmm4[0],xmm0[0]
+	vpxor	.LCPI148_5(%rip), %xmm0, %xmm0
+	vmovdqa	1664(%rsp), %ymm2       # 32-byte Reload
+	vpcmpgtd	%ymm5, %ymm2, %ymm4
+	vpshufb	%ymm10, %ymm4, %ymm4
+	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
+	vmovdqa	1632(%rsp), %ymm2       # 32-byte Reload
+	vpcmpgtd	%ymm5, %ymm2, %ymm8
+	vpshufb	%ymm10, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vpshufb	%xmm1, %xmm8, %xmm2
+	vpshufb	%xmm1, %xmm4, %xmm4
+	vpunpcklqdq	%xmm2, %xmm4, %xmm2 # xmm2 = xmm4[0],xmm2[0]
+	vpor	%xmm0, %xmm2, %xmm13
+	vpinsrd	$3, %edx, %xmm7, %xmm0
+	vinserti128	$1, %xmm6, %ymm0, %ymm0
+	vpsrad	$31, %ymm0, %ymm2
+	vmovdqa	2304(%rsp), %ymm11      # 32-byte Reload
+	vpand	%ymm2, %ymm11, %ymm2
+	vmovdqa	2112(%rsp), %ymm8       # 32-byte Reload
+	vpaddd	%ymm0, %ymm8, %ymm0
+	vpaddd	%ymm2, %ymm0, %ymm0
+	vpabsd	%xmm0, %xmm2
+	vextracti128	$1, %ymm0, %xmm0
+	vpabsd	%xmm0, %xmm0
+	vinserti128	$1, %xmm0, %ymm2, %ymm0
+	vmovdqa	2048(%rsp), %ymm10      # 32-byte Reload
+	vpsubd	%ymm0, %ymm10, %ymm0
+	movq	1752(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rcx), %edx
+	movl	%edx, 1984(%rsp)        # 4-byte Spill
+	vmovd	%edx, %xmm2
+	vpbroadcastd	%xmm2, %ymm14
+	vpaddd	%ymm9, %ymm14, %ymm2
+	vmovdqa	2032(%rsp), %xmm4       # 16-byte Reload
+	vpminsd	%xmm4, %xmm2, %xmm7
+	vextracti128	$1, %ymm2, %xmm2
+	vpminsd	%xmm4, %xmm2, %xmm2
+	vmovdqa	2096(%rsp), %xmm6       # 16-byte Reload
+	vpmaxsd	%xmm6, %xmm7, %xmm7
+	vpmaxsd	%xmm6, %xmm2, %xmm2
+	vinserti128	$1, %xmm2, %ymm7, %ymm2
+	vpunpckhbw	%xmm13, %xmm13, %xmm7 # xmm7 = xmm13[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
+	vpmovzxwd	%xmm7, %ymm7    # ymm7 = xmm7[0],zero,xmm7[1],zero,xmm7[2],zero,xmm7[3],zero,xmm7[4],zero,xmm7[5],zero,xmm7[6],zero,xmm7[7],zero
+	vpslld	$31, %ymm7, %ymm7
+	vblendvps	%ymm7, %ymm0, %ymm2, %ymm0
+	vmovdqa	2272(%rsp), %ymm9       # 32-byte Reload
+	vpaddd	%ymm0, %ymm9, %ymm7
+	vmovq	%xmm7, %r9
+	movslq	%r9d, %rax
+	movq	%rax, 1960(%rsp)        # 8-byte Spill
+	movzwl	(%r8,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	vinserti128	$1, %xmm15, %ymm3, %ymm1
+	vpsrad	$31, %ymm1, %ymm2
+	vpand	%ymm2, %ymm11, %ymm2
+	vpaddd	%ymm1, %ymm8, %ymm1
+	vpaddd	%ymm2, %ymm1, %ymm1
+	vpabsd	%xmm1, %xmm2
+	vextracti128	$1, %ymm1, %xmm1
+	vpabsd	%xmm1, %xmm1
+	vinserti128	$1, %xmm1, %ymm2, %ymm1
+	vpaddd	%ymm12, %ymm14, %ymm2
+	vmovdqa	%ymm12, %ymm15
+	vpminsd	%xmm4, %xmm2, %xmm3
+	vextracti128	$1, %ymm2, %xmm2
+	vpminsd	%xmm4, %xmm2, %xmm2
+	vmovdqa	%xmm4, %xmm14
+	vpmaxsd	%xmm6, %xmm3, %xmm3
+	vpmaxsd	%xmm6, %xmm2, %xmm2
+	vinserti128	$1, %xmm2, %ymm3, %ymm2
+	vpsubd	%ymm1, %ymm10, %ymm1
+	vpmovzxbd	%xmm13, %ymm3   # ymm3 = xmm13[0],zero,zero,zero,xmm13[1],zero,zero,zero,xmm13[2],zero,zero,zero,xmm13[3],zero,zero,zero,xmm13[4],zero,zero,zero,xmm13[5],zero,zero,zero,xmm13[6],zero,zero,zero,xmm13[7],zero,zero,zero
+	vpslld	$31, %ymm3, %ymm3
+	vblendvps	%ymm3, %ymm1, %ymm2, %ymm1
+	vpaddd	%ymm1, %ymm9, %ymm1
+	vmovq	%xmm1, %rdi
+	movslq	%edi, %rax
+	movq	%rax, 2368(%rsp)        # 8-byte Spill
+	sarq	$32, %rdi
+	vpextrq	$1, %xmm1, %rsi
+	movslq	%esi, %rax
+	movq	%rax, 2496(%rsp)        # 8-byte Spill
+	sarq	$32, %rsi
+	vextracti128	$1, %ymm1, %xmm1
+	vmovq	%xmm1, %rcx
+	movslq	%ecx, %rax
+	movq	%rax, 2464(%rsp)        # 8-byte Spill
+	sarq	$32, %rcx
+	vpextrq	$1, %xmm1, %rbx
+	movslq	%ebx, %rax
+	movq	%rax, 2528(%rsp)        # 8-byte Spill
+	sarq	$32, %rbx
+	sarq	$32, %r9
+	movq	%r9, 2432(%rsp)         # 8-byte Spill
+	vpextrq	$1, %xmm7, %r12
+	movslq	%r12d, %r10
+	movq	%r10, 1312(%rsp)        # 8-byte Spill
+	sarq	$32, %r12
+	movq	%r12, 1408(%rsp)        # 8-byte Spill
+	vextracti128	$1, %ymm7, %xmm1
+	vmovq	%xmm1, %r11
+	movslq	%r11d, %rax
+	movq	%rax, 2400(%rsp)        # 8-byte Spill
+	sarq	$32, %r11
+	movq	%r11, 1376(%rsp)        # 8-byte Spill
+	vpextrq	$1, %xmm1, %r14
+	movslq	%r14d, %r9
+	movq	%r9, 1344(%rsp)         # 8-byte Spill
+	sarq	$32, %r14
+	movq	%r14, 1448(%rsp)        # 8-byte Spill
+	andl	$1, %edx
+	movl	%edx, 1968(%rsp)        # 4-byte Spill
+	sete	%al
+	andb	1712(%rsp), %al         # 1-byte Folded Reload
+	movq	2432(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$1, (%r8,%rdx,2), %xmm0, %xmm0
+	vpinsrw	$2, (%r8,%r10,2), %xmm0, %xmm0
+	vpinsrw	$3, (%r8,%r12,2), %xmm0, %xmm0
+	movq	2400(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$4, (%r8,%rdx,2), %xmm0, %xmm0
+	vpinsrw	$5, (%r8,%r11,2), %xmm0, %xmm0
+	vpinsrw	$6, (%r8,%r9,2), %xmm0, %xmm0
+	vpinsrw	$7, (%r8,%r14,2), %xmm0, %xmm4
+	jne	.LBB148_10
+# BB#11:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vpxor	%ymm1, %ymm1, %ymm1
+	movq	2496(%rsp), %r10        # 8-byte Reload
+	movq	2528(%rsp), %r9         # 8-byte Reload
+	movq	2464(%rsp), %rdx        # 8-byte Reload
+	jmp	.LBB148_12
+	.align	16, 0x90
+.LBB148_10:                             #   in Loop: Header=BB148_9 Depth=2
+	movq	2368(%rsp), %rdx        # 8-byte Reload
+	movzwl	(%r8,%rdx,2), %edx
+	vmovd	%edx, %xmm0
+	vpinsrw	$1, (%r8,%rdi,2), %xmm0, %xmm0
+	movq	2496(%rsp), %r10        # 8-byte Reload
+	vpinsrw	$2, (%r8,%r10,2), %xmm0, %xmm0
+	vpinsrw	$3, (%r8,%rsi,2), %xmm0, %xmm0
+	movq	2464(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$4, (%r8,%rdx,2), %xmm0, %xmm0
+	vpinsrw	$5, (%r8,%rcx,2), %xmm0, %xmm0
+	movq	2528(%rsp), %r9         # 8-byte Reload
+	vpinsrw	$6, (%r8,%r9,2), %xmm0, %xmm0
+	vpinsrw	$7, (%r8,%rbx,2), %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm1
+.LBB148_12:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	testb	%al, %al
+	jne	.LBB148_13
+# BB#14:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	movq	%rdx, 2464(%rsp)        # 8-byte Spill
+	movq	%r10, 2496(%rsp)        # 8-byte Spill
+	movq	%r9, 2528(%rsp)         # 8-byte Spill
+	movq	%rdi, 1504(%rsp)        # 8-byte Spill
+	movq	%rcx, 1536(%rsp)        # 8-byte Spill
+	movq	%rsi, 1696(%rsp)        # 8-byte Spill
+	movq	%rbx, 1712(%rsp)        # 8-byte Spill
+	vpxor	%ymm4, %ymm4, %ymm4
+	jmp	.LBB148_15
+	.align	16, 0x90
+.LBB148_13:                             #   in Loop: Header=BB148_9 Depth=2
+	movq	%rdx, 2464(%rsp)        # 8-byte Spill
+	movq	%r10, 2496(%rsp)        # 8-byte Spill
+	movq	%r9, 2528(%rsp)         # 8-byte Spill
+	movq	%rdi, 1504(%rsp)        # 8-byte Spill
+	movq	%rcx, 1536(%rsp)        # 8-byte Spill
+	movq	%rsi, 1696(%rsp)        # 8-byte Spill
+	movq	%rbx, 1712(%rsp)        # 8-byte Spill
+	vpmovzxwd	%xmm4, %ymm0    # ymm0 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
+	vcvtdq2ps	%ymm0, %ymm4
+.LBB148_15:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	movq	1912(%rsp), %rax        # 8-byte Reload
+	movq	2560(%rsp), %rcx        # 8-byte Reload
+	leal	(%rax,%rcx), %eax
+	vmovd	%eax, %xmm0
+	vpbroadcastd	%xmm0, %ymm6
+	vpaddd	%ymm15, %ymm6, %ymm7
+	vextracti128	$1, %ymm7, %xmm0
+	vpextrd	$1, %xmm0, %eax
+	cltd
+	movl	1488(%rsp), %r10d       # 4-byte Reload
+	idivl	%r10d
+	movl	%edx, 1104(%rsp)        # 4-byte Spill
+	vmovd	%xmm0, %eax
+	cltd
+	movl	1480(%rsp), %r11d       # 4-byte Reload
+	idivl	%r11d
+	movl	%edx, 1096(%rsp)        # 4-byte Spill
+	vpextrd	$2, %xmm0, %eax
+	cltd
+	movl	1472(%rsp), %ecx        # 4-byte Reload
+	idivl	%ecx
+	movl	%edx, 1112(%rsp)        # 4-byte Spill
+	vpextrd	$3, %xmm0, %eax
+	cltd
+	movl	2336(%rsp), %r12d       # 4-byte Reload
+	idivl	%r12d
+	movl	%edx, %esi
+	vpextrd	$1, %xmm7, %eax
+	cltd
+	idivl	1216(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %edi
+	vmovd	%xmm7, %eax
+	cltd
+	idivl	1184(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %ebx
+	vpextrd	$2, %xmm7, %eax
+	cltd
+	idivl	1152(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %r14d
+	vpextrd	$3, %xmm7, %eax
+	cltd
+	idivl	1120(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %r9d
+	vmovdqa	.LCPI148_6(%rip), %ymm13 # ymm13 = [16,18,20,22,24,26,28,30]
+	vpaddd	%ymm13, %ymm6, %ymm6
+	vextracti128	$1, %ymm6, %xmm0
+	vpextrd	$1, %xmm0, %eax
+	cltd
+	idivl	%r10d
+	movl	%edx, %r10d
+	vmovd	%xmm0, %eax
+	cltd
+	idivl	%r11d
+	movl	%edx, %r11d
+	vpextrd	$2, %xmm0, %eax
+	cltd
+	idivl	%ecx
+	movl	%edx, 1488(%rsp)        # 4-byte Spill
+	vmovd	1096(%rsp), %xmm2       # 4-byte Folded Reload
+                                        # xmm2 = mem[0],zero,zero,zero
+	vpinsrd	$1, 1104(%rsp), %xmm2, %xmm2 # 4-byte Folded Reload
+	vmovdqa	1792(%rsp), %ymm3       # 32-byte Reload
+	vpcmpgtd	%ymm5, %ymm3, %ymm7
+	vmovdqa	.LCPI148_3(%rip), %ymm11 # ymm11 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
+	vpshufb	%ymm11, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vmovdqa	1760(%rsp), %ymm3       # 32-byte Reload
+	vpcmpgtd	%ymm5, %ymm3, %ymm8
+	vpshufb	%ymm11, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vmovdqa	.LCPI148_4(%rip), %xmm12 # xmm12 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
+	vpshufb	%xmm12, %xmm8, %xmm3
+	vpshufb	%xmm12, %xmm7, %xmm7
+	vpunpcklqdq	%xmm3, %xmm7, %xmm3 # xmm3 = xmm7[0],xmm3[0]
+	vpxor	.LCPI148_5(%rip), %xmm3, %xmm3
+	vmovdqa	1600(%rsp), %ymm7       # 32-byte Reload
+	vpcmpgtd	%ymm5, %ymm7, %ymm7
+	vpshufb	%ymm11, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vmovdqa	1568(%rsp), %ymm8       # 32-byte Reload
+	vpcmpgtd	%ymm5, %ymm8, %ymm5
+	vpshufb	%ymm11, %ymm5, %ymm5
+	vpermq	$232, %ymm5, %ymm5      # ymm5 = ymm5[0,2,2,3]
+	vpshufb	%xmm12, %xmm5, %xmm5
+	vpshufb	%xmm12, %xmm7, %xmm7
+	vpunpcklqdq	%xmm5, %xmm7, %xmm5 # xmm5 = xmm7[0],xmm5[0]
+	vpor	%xmm3, %xmm5, %xmm5
+	vpinsrd	$2, 1112(%rsp), %xmm2, %xmm2 # 4-byte Folded Reload
+	vpinsrd	$3, %esi, %xmm2, %xmm2
+	vmovd	%ebx, %xmm3
+	vpextrd	$3, %xmm0, %eax
+	cltd
+	idivl	%r12d
+	movl	%edx, %esi
+	vpinsrd	$1, %edi, %xmm3, %xmm0
+	vpinsrd	$2, %r14d, %xmm0, %xmm0
+	vpextrd	$1, %xmm6, %eax
+	cltd
+	idivl	1280(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %edi
+	vpinsrd	$3, %r9d, %xmm0, %xmm0
+	vinserti128	$1, %xmm2, %ymm0, %ymm0
+	vmovd	%xmm6, %eax
+	cltd
+	idivl	1248(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %ebx
+	vpsrad	$31, %ymm0, %ymm2
+	vmovdqa	2304(%rsp), %ymm8       # 32-byte Reload
+	vpand	%ymm8, %ymm2, %ymm2
+	vmovdqa	2112(%rsp), %ymm9       # 32-byte Reload
+	vpaddd	%ymm0, %ymm9, %ymm0
+	vpaddd	%ymm2, %ymm0, %ymm0
+	vpabsd	%xmm0, %xmm2
+	vextracti128	$1, %ymm0, %xmm0
+	vpabsd	%xmm0, %xmm0
+	vinserti128	$1, %xmm0, %ymm2, %ymm0
+	vpsubd	%ymm0, %ymm10, %ymm0
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	movq	2560(%rsp), %rcx        # 8-byte Reload
+	leal	(%rax,%rcx), %eax
+	vmovd	%eax, %xmm2
+	vpbroadcastd	%xmm2, %ymm7
+	vpaddd	%ymm15, %ymm7, %ymm2
+	vpminsd	%xmm14, %xmm2, %xmm3
+	vextracti128	$1, %ymm2, %xmm2
+	vpminsd	%xmm14, %xmm2, %xmm2
+	vmovdqa	2096(%rsp), %xmm15      # 16-byte Reload
+	vpmaxsd	%xmm15, %xmm3, %xmm3
+	vpmaxsd	%xmm15, %xmm2, %xmm2
+	vinserti128	$1, %xmm2, %ymm3, %ymm2
+	vpmovzxbd	%xmm5, %ymm3    # ymm3 = xmm5[0],zero,zero,zero,xmm5[1],zero,zero,zero,xmm5[2],zero,zero,zero,xmm5[3],zero,zero,zero,xmm5[4],zero,zero,zero,xmm5[5],zero,zero,zero,xmm5[6],zero,zero,zero,xmm5[7],zero,zero,zero
+	vpslld	$31, %ymm3, %ymm3
+	vblendvps	%ymm3, %ymm0, %ymm2, %ymm0
+	vmovd	%r11d, %xmm2
+	vpextrd	$2, %xmm6, %eax
+	cltd
+	idivl	1464(%rsp)              # 4-byte Folded Reload
+	vpinsrd	$1, %r10d, %xmm2, %xmm2
+	vpinsrd	$2, 1488(%rsp), %xmm2, %xmm2 # 4-byte Folded Reload
+	vpinsrd	$3, %esi, %xmm2, %xmm2
+	vpextrd	$3, %xmm6, %eax
+	vmovd	%ebx, %xmm3
+	vpinsrd	$1, %edi, %xmm3, %xmm3
+	vpinsrd	$2, %edx, %xmm3, %xmm3
+	cltd
+	idivl	1456(%rsp)              # 4-byte Folded Reload
+	vpinsrd	$3, %edx, %xmm3, %xmm3
+	vinserti128	$1, %xmm2, %ymm3, %ymm2
+	vpsrad	$31, %ymm2, %ymm3
+	vpand	%ymm8, %ymm3, %ymm3
+	vpaddd	%ymm2, %ymm9, %ymm2
+	vpaddd	%ymm3, %ymm2, %ymm2
+	vpabsd	%xmm2, %xmm3
+	vextracti128	$1, %ymm2, %xmm2
+	vpabsd	%xmm2, %xmm2
+	vinserti128	$1, %xmm2, %ymm3, %ymm2
+	vpaddd	%ymm13, %ymm7, %ymm3
+	vpminsd	%xmm14, %xmm3, %xmm6
+	vextracti128	$1, %ymm3, %xmm3
+	vpminsd	%xmm14, %xmm3, %xmm3
+	vpmaxsd	%xmm15, %xmm6, %xmm6
+	vpmaxsd	%xmm15, %xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm6, %ymm3
+	vpsubd	%ymm2, %ymm10, %ymm2
+	vpunpckhbw	%xmm5, %xmm5, %xmm5 # xmm5 = xmm5[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
+	vpmovzxwd	%xmm5, %ymm5    # ymm5 = xmm5[0],zero,xmm5[1],zero,xmm5[2],zero,xmm5[3],zero,xmm5[4],zero,xmm5[5],zero,xmm5[6],zero,xmm5[7],zero
+	vpslld	$31, %ymm5, %ymm5
+	vblendvps	%ymm5, %ymm2, %ymm3, %ymm2
+	vmovdqa	2272(%rsp), %ymm3       # 32-byte Reload
+	vpaddd	%ymm2, %ymm3, %ymm2
+	vpaddd	%ymm0, %ymm3, %ymm0
+	vpextrq	$1, %xmm0, %r14
+	vmovq	%xmm0, %r10
+	movslq	%r10d, %rax
+	movq	%rax, 1120(%rsp)        # 8-byte Spill
+	sarq	$32, %r10
+	movslq	%r14d, %rax
+	movq	%rax, 1104(%rsp)        # 8-byte Spill
+	sarq	$32, %r14
+	vextracti128	$1, %ymm0, %xmm0
+	vpextrq	$1, %xmm0, %r12
+	vmovq	%xmm0, %r9
+	movslq	%r9d, %rax
+	movq	%rax, 1112(%rsp)        # 8-byte Spill
+	sarq	$32, %r9
+	movslq	%r12d, %rax
+	movq	%rax, 2336(%rsp)        # 8-byte Spill
+	sarq	$32, %r12
+	vpextrq	$1, %xmm2, %rcx
+	vmovq	%xmm2, %rbx
+	movslq	%ebx, %rax
+	movq	%rax, 1216(%rsp)        # 8-byte Spill
+	sarq	$32, %rbx
+	movq	%rbx, 1152(%rsp)        # 8-byte Spill
+	movslq	%ecx, %r11
+	movq	%r11, 1184(%rsp)        # 8-byte Spill
+	sarq	$32, %rcx
+	vextracti128	$1, %ymm2, %xmm0
+	vmovq	%xmm0, %rsi
+	movzwl	(%r8,%rax,2), %edx
+	vmovd	%edx, %xmm2
+	movslq	%esi, %rdi
+	movq	%rdi, 1480(%rsp)        # 8-byte Spill
+	sarq	$32, %rsi
+	movq	%rsi, 1248(%rsp)        # 8-byte Spill
+	vpextrq	$1, %xmm0, %rdx
+	movslq	%edx, %rax
+	movq	%rax, 1488(%rsp)        # 8-byte Spill
+	sarq	$32, %rdx
+	vpinsrw	$1, (%r8,%rbx,2), %xmm2, %xmm0
+	vpinsrw	$2, (%r8,%r11,2), %xmm0, %xmm0
+	vpinsrw	$3, (%r8,%rcx,2), %xmm0, %xmm6
+	cmpb	$0, 1064(%rsp)          # 1-byte Folded Reload
+	movzwl	(%r8,%rdi,2), %edi
+	movl	%edi, 1280(%rsp)        # 4-byte Spill
+	movzwl	(%r8,%rsi,2), %edi
+	movl	%edi, 1456(%rsp)        # 4-byte Spill
+	movzwl	(%r8,%rax,2), %eax
+	movl	%eax, 1464(%rsp)        # 4-byte Spill
+	movzwl	(%r8,%rdx,2), %eax
+	movl	%eax, 1472(%rsp)        # 4-byte Spill
+	jne	.LBB148_16
+# BB#17:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	movq	1104(%rsp), %r11        # 8-byte Reload
+	vxorps	%ymm5, %ymm5, %ymm5
+	vmovaps	.LCPI148_8(%rip), %ymm11 # ymm11 = <u,4,u,5,u,6,u,7>
+	vmovaps	.LCPI148_9(%rip), %ymm12 # ymm12 = <4,u,5,u,6,u,7,u>
+	movq	2240(%rsp), %rdi        # 8-byte Reload
+	movq	2528(%rsp), %rbx        # 8-byte Reload
+	movq	1120(%rsp), %rax        # 8-byte Reload
+	movq	1112(%rsp), %rsi        # 8-byte Reload
+	jmp	.LBB148_18
+	.align	16, 0x90
+.LBB148_16:                             #   in Loop: Header=BB148_9 Depth=2
+	movq	1120(%rsp), %rax        # 8-byte Reload
+	movzwl	(%r8,%rax,2), %r11d
+	vmovd	%r11d, %xmm0
+	vpinsrw	$1, (%r8,%r10,2), %xmm0, %xmm0
+	movq	1104(%rsp), %r11        # 8-byte Reload
+	vpinsrw	$2, (%r8,%r11,2), %xmm0, %xmm0
+	vpinsrw	$3, (%r8,%r14,2), %xmm0, %xmm0
+	movq	1112(%rsp), %rsi        # 8-byte Reload
+	vpinsrw	$4, (%r8,%rsi,2), %xmm0, %xmm0
+	vpinsrw	$5, (%r8,%r9,2), %xmm0, %xmm0
+	movq	2336(%rsp), %rdi        # 8-byte Reload
+	vpinsrw	$6, (%r8,%rdi,2), %xmm0, %xmm0
+	vpinsrw	$7, (%r8,%r12,2), %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm5
+	vmovaps	.LCPI148_8(%rip), %ymm11 # ymm11 = <u,4,u,5,u,6,u,7>
+	vmovaps	.LCPI148_9(%rip), %ymm12 # ymm12 = <4,u,5,u,6,u,7,u>
+	movq	2240(%rsp), %rdi        # 8-byte Reload
+	movq	2528(%rsp), %rbx        # 8-byte Reload
+.LBB148_18:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	jne	.LBB148_19
+# BB#20:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vpxor	%ymm6, %ymm6, %ymm6
+	jmp	.LBB148_21
+	.align	16, 0x90
+.LBB148_19:                             #   in Loop: Header=BB148_9 Depth=2
+	vpinsrw	$4, 1280(%rsp), %xmm6, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$5, 1456(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$6, 1464(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$7, 1472(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm6
+.LBB148_21:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vpermps	%ymm6, %ymm11, %ymm0
+	vpermps	%ymm4, %ymm12, %ymm2
+	vblendps	$170, %ymm0, %ymm2, %ymm0 # ymm0 = ymm2[0],ymm0[1],ymm2[2],ymm0[3],ymm2[4],ymm0[5],ymm2[6],ymm0[7]
+	vmovaps	.LCPI148_10(%rip), %ymm2 # ymm2 = <u,0,u,1,u,2,u,3>
+	vmovaps	%ymm2, %ymm7
+	vpermps	%ymm6, %ymm7, %ymm2
+	vmovaps	.LCPI148_11(%rip), %ymm3 # ymm3 = <0,u,1,u,2,u,3,u>
+	vmovaps	%ymm3, %ymm6
+	vpermps	%ymm4, %ymm6, %ymm3
+	vblendps	$170, %ymm2, %ymm3, %ymm2 # ymm2 = ymm3[0],ymm2[1],ymm3[2],ymm2[3],ymm3[4],ymm2[5],ymm3[6],ymm2[7]
+	vpermps	%ymm5, %ymm11, %ymm3
+	vpermps	%ymm1, %ymm12, %ymm4
+	vblendps	$170, %ymm3, %ymm4, %ymm3 # ymm3 = ymm4[0],ymm3[1],ymm4[2],ymm3[3],ymm4[4],ymm3[5],ymm4[6],ymm3[7]
+	vpermps	%ymm5, %ymm7, %ymm4
+	vmovaps	%ymm7, %ymm13
+	vpermps	%ymm1, %ymm6, %ymm1
+	vmovaps	%ymm6, %ymm14
+	vblendps	$170, %ymm4, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm4[1],ymm1[2],ymm4[3],ymm1[4],ymm4[5],ymm1[6],ymm4[7]
+	vmovups	%ymm1, (%rdi)
+	vmovups	%ymm3, 32(%rdi)
+	vmovups	%ymm2, 64(%rdi)
+	vmovups	%ymm0, 96(%rdi)
+	movzwl	(%r8,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	vpinsrw	$1, (%r8,%r10,2), %xmm0, %xmm0
+	vpinsrw	$2, (%r8,%r11,2), %xmm0, %xmm0
+	vpinsrw	$3, (%r8,%r14,2), %xmm0, %xmm0
+	vpinsrw	$4, (%r8,%rsi,2), %xmm0, %xmm0
+	vpinsrw	$5, (%r8,%r9,2), %xmm0, %xmm0
+	movq	2336(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%r8,%rax,2), %xmm0, %xmm0
+	vpinsrw	$7, (%r8,%r12,2), %xmm0, %xmm6
+	movq	1216(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$0, (%r8,%rax,2), %xmm0, %xmm0
+	movq	1152(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%r8,%rax,2), %xmm0, %xmm0
+	movq	1184(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%r8,%rax,2), %xmm0, %xmm0
+	vpinsrw	$3, (%r8,%rcx,2), %xmm0, %xmm1
+	movq	1960(%rsp), %rax        # 8-byte Reload
+	movzwl	(%r8,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	movq	2432(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%r8,%rax,2), %xmm0, %xmm0
+	movq	1312(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%r8,%rax,2), %xmm0, %xmm0
+	movq	1408(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$3, (%r8,%rax,2), %xmm0, %xmm0
+	movq	2400(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%r8,%rax,2), %xmm0, %xmm0
+	movq	1376(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%r8,%rax,2), %xmm0, %xmm0
+	movq	1344(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%r8,%rax,2), %xmm0, %xmm0
+	movq	1448(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$7, (%r8,%rax,2), %xmm0, %xmm0
+	movq	2368(%rsp), %rax        # 8-byte Reload
+	movzwl	(%r8,%rax,2), %eax
+	vmovd	%eax, %xmm2
+	movq	1504(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%r8,%rax,2), %xmm2, %xmm2
+	movq	2496(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%r8,%rax,2), %xmm2, %xmm2
+	movq	1696(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$3, (%r8,%rax,2), %xmm2, %xmm2
+	movq	2464(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%r8,%rax,2), %xmm2, %xmm2
+	movq	1536(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%r8,%rax,2), %xmm2, %xmm2
+	vpinsrw	$6, (%r8,%rbx,2), %xmm2, %xmm2
+	movq	1712(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$7, (%r8,%rax,2), %xmm2, %xmm2
+	movl	1080(%rsp), %r10d       # 4-byte Reload
+	movl	1984(%rsp), %ebx        # 4-byte Reload
+	testl	%ebx, %r10d
+	setne	%al
+	movq	1088(%rsp), %rsi        # 8-byte Reload
+	orl	%esi, %ebx
+	testb	$1, %bl
+	sete	%bl
+	orb	%al, %bl
+	vpmovzxwd	%xmm0, %ymm5    # ymm5 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vpmovzxwd	%xmm2, %ymm0    # ymm0 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
+	vcvtdq2ps	%ymm0, %ymm4
+	vmovaps	%ymm4, %ymm7
+	jne	.LBB148_23
+# BB#22:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vxorps	%ymm7, %ymm7, %ymm7
+.LBB148_23:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vcvtdq2ps	%ymm5, %ymm5
+	vmovaps	%ymm5, %ymm8
+	movq	2560(%rsp), %rcx        # 8-byte Reload
+	jne	.LBB148_25
+# BB#24:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vxorps	%ymm8, %ymm8, %ymm8
+.LBB148_25:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vpmovzxwd	%xmm6, %ymm0    # ymm0 = xmm6[0],zero,xmm6[1],zero,xmm6[2],zero,xmm6[3],zero,xmm6[4],zero,xmm6[5],zero,xmm6[6],zero,xmm6[7],zero
+	vcvtdq2ps	%ymm0, %ymm6
+	vmovaps	%ymm6, %ymm9
+	cmpb	$0, 1056(%rsp)          # 1-byte Folded Reload
+	jne	.LBB148_27
+# BB#26:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vxorps	%ymm9, %ymm9, %ymm9
+.LBB148_27:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	jne	.LBB148_28
+# BB#29:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vpxor	%ymm10, %ymm10, %ymm10
+	jmp	.LBB148_30
+	.align	16, 0x90
+.LBB148_28:                             #   in Loop: Header=BB148_9 Depth=2
+	vpinsrw	$4, 1280(%rsp), %xmm1, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$5, 1456(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$6, 1464(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$7, 1472(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm10
+.LBB148_30:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vpermps	%ymm10, %ymm11, %ymm0
+	vpermps	%ymm8, %ymm12, %ymm2
+	vblendps	$170, %ymm0, %ymm2, %ymm0 # ymm0 = ymm2[0],ymm0[1],ymm2[2],ymm0[3],ymm2[4],ymm0[5],ymm2[6],ymm0[7]
+	vpermps	%ymm10, %ymm13, %ymm2
+	vpermps	%ymm8, %ymm14, %ymm3
+	vblendps	$170, %ymm2, %ymm3, %ymm2 # ymm2 = ymm3[0],ymm2[1],ymm3[2],ymm2[3],ymm3[4],ymm2[5],ymm3[6],ymm2[7]
+	vpermps	%ymm9, %ymm11, %ymm3
+	vpermps	%ymm7, %ymm12, %ymm8
+	vblendps	$170, %ymm3, %ymm8, %ymm3 # ymm3 = ymm8[0],ymm3[1],ymm8[2],ymm3[3],ymm8[4],ymm3[5],ymm8[6],ymm3[7]
+	vpermps	%ymm9, %ymm13, %ymm8
+	vmovaps	%ymm13, %ymm9
+	vpermps	%ymm7, %ymm14, %ymm7
+	vmovaps	%ymm14, %ymm10
+	vblendps	$170, %ymm8, %ymm7, %ymm7 # ymm7 = ymm7[0],ymm8[1],ymm7[2],ymm8[3],ymm7[4],ymm8[5],ymm7[6],ymm8[7]
+	movq	960(%rsp), %rax         # 8-byte Reload
+	vmovups	%ymm7, 32(%rax,%rdi)
+	vmovups	%ymm3, 64(%rax,%rdi)
+	vmovups	%ymm2, 96(%rax,%rdi)
+	vmovups	%ymm0, 128(%rax,%rdi)
+	movb	2176(%rsp), %al         # 1-byte Reload
+	movl	1968(%rsp), %ebx        # 4-byte Reload
+	andb	%bl, %al
+	jne	.LBB148_32
+# BB#31:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vxorps	%ymm4, %ymm4, %ymm4
+.LBB148_32:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	testb	%al, %al
+	vxorps	%ymm2, %ymm2, %ymm2
+	jne	.LBB148_34
+# BB#33:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vxorps	%ymm5, %ymm5, %ymm5
+.LBB148_34:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	movq	1480(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%r8,%rax,2), %xmm1, %xmm0
+	movq	1248(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%r8,%rax,2), %xmm0, %xmm1
+	movq	1488(%rsp), %rax        # 8-byte Reload
+	movzwl	(%r8,%rax,2), %eax
+	movzwl	(%r8,%rdx,2), %edx
+	cmpb	$0, 1072(%rsp)          # 1-byte Folded Reload
+	jne	.LBB148_36
+# BB#35:                                # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vxorps	%ymm6, %ymm6, %ymm6
+.LBB148_36:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	je	.LBB148_38
+# BB#37:                                #   in Loop: Header=BB148_9 Depth=2
+	vpinsrw	$6, %eax, %xmm1, %xmm0
+	vpinsrw	$7, %edx, %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm2
+.LBB148_38:                             # %for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_9 Depth=2
+	vpermps	%ymm5, %ymm12, %ymm0
+	vpermps	%ymm2, %ymm11, %ymm1
+	vblendps	$170, %ymm1, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm1[1],ymm0[2],ymm1[3],ymm0[4],ymm1[5],ymm0[6],ymm1[7]
+	vpermps	%ymm5, %ymm10, %ymm1
+	vpermps	%ymm2, %ymm9, %ymm2
+	vblendps	$170, %ymm2, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm2[1],ymm1[2],ymm2[3],ymm1[4],ymm2[5],ymm1[6],ymm2[7]
+	vpermps	%ymm6, %ymm11, %ymm2
+	vpermps	%ymm4, %ymm12, %ymm3
+	vblendps	$170, %ymm2, %ymm3, %ymm2 # ymm2 = ymm3[0],ymm2[1],ymm3[2],ymm2[3],ymm3[4],ymm2[5],ymm3[6],ymm2[7]
+	vpermps	%ymm6, %ymm9, %ymm3
+	vpermps	%ymm4, %ymm10, %ymm4
+	vblendps	$170, %ymm3, %ymm4, %ymm3 # ymm3 = ymm4[0],ymm3[1],ymm4[2],ymm3[3],ymm4[4],ymm3[5],ymm4[6],ymm3[7]
+	movq	1008(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm3, (%rax,%rdi)
+	movq	1024(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm2, 96(%rax,%rdi)
+	vmovups	%ymm1, 128(%rax,%rdi)
+	movq	1016(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm0, (%rax,%rdi)
+	addl	$32, %ecx
+	subq	$-128, %rdi
+	movl	2208(%rsp), %eax        # 4-byte Reload
+	addl	$-1, %eax
+	jne	.LBB148_9
+.LBB148_39:                             # %end for deinterleaved$3.s0.v15.v15
+                                        #   in Loop: Header=BB148_7 Depth=1
+	movq	1088(%rsp), %rdx        # 8-byte Reload
+	leal	1(%rdx), %eax
+	movl	952(%rsp), %esi         # 4-byte Reload
+	addb	$1, %sil
+	cmpl	892(%rsp), %edx         # 4-byte Folded Reload
+	movq	%rax, 1088(%rsp)        # 8-byte Spill
+	movq	792(%rsp), %rbx         # 8-byte Reload
+	jne	.LBB148_7
+# BB#40:                                # %consume deinterleaved$3
+	vmovss	.LCPI148_12(%rip), %xmm0 # xmm0 = mem[0],zero,zero,zero
+	vmovss	592(%rsp), %xmm3        # 4-byte Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vsubss	%xmm3, %xmm0, %xmm1
+	vmovss	392(%rsp), %xmm4        # 4-byte Reload
+                                        # xmm4 = mem[0],zero,zero,zero
+	vmulss	%xmm4, %xmm1, %xmm2
+	vmovss	384(%rsp), %xmm5        # 4-byte Reload
+                                        # xmm5 = mem[0],zero,zero,zero
+	vdivss	%xmm5, %xmm2, %xmm2
+	vaddss	%xmm2, %xmm3, %xmm2
+	vmovss	412(%rsp), %xmm3        # 4-byte Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vsubss	%xmm4, %xmm3, %xmm3
+	vmulss	%xmm3, %xmm1, %xmm1
+	vdivss	%xmm1, %xmm5, %xmm1
+	vbroadcastss	%xmm1, %xmm1
+	vmovaps	%xmm1, 1696(%rsp)       # 16-byte Spill
+	vbroadcastss	%xmm2, %xmm12
+	vmovaps	%xmm12, 592(%rsp)       # 16-byte Spill
+	cmpl	$0, 564(%rsp)           # 4-byte Folded Reload
+	jle	.LBB148_41
+# BB#42:                                # %produce demosaiced$3.preheader
+	movq	%r8, 1736(%rsp)         # 8-byte Spill
+	vmovss	528(%rsp), %xmm3        # 4-byte Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vsubss	%xmm3, %xmm0, %xmm2
+	vmovss	456(%rsp), %xmm4        # 4-byte Reload
+                                        # xmm4 = mem[0],zero,zero,zero
+	vmulss	%xmm4, %xmm2, %xmm1
+	vmovss	448(%rsp), %xmm5        # 4-byte Reload
+                                        # xmm5 = mem[0],zero,zero,zero
+	vdivss	%xmm5, %xmm1, %xmm1
+	vaddss	%xmm1, %xmm3, %xmm1
+	vmovss	512(%rsp), %xmm3        # 4-byte Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vsubss	%xmm4, %xmm3, %xmm3
+	vmulss	%xmm3, %xmm2, %xmm2
+	vdivss	%xmm2, %xmm5, %xmm2
+	vmovss	476(%rsp), %xmm4        # 4-byte Reload
+                                        # xmm4 = mem[0],zero,zero,zero
+	vsubss	%xmm4, %xmm0, %xmm3
+	vmovss	472(%rsp), %xmm7        # 4-byte Reload
+                                        # xmm7 = mem[0],zero,zero,zero
+	vmulss	%xmm7, %xmm3, %xmm0
+	vmovss	640(%rsp), %xmm5        # 4-byte Reload
+                                        # xmm5 = mem[0],zero,zero,zero
+	vdivss	%xmm5, %xmm0, %xmm0
+	vaddss	%xmm0, %xmm4, %xmm0
+	movq	544(%rsp), %rbx         # 8-byte Reload
+	movl	464(%rsp), %eax         # 4-byte Reload
+	imull	%ebx, %eax
+	vmovss	480(%rsp), %xmm4        # 4-byte Reload
+                                        # xmm4 = mem[0],zero,zero,zero
+	vsubss	%xmm7, %xmm4, %xmm4
+	movl	432(%rsp), %ecx         # 4-byte Reload
+	movl	424(%rsp), %edx         # 4-byte Reload
+	imull	%edx, %ecx
+	vmulss	%xmm4, %xmm3, %xmm3
+	addl	440(%rsp), %eax         # 4-byte Folded Reload
+	addl	416(%rsp), %ecx         # 4-byte Folded Reload
+	vmovd	%ecx, %xmm4
+	vmovaps	%ymm4, 2208(%rsp)       # 32-byte Spill
+	vmovd	%edx, %xmm4
+	cltq
+	leaq	(%rbx,%rbx), %rdx
+	subq	%rax, %rdx
+	movq	576(%rsp), %rdi         # 8-byte Reload
+	leaq	8(%rdi,%rdx,4), %rcx
+	movq	%rcx, 392(%rsp)         # 8-byte Spill
+	vbroadcastss	8(%rdi,%rdx,4), %ymm7
+	vmovaps	%ymm7, 1408(%rsp)       # 32-byte Spill
+	leaq	4(%rdi,%rdx,4), %rcx
+	movq	%rcx, 384(%rsp)         # 8-byte Spill
+	vbroadcastss	4(%rdi,%rdx,4), %ymm7
+	vmovaps	%ymm7, 1376(%rsp)       # 32-byte Spill
+	leaq	(%rdi,%rdx,4), %rcx
+	movq	%rcx, 376(%rsp)         # 8-byte Spill
+	vbroadcastss	(%rdi,%rdx,4), %ymm7
+	vmovaps	%ymm7, 1344(%rsp)       # 32-byte Spill
+	subq	%rax, %rbx
+	leaq	8(%rdi,%rbx,4), %rcx
+	movq	%rcx, 368(%rsp)         # 8-byte Spill
+	vbroadcastss	8(%rdi,%rbx,4), %ymm7
+	vmovaps	%ymm7, 1312(%rsp)       # 32-byte Spill
+	movl	$2, %edx
+	subq	%rax, %rdx
+	movl	$1, %esi
+	subq	%rax, %rsi
+	shlq	$2, %rax
+	movq	%rdi, %rcx
+	subq	%rax, %rcx
+	movq	%rcx, 328(%rsp)         # 8-byte Spill
+	negq	%rax
+	vbroadcastss	(%rdi,%rax), %ymm7
+	vmovaps	%ymm7, 1280(%rsp)       # 32-byte Spill
+	leaq	4(%rdi,%rbx,4), %rax
+	movq	%rax, 360(%rsp)         # 8-byte Spill
+	vbroadcastss	4(%rdi,%rbx,4), %ymm7
+	vmovaps	%ymm7, 1248(%rsp)       # 32-byte Spill
+	vbroadcastss	(%rdi,%rbx,4), %ymm7
+	vmovaps	%ymm7, 1216(%rsp)       # 32-byte Spill
+	leaq	(%rdi,%rbx,4), %rax
+	movq	%rax, 352(%rsp)         # 8-byte Spill
+	vbroadcastss	(%rdi,%rdx,4), %ymm7
+	vmovaps	%ymm7, 1184(%rsp)       # 32-byte Spill
+	leaq	(%rdi,%rdx,4), %rax
+	movq	%rax, 344(%rsp)         # 8-byte Spill
+	vpbroadcastd	(%rdi,%rsi,4), %ymm7
+	vmovdqa	%ymm7, 1152(%rsp)       # 32-byte Spill
+	leaq	(%rdi,%rsi,4), %rax
+	movq	%rax, 336(%rsp)         # 8-byte Spill
+	movl	$31, %edi
+	movq	720(%rsp), %rax         # 8-byte Reload
+	subl	%eax, %edi
+	movq	400(%rsp), %rax         # 8-byte Reload
+	movslq	%eax, %rcx
+	movq	%rcx, 440(%rsp)         # 8-byte Spill
+	movq	728(%rsp), %rax         # 8-byte Reload
+	subl	%eax, %edi
+	movl	%edi, 1072(%rsp)        # 4-byte Spill
+	movq	904(%rsp), %rax         # 8-byte Reload
+	leal	(,%rax,4), %edx
+	movl	%edx, 896(%rsp)         # 4-byte Spill
+	shll	$3, %eax
+	movq	%rax, 904(%rsp)         # 8-byte Spill
+	movq	1976(%rsp), %rsi        # 8-byte Reload
+	movq	712(%rsp), %rax         # 8-byte Reload
+	subl	%eax, %esi
+	movq	584(%rsp), %r8          # 8-byte Reload
+	subq	%r8, %rcx
+	movq	%rcx, 1064(%rsp)        # 8-byte Spill
+	movq	880(%rsp), %r9          # 8-byte Reload
+	movq	%r9, %rbx
+	negq	%rbx
+	cmpl	%edi, %esi
+	cmovll	%edi, %esi
+	movl	%esi, %r12d
+	notl	%r12d
+	movslq	%r12d, %rax
+	subq	%r8, %rax
+	vbroadcastss	%xmm2, %xmm2
+	vmovaps	%xmm2, 528(%rsp)        # 16-byte Spill
+	vbroadcastss	%xmm1, %xmm1
+	vmovaps	%xmm1, 512(%rsp)        # 16-byte Spill
+	vdivss	%xmm3, %xmm5, %xmm1
+	vbroadcastss	%xmm1, %xmm1
+	vmovaps	%xmm1, 640(%rsp)        # 16-byte Spill
+	vbroadcastss	%xmm0, %xmm0
+	vmovaps	%xmm0, 1488(%rsp)       # 16-byte Spill
+	vpbroadcastd	%xmm4, %ymm0
+	vmovdqa	%ymm0, 2176(%rsp)       # 32-byte Spill
+	movl	$2, %r11d
+	subl	%esi, %r11d
+	negl	%esi
+	movq	%rsi, 1976(%rsp)        # 8-byte Spill
+	movl	$64, %edi
+	subq	%r9, %rdi
+	movl	$128, %edx
+	subq	%r9, %rdx
+	movq	944(%rsp), %rsi         # 8-byte Reload
+	leaq	1(%rsi), %rcx
+	movq	%rcx, 544(%rsp)         # 8-byte Spill
+	addq	$1, %rsi
+	subq	%r9, %rsi
+	imulq	%rsi, %rax
+	addq	%rsi, %rsi
+	movq	%rsi, 944(%rsp)         # 8-byte Spill
+	movq	864(%rsp), %rcx         # 8-byte Reload
+	leaq	32(%rcx,%rax,2), %rsi
+	movq	%rsi, 1968(%rsp)        # 8-byte Spill
+	leaq	(%rcx,%rax,2), %rax
+	movq	%rax, 1960(%rsp)        # 8-byte Spill
+	vbroadcastss	.LCPI148_13(%rip), %xmm0
+	vmovaps	%xmm0, 2560(%rsp)       # 16-byte Spill
+	movq	504(%rsp), %rax         # 8-byte Reload
+	leaq	(%rax,%rax), %rax
+	movq	%rax, 1712(%rsp)        # 8-byte Spill
+	xorl	%eax, %eax
+	movq	%rax, 1120(%rsp)        # 8-byte Spill
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	xorl	%ecx, %ecx
+	vxorps	%xmm8, %xmm8, %xmm8
+	vbroadcastss	.LCPI148_14(%rip), %xmm0
+	vmovaps	%xmm0, 2528(%rsp)       # 16-byte Spill
+	vbroadcastss	.LCPI148_15(%rip), %xmm0
+	vmovaps	%xmm0, 2496(%rsp)       # 16-byte Spill
+	vpbroadcastd	.LCPI148_16(%rip), %ymm0
+	vmovdqa	%ymm0, 1536(%rsp)       # 32-byte Spill
+	.align	16, 0x90
+.LBB148_43:                             # %produce demosaiced$3
+                                        # =>This Loop Header: Depth=1
+                                        #     Child Loop BB148_44 Depth 2
+                                        #       Child Loop BB148_45 Depth 3
+                                        #     Child Loop BB148_62 Depth 2
+                                        #       Child Loop BB148_63 Depth 3
+                                        #     Child Loop BB148_78 Depth 2
+                                        #       Child Loop BB148_79 Depth 3
+                                        #     Child Loop BB148_97 Depth 2
+                                        #       Child Loop BB148_98 Depth 3
+	movq	%rcx, 1080(%rsp)        # 8-byte Spill
+	movl	%eax, 1088(%rsp)        # 4-byte Spill
+	movq	%rdx, 1096(%rsp)        # 8-byte Spill
+	movq	%rdi, 1104(%rsp)        # 8-byte Spill
+	movq	%rbx, 1112(%rsp)        # 8-byte Spill
+	cltq
+	leaq	(%rdx,%rax), %rdx
+	leaq	2592(%rsp,%rdx,4), %rdx
+	movq	%rdx, 1480(%rsp)        # 8-byte Spill
+	leaq	(%rdi,%rax), %rdx
+	leaq	2592(%rsp,%rdx,4), %rdx
+	movq	%rdx, 1472(%rsp)        # 8-byte Spill
+	leaq	(%rax,%rbx), %rax
+	leaq	2592(%rsp,%rax,4), %r14
+	shll	$5, %ecx
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	addl	%eax, %ecx
+	movq	%rcx, 1504(%rsp)        # 8-byte Spill
+	xorl	%eax, %eax
+	xorl	%esi, %esi
+	movq	1976(%rsp), %rcx        # 8-byte Reload
+	.align	16, 0x90
+.LBB148_44:                             # %for demosaiced$3.s0.v15.v15
+                                        #   Parent Loop BB148_43 Depth=1
+                                        # =>  This Loop Header: Depth=2
+                                        #       Child Loop BB148_45 Depth 3
+	movq	%rsi, 1448(%rsp)        # 8-byte Spill
+	movq	%rax, 1456(%rsp)        # 8-byte Spill
+	movq	%r14, 1464(%rsp)        # 8-byte Spill
+	movq	1504(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rsi,8), %r8d
+	movl	%eax, %r9d
+	andl	$1, %r9d
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	subl	%eax, %r8d
+	xorl	%eax, %eax
+	.align	16, 0x90
+.LBB148_45:                             # %for demosaiced$3.s0.v16
+                                        #   Parent Loop BB148_43 Depth=1
+                                        #     Parent Loop BB148_44 Depth=2
+                                        # =>    This Inner Loop Header: Depth=3
+	leal	(%r11,%rax), %edi
+	andl	$3, %edi
+	movq	2552(%rsp), %rsi        # 8-byte Reload
+	imull	%esi, %edi
+	leal	(%r12,%rax), %r10d
+	addl	%r8d, %edi
+	leal	(%rcx,%rax), %ebx
+	andl	$3, %ebx
+	imull	%esi, %ebx
+	movl	%r10d, %edx
+	andl	$3, %edx
+	imull	%esi, %edx
+	addl	%r8d, %ebx
+	addl	%r8d, %edx
+	movslq	%edi, %rdi
+	vmovups	(%r13,%rdi,4), %xmm0
+	vmovaps	%xmm0, 2240(%rsp)       # 16-byte Spill
+	vmovups	16(%r13,%rdi,4), %xmm1
+	vmovaps	%xmm1, 1984(%rsp)       # 16-byte Spill
+	vshufps	$221, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[1,3],xmm1[1,3]
+	vsubps	%xmm12, %xmm0, %xmm0
+	vmovaps	1696(%rsp), %xmm3       # 16-byte Reload
+	vmulps	%xmm0, %xmm3, %xmm0
+	vmovaps	%xmm0, 2400(%rsp)       # 16-byte Spill
+	movslq	%ebx, %rbx
+	vmovups	(%r13,%rbx,4), %xmm10
+	vmovups	16(%r13,%rbx,4), %xmm13
+	vshufps	$221, %xmm13, %xmm10, %xmm0 # xmm0 = xmm10[1,3],xmm13[1,3]
+	vsubps	%xmm12, %xmm0, %xmm0
+	vmulps	%xmm0, %xmm3, %xmm11
+	vmovups	8(%r13,%rdi,4), %xmm0
+	vmovaps	%xmm0, 2368(%rsp)       # 16-byte Spill
+	vmovups	24(%r13,%rdi,4), %xmm1
+	vmovaps	%xmm1, 2336(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[0,2],xmm1[0,2]
+	vsubps	%xmm12, %xmm0, %xmm0
+	vmulps	%xmm0, %xmm3, %xmm7
+	vmovups	8(%r13,%rbx,4), %xmm0
+	vmovaps	%xmm0, 2304(%rsp)       # 16-byte Spill
+	vmovups	24(%r13,%rbx,4), %xmm1
+	vmovaps	%xmm1, 2272(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[0,2],xmm1[0,2]
+	vsubps	%xmm12, %xmm0, %xmm0
+	vmulps	%xmm0, %xmm3, %xmm4
+	movslq	%edx, %rdx
+	vmovups	(%r13,%rdx,4), %xmm5
+	vmovups	16(%r13,%rdx,4), %xmm0
+	vshufps	$221, %xmm0, %xmm5, %xmm1 # xmm1 = xmm5[1,3],xmm0[1,3]
+	vsubps	%xmm12, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm3, %xmm2
+	vmovups	8(%r13,%rdx,4), %xmm14
+	vmovups	24(%r13,%rdx,4), %xmm15
+	vshufps	$136, %xmm15, %xmm14, %xmm1 # xmm1 = xmm14[0,2],xmm15[0,2]
+	vsubps	%xmm12, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm3, %xmm1
+	vmovaps	2560(%rsp), %xmm6       # 16-byte Reload
+	vminps	%xmm6, %xmm1, %xmm1
+	vmaxps	%xmm8, %xmm1, %xmm1
+	vmovaps	%xmm1, 2464(%rsp)       # 16-byte Spill
+	vminps	%xmm6, %xmm2, %xmm1
+	vmaxps	%xmm8, %xmm1, %xmm2
+	testl	%r9d, %r9d
+	vmovaps	%xmm2, 2432(%rsp)       # 16-byte Spill
+	je	.LBB148_47
+# BB#46:                                # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	vshufps	$136, %xmm0, %xmm5, %xmm0 # xmm0 = xmm5[0,2],xmm0[0,2]
+	vsubps	%xmm12, %xmm0, %xmm0
+	vmulps	1696(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+	vminps	%xmm6, %xmm0, %xmm0
+	vmaxps	%xmm8, %xmm0, %xmm0
+	vaddps	2464(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+	vmulps	2528(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+	vmovaps	%xmm0, 2432(%rsp)       # 16-byte Spill
+.LBB148_47:                             # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	vminps	%xmm6, %xmm4, %xmm0
+	vxorps	%xmm4, %xmm4, %xmm4
+	vmaxps	%xmm4, %xmm0, %xmm8
+	vminps	%xmm6, %xmm7, %xmm0
+	vmaxps	%xmm4, %xmm0, %xmm9
+	vminps	%xmm6, %xmm11, %xmm0
+	vmaxps	%xmm4, %xmm0, %xmm11
+	vmovaps	2400(%rsp), %xmm0       # 16-byte Reload
+	vminps	%xmm6, %xmm0, %xmm0
+	vmaxps	%xmm4, %xmm0, %xmm5
+	je	.LBB148_48
+# BB#49:                                # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	vshufps	$136, %xmm13, %xmm10, %xmm0 # xmm0 = xmm10[0,2],xmm13[0,2]
+	vsubps	%xmm12, %xmm0, %xmm0
+	vmovaps	1696(%rsp), %xmm3       # 16-byte Reload
+	vmulps	%xmm0, %xmm3, %xmm0
+	vminps	%xmm6, %xmm0, %xmm0
+	vmaxps	%xmm4, %xmm0, %xmm0
+	vaddps	%xmm8, %xmm0, %xmm0
+	vmovaps	2240(%rsp), %xmm1       # 16-byte Reload
+	vshufps	$136, 1984(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
+                                        # xmm1 = xmm1[0,2],mem[0,2]
+	vsubps	%xmm12, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm3, %xmm1
+	vminps	%xmm6, %xmm1, %xmm1
+	vmaxps	%xmm4, %xmm1, %xmm1
+	vxorps	%xmm3, %xmm3, %xmm3
+	vaddps	%xmm9, %xmm1, %xmm1
+	vaddps	%xmm0, %xmm1, %xmm0
+	vmulps	2496(%rsp), %xmm0, %xmm4 # 16-byte Folded Reload
+	jmp	.LBB148_50
+	.align	16, 0x90
+.LBB148_48:                             #   in Loop: Header=BB148_45 Depth=3
+	vxorps	%xmm3, %xmm3, %xmm3
+	vaddps	%xmm11, %xmm5, %xmm0
+	vmulps	2528(%rsp), %xmm0, %xmm4 # 16-byte Folded Reload
+.LBB148_50:                             # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	jne	.LBB148_52
+# BB#51:                                # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	vshufps	$221, %xmm15, %xmm14, %xmm0 # xmm0 = xmm14[1,3],xmm15[1,3]
+	vsubps	%xmm12, %xmm0, %xmm0
+	vmulps	1696(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+	vminps	2560(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+	vmaxps	%xmm3, %xmm0, %xmm0
+	vaddps	%xmm0, %xmm2, %xmm0
+	vmulps	2528(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+	vmovaps	%xmm0, 2464(%rsp)       # 16-byte Spill
+.LBB148_52:                             # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	jne	.LBB148_53
+# BB#54:                                # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	vmovaps	2304(%rsp), %xmm0       # 16-byte Reload
+	vshufps	$221, 2272(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+                                        # xmm0 = xmm0[1,3],mem[1,3]
+	vsubps	%xmm12, %xmm0, %xmm0
+	vmovaps	1696(%rsp), %xmm2       # 16-byte Reload
+	vmulps	%xmm0, %xmm2, %xmm0
+	vmovaps	2560(%rsp), %xmm3       # 16-byte Reload
+	vminps	%xmm3, %xmm0, %xmm0
+	vxorps	%xmm8, %xmm8, %xmm8
+	vmaxps	%xmm8, %xmm0, %xmm0
+	vaddps	%xmm0, %xmm11, %xmm0
+	vmovaps	2368(%rsp), %xmm1       # 16-byte Reload
+	vshufps	$221, 2336(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
+                                        # xmm1 = xmm1[1,3],mem[1,3]
+	vsubps	%xmm12, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm2, %xmm1
+	vminps	%xmm3, %xmm1, %xmm1
+	vmaxps	%xmm8, %xmm1, %xmm1
+	vaddps	%xmm1, %xmm5, %xmm1
+	vaddps	%xmm0, %xmm1, %xmm0
+	vmulps	2496(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+	jmp	.LBB148_55
+	.align	16, 0x90
+.LBB148_53:                             #   in Loop: Header=BB148_45 Depth=3
+	vaddps	%xmm8, %xmm9, %xmm0
+	vmulps	2528(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+	vxorps	%xmm8, %xmm8, %xmm8
+.LBB148_55:                             # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	andl	$1, %r10d
+	je	.LBB148_57
+# BB#56:                                # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	vmovaps	2432(%rsp), %xmm1       # 16-byte Reload
+	vmovaps	%xmm1, %xmm4
+.LBB148_57:                             # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	testl	%r10d, %r10d
+	je	.LBB148_59
+# BB#58:                                # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	vmovaps	2464(%rsp), %xmm0       # 16-byte Reload
+.LBB148_59:                             # %for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_45 Depth=3
+	vmovaps	.LCPI148_10(%rip), %ymm1 # ymm1 = <u,0,u,1,u,2,u,3>
+	vpermps	%ymm0, %ymm1, %ymm0
+	vmovaps	.LCPI148_11(%rip), %ymm1 # ymm1 = <0,u,1,u,2,u,3,u>
+	vpermps	%ymm4, %ymm1, %ymm1
+	vblendps	$170, %ymm0, %ymm1, %ymm0 # ymm0 = ymm1[0],ymm0[1],ymm1[2],ymm0[3],ymm1[4],ymm0[5],ymm1[6],ymm0[7]
+	vmovups	%ymm0, (%r14)
+	subq	$-128, %r14
+	addl	$1, %eax
+	cmpl	$2, %eax
+	jne	.LBB148_45
+# BB#60:                                # %end for demosaiced$3.s0.v16
+                                        #   in Loop: Header=BB148_44 Depth=2
+	movq	1456(%rsp), %rax        # 8-byte Reload
+	addq	$1, %rax
+	movq	1448(%rsp), %rsi        # 8-byte Reload
+	addl	$1, %esi
+	movq	1464(%rsp), %r14        # 8-byte Reload
+	addq	$32, %r14
+	xorl	%edi, %edi
+	cmpq	$4, %rax
+	jne	.LBB148_44
+# BB#61:                                #   in Loop: Header=BB148_43 Depth=1
+	xorl	%edx, %edx
+	vmovaps	528(%rsp), %xmm8        # 16-byte Reload
+	vmovaps	512(%rsp), %xmm10       # 16-byte Reload
+	vmovaps	640(%rsp), %xmm9        # 16-byte Reload
+	vmovaps	2560(%rsp), %xmm11      # 16-byte Reload
+	movq	1472(%rsp), %rsi        # 8-byte Reload
+	.align	16, 0x90
+.LBB148_62:                             # %for demosaiced$3.s0.v15.v153
+                                        #   Parent Loop BB148_43 Depth=1
+                                        # =>  This Loop Header: Depth=2
+                                        #       Child Loop BB148_63 Depth 3
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	movq	%rdi, 2464(%rsp)        # 8-byte Spill
+	movq	%rsi, 1472(%rsp)        # 8-byte Spill
+	movq	1504(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rdx,8), %r14d
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	subl	%eax, %r14d
+	addl	896(%rsp), %r14d        # 4-byte Folded Reload
+	xorl	%edx, %edx
+	movq	%rsi, %rax
+	movq	1976(%rsp), %rcx        # 8-byte Reload
+	.align	16, 0x90
+.LBB148_63:                             # %for demosaiced$3.s0.v167
+                                        #   Parent Loop BB148_43 Depth=1
+                                        #     Parent Loop BB148_62 Depth=2
+                                        # =>    This Inner Loop Header: Depth=3
+	leal	(%r12,%rdx), %r10d
+	movl	%r10d, %edi
+	andl	$3, %edi
+	movq	2552(%rsp), %rsi        # 8-byte Reload
+	imull	%esi, %edi
+	leal	(%rdi,%r14), %edi
+	leal	(%r11,%rdx), %ebx
+	andl	$3, %ebx
+	imull	%esi, %ebx
+	leal	(%rcx,%rdx), %r8d
+	andl	$3, %r8d
+	imull	%esi, %r8d
+	leal	(%rbx,%r14), %ebx
+	leal	(%r8,%r14), %esi
+	movslq	%edi, %rdi
+	vmovups	40(%r13,%rdi,4), %xmm1
+	vmovups	56(%r13,%rdi,4), %xmm2
+	vshufps	$136, %xmm2, %xmm1, %xmm0 # xmm0 = xmm1[0,2],xmm2[0,2]
+	vsubps	%xmm10, %xmm0, %xmm0
+	vmulps	%xmm0, %xmm8, %xmm0
+	movslq	%esi, %rsi
+	vmovups	32(%r13,%rsi,4), %xmm3
+	vshufps	$221, 48(%r13,%rsi,4), %xmm3, %xmm3 # xmm3 = xmm3[1,3],mem[1,3]
+	vsubps	%xmm10, %xmm3, %xmm3
+	vmulps	%xmm3, %xmm8, %xmm3
+	vminps	%xmm11, %xmm3, %xmm3
+	vxorps	%xmm7, %xmm7, %xmm7
+	vmaxps	%xmm7, %xmm3, %xmm3
+	movslq	%ebx, %rbx
+	vmovups	32(%r13,%rbx,4), %xmm4
+	vshufps	$221, 48(%r13,%rbx,4), %xmm4, %xmm4 # xmm4 = xmm4[1,3],mem[1,3]
+	vsubps	%xmm10, %xmm4, %xmm4
+	vmulps	%xmm4, %xmm8, %xmm4
+	vminps	%xmm11, %xmm4, %xmm4
+	vmaxps	%xmm7, %xmm4, %xmm4
+	vaddps	%xmm4, %xmm3, %xmm3
+	vminps	%xmm11, %xmm0, %xmm0
+	vmaxps	%xmm7, %xmm0, %xmm0
+	vmovups	32(%r13,%rdi,4), %xmm4
+	vmovups	48(%r13,%rdi,4), %xmm5
+	vshufps	$136, %xmm5, %xmm4, %xmm6 # xmm6 = xmm4[0,2],xmm5[0,2]
+	vsubps	%xmm10, %xmm6, %xmm6
+	vmulps	%xmm6, %xmm8, %xmm6
+	vminps	%xmm11, %xmm6, %xmm6
+	vmaxps	%xmm7, %xmm6, %xmm6
+	vaddps	%xmm6, %xmm0, %xmm6
+	vaddps	%xmm6, %xmm3, %xmm6
+	vshufps	$221, %xmm5, %xmm4, %xmm3 # xmm3 = xmm4[1,3],xmm5[1,3]
+	vsubps	%xmm10, %xmm3, %xmm3
+	vmulps	%xmm3, %xmm8, %xmm4
+	vmovups	40(%r13,%rsi,4), %xmm3
+	vshufps	$136, 56(%r13,%rsi,4), %xmm3, %xmm3 # xmm3 = xmm3[0,2],mem[0,2]
+	vsubps	%xmm10, %xmm3, %xmm3
+	vmulps	%xmm3, %xmm8, %xmm3
+	vminps	%xmm11, %xmm3, %xmm3
+	vmaxps	%xmm7, %xmm3, %xmm3
+	vmovups	40(%r13,%rbx,4), %xmm5
+	vshufps	$136, 56(%r13,%rbx,4), %xmm5, %xmm5 # xmm5 = xmm5[0,2],mem[0,2]
+	vsubps	%xmm10, %xmm5, %xmm5
+	vmulps	%xmm5, %xmm8, %xmm5
+	vminps	%xmm11, %xmm5, %xmm5
+	vmaxps	%xmm7, %xmm5, %xmm5
+	vaddps	%xmm5, %xmm3, %xmm3
+	vshufps	$221, %xmm2, %xmm1, %xmm1 # xmm1 = xmm1[1,3],xmm2[1,3]
+	vsubps	%xmm10, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm8, %xmm1
+	vminps	%xmm11, %xmm1, %xmm1
+	vmaxps	%xmm7, %xmm1, %xmm2
+	vminps	%xmm11, %xmm4, %xmm1
+	vmaxps	%xmm7, %xmm1, %xmm1
+	vaddps	%xmm1, %xmm2, %xmm5
+	vmulps	2496(%rsp), %xmm6, %xmm4 # 16-byte Folded Reload
+	vmovaps	%xmm4, %xmm2
+	testl	%r9d, %r9d
+	je	.LBB148_65
+# BB#64:                                # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	vmovaps	%xmm1, %xmm2
+.LBB148_65:                             # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	vaddps	%xmm3, %xmm5, %xmm3
+	je	.LBB148_67
+# BB#66:                                # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	vmovaps	%xmm4, %xmm1
+.LBB148_67:                             # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	vmulps	2496(%rsp), %xmm3, %xmm4 # 16-byte Folded Reload
+	vmovaps	%xmm4, %xmm3
+	jne	.LBB148_69
+# BB#68:                                # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	vmovaps	%xmm0, %xmm3
+.LBB148_69:                             # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	jne	.LBB148_71
+# BB#70:                                # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	vmovaps	%xmm4, %xmm0
+.LBB148_71:                             # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	andl	$1, %r10d
+	je	.LBB148_73
+# BB#72:                                # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	vmovaps	%xmm3, %xmm0
+.LBB148_73:                             # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	testl	%r10d, %r10d
+	je	.LBB148_75
+# BB#74:                                # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	vmovaps	%xmm2, %xmm1
+.LBB148_75:                             # %for demosaiced$3.s0.v167
+                                        #   in Loop: Header=BB148_63 Depth=3
+	vmovaps	.LCPI148_10(%rip), %ymm2 # ymm2 = <u,0,u,1,u,2,u,3>
+	vpermps	%ymm0, %ymm2, %ymm0
+	vmovaps	.LCPI148_11(%rip), %ymm2 # ymm2 = <0,u,1,u,2,u,3,u>
+	vpermps	%ymm1, %ymm2, %ymm1
+	vblendps	$170, %ymm0, %ymm1, %ymm0 # ymm0 = ymm1[0],ymm0[1],ymm1[2],ymm0[3],ymm1[4],ymm0[5],ymm1[6],ymm0[7]
+	vmovups	%ymm0, (%rax)
+	subq	$-128, %rax
+	addl	$1, %edx
+	cmpl	$2, %edx
+	jne	.LBB148_63
+# BB#76:                                # %end for demosaiced$3.s0.v168
+                                        #   in Loop: Header=BB148_62 Depth=2
+	movq	2464(%rsp), %rdi        # 8-byte Reload
+	addq	$1, %rdi
+	movq	2432(%rsp), %rdx        # 8-byte Reload
+	addl	$1, %edx
+	movq	1472(%rsp), %rsi        # 8-byte Reload
+	addq	$32, %rsi
+	xorl	%ecx, %ecx
+	cmpq	$4, %rdi
+	jne	.LBB148_62
+# BB#77:                                #   in Loop: Header=BB148_43 Depth=1
+	xorl	%edx, %edx
+	movq	1480(%rsp), %r8         # 8-byte Reload
+	.align	16, 0x90
+.LBB148_78:                             # %for demosaiced$3.s0.v15.v1510
+                                        #   Parent Loop BB148_43 Depth=1
+                                        # =>  This Loop Header: Depth=2
+                                        #       Child Loop BB148_79 Depth 3
+	movq	%rdx, 1984(%rsp)        # 8-byte Spill
+	movq	%r8, 1480(%rsp)         # 8-byte Spill
+	movq	1504(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rdx,8), %edx
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	subl	%eax, %edx
+	movq	904(%rsp), %rax         # 8-byte Reload
+	addl	%eax, %edx
+	xorl	%eax, %eax
+	.align	16, 0x90
+.LBB148_79:                             # %for demosaiced$3.s0.v1614
+                                        #   Parent Loop BB148_43 Depth=1
+                                        #     Parent Loop BB148_78 Depth=2
+                                        # =>    This Inner Loop Header: Depth=3
+	leal	(%r12,%rax), %r14d
+	movl	%r14d, %edi
+	andl	$3, %edi
+	movq	2552(%rsp), %r10        # 8-byte Reload
+	imull	%r10d, %edi
+	leal	(%rdi,%rdx), %edi
+	leal	(%r11,%rax), %ebx
+	andl	$3, %ebx
+	imull	%r10d, %ebx
+	movq	1976(%rsp), %rsi        # 8-byte Reload
+	leal	(%rsi,%rax), %esi
+	andl	$3, %esi
+	imull	%r10d, %esi
+	leal	(%rbx,%rdx), %ebx
+	leal	(%rsi,%rdx), %esi
+	movslq	%edi, %rdi
+	vmovups	72(%r13,%rdi,4), %xmm0
+	vmovaps	%xmm0, 2400(%rsp)       # 16-byte Spill
+	vmovups	88(%r13,%rdi,4), %xmm1
+	vmovaps	%xmm1, 2368(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[0,2],xmm1[0,2]
+	vmovaps	1488(%rsp), %xmm11      # 16-byte Reload
+	vsubps	%xmm11, %xmm0, %xmm0
+	vmulps	%xmm0, %xmm9, %xmm0
+	vmovaps	%xmm0, 2464(%rsp)       # 16-byte Spill
+	vmovups	64(%r13,%rdi,4), %xmm4
+	vmovups	80(%r13,%rdi,4), %xmm0
+	vshufps	$221, %xmm0, %xmm4, %xmm1 # xmm1 = xmm4[1,3],xmm0[1,3]
+	vsubps	%xmm11, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm9, %xmm1
+	vmovaps	%xmm1, 2432(%rsp)       # 16-byte Spill
+	movslq	%ebx, %rdi
+	vmovups	72(%r13,%rdi,4), %xmm1
+	vmovaps	%xmm1, 2336(%rsp)       # 16-byte Spill
+	vmovups	88(%r13,%rdi,4), %xmm2
+	vmovaps	%xmm2, 2304(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm2, %xmm1, %xmm1 # xmm1 = xmm1[0,2],xmm2[0,2]
+	vsubps	%xmm11, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm9, %xmm3
+	movslq	%esi, %rsi
+	vmovups	72(%r13,%rsi,4), %xmm1
+	vmovaps	%xmm1, 2240(%rsp)       # 16-byte Spill
+	vmovups	88(%r13,%rsi,4), %xmm7
+	vshufps	$136, %xmm7, %xmm1, %xmm1 # xmm1 = xmm1[0,2],xmm7[0,2]
+	vsubps	%xmm11, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm9, %xmm6
+	vmovups	64(%r13,%rdi,4), %xmm1
+	vmovups	80(%r13,%rdi,4), %xmm14
+	vshufps	$221, %xmm14, %xmm1, %xmm2 # xmm2 = xmm1[1,3],xmm14[1,3]
+	vsubps	%xmm11, %xmm2, %xmm2
+	vmulps	%xmm2, %xmm9, %xmm2
+	vmovups	64(%r13,%rsi,4), %xmm12
+	vmovups	80(%r13,%rsi,4), %xmm10
+	vshufps	$221, %xmm10, %xmm12, %xmm5 # xmm5 = xmm12[1,3],xmm10[1,3]
+	vsubps	%xmm11, %xmm5, %xmm5
+	vmulps	%xmm5, %xmm9, %xmm5
+	vmovaps	2560(%rsp), %xmm8       # 16-byte Reload
+	vminps	%xmm8, %xmm5, %xmm5
+	vxorps	%xmm15, %xmm15, %xmm15
+	vmaxps	%xmm15, %xmm5, %xmm13
+	vminps	%xmm8, %xmm2, %xmm2
+	vmaxps	%xmm15, %xmm2, %xmm5
+	vminps	%xmm8, %xmm6, %xmm2
+	vmaxps	%xmm15, %xmm2, %xmm6
+	vminps	%xmm8, %xmm3, %xmm2
+	vmaxps	%xmm15, %xmm2, %xmm3
+	testl	%r9d, %r9d
+	je	.LBB148_80
+# BB#81:                                # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	vaddps	%xmm13, %xmm5, %xmm1
+	vmovaps	%xmm5, 2272(%rsp)       # 16-byte Spill
+	vmulps	2528(%rsp), %xmm1, %xmm11 # 16-byte Folded Reload
+	jmp	.LBB148_82
+	.align	16, 0x90
+.LBB148_80:                             #   in Loop: Header=BB148_79 Depth=3
+	vmovaps	%xmm5, 2272(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm10, %xmm12, %xmm2 # xmm2 = xmm12[0,2],xmm10[0,2]
+	vsubps	%xmm11, %xmm2, %xmm2
+	vmulps	%xmm2, %xmm9, %xmm2
+	vminps	%xmm8, %xmm2, %xmm2
+	vmaxps	%xmm15, %xmm2, %xmm2
+	vaddps	%xmm2, %xmm6, %xmm2
+	vshufps	$136, %xmm14, %xmm1, %xmm1 # xmm1 = xmm1[0,2],xmm14[0,2]
+	vsubps	%xmm11, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm9, %xmm1
+	vminps	%xmm8, %xmm1, %xmm1
+	vmaxps	%xmm15, %xmm1, %xmm1
+	vaddps	%xmm1, %xmm3, %xmm1
+	vaddps	%xmm2, %xmm1, %xmm1
+	vmulps	2496(%rsp), %xmm1, %xmm11 # 16-byte Folded Reload
+.LBB148_82:                             # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	vmovaps	%xmm8, %xmm5
+	vmovaps	2432(%rsp), %xmm1       # 16-byte Reload
+	vminps	%xmm5, %xmm1, %xmm1
+	vmaxps	%xmm15, %xmm1, %xmm12
+	vmovaps	2464(%rsp), %xmm1       # 16-byte Reload
+	vminps	%xmm5, %xmm1, %xmm1
+	vmaxps	%xmm15, %xmm1, %xmm10
+	vxorps	%xmm8, %xmm8, %xmm8
+	je	.LBB148_83
+# BB#84:                                # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	vmovaps	%xmm12, %xmm0
+	jmp	.LBB148_85
+	.align	16, 0x90
+.LBB148_83:                             #   in Loop: Header=BB148_79 Depth=3
+	vshufps	$136, %xmm0, %xmm4, %xmm0 # xmm0 = xmm4[0,2],xmm0[0,2]
+	vsubps	1488(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+	vmulps	%xmm0, %xmm9, %xmm0
+	vminps	%xmm5, %xmm0, %xmm0
+	vmaxps	%xmm8, %xmm0, %xmm0
+	vaddps	%xmm0, %xmm10, %xmm0
+	vmulps	2528(%rsp), %xmm0, %xmm0 # 16-byte Folded Reload
+.LBB148_85:                             # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	jne	.LBB148_86
+# BB#87:                                # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	vaddps	%xmm6, %xmm3, %xmm1
+	vmulps	2528(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
+	jmp	.LBB148_88
+	.align	16, 0x90
+.LBB148_86:                             #   in Loop: Header=BB148_79 Depth=3
+	vmovaps	2240(%rsp), %xmm1       # 16-byte Reload
+	vshufps	$221, %xmm7, %xmm1, %xmm1 # xmm1 = xmm1[1,3],xmm7[1,3]
+	vmovaps	1488(%rsp), %xmm4       # 16-byte Reload
+	vsubps	%xmm4, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm9, %xmm1
+	vminps	%xmm5, %xmm1, %xmm1
+	vmaxps	%xmm8, %xmm1, %xmm1
+	vaddps	%xmm13, %xmm1, %xmm1
+	vmovaps	2336(%rsp), %xmm3       # 16-byte Reload
+	vshufps	$221, 2304(%rsp), %xmm3, %xmm3 # 16-byte Folded Reload
+                                        # xmm3 = xmm3[1,3],mem[1,3]
+	vsubps	%xmm4, %xmm3, %xmm3
+	vmulps	%xmm3, %xmm9, %xmm3
+	vminps	%xmm5, %xmm3, %xmm3
+	vmaxps	%xmm8, %xmm3, %xmm3
+	vaddps	2272(%rsp), %xmm3, %xmm3 # 16-byte Folded Reload
+	vaddps	%xmm1, %xmm3, %xmm1
+	vmulps	2496(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
+.LBB148_88:                             # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	je	.LBB148_90
+# BB#89:                                #   in Loop: Header=BB148_79 Depth=3
+	vmovaps	2400(%rsp), %xmm3       # 16-byte Reload
+	vshufps	$221, 2368(%rsp), %xmm3, %xmm3 # 16-byte Folded Reload
+                                        # xmm3 = xmm3[1,3],mem[1,3]
+	vsubps	1488(%rsp), %xmm3, %xmm3 # 16-byte Folded Reload
+	vmulps	%xmm3, %xmm9, %xmm3
+	vminps	%xmm5, %xmm3, %xmm3
+	vmaxps	%xmm8, %xmm3, %xmm3
+	vaddps	%xmm12, %xmm3, %xmm2
+	vmulps	2528(%rsp), %xmm2, %xmm10 # 16-byte Folded Reload
+.LBB148_90:                             # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	andl	$1, %r14d
+	je	.LBB148_92
+# BB#91:                                # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	vmovaps	%xmm1, %xmm10
+.LBB148_92:                             # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	vmovaps	%xmm5, 2560(%rsp)       # 16-byte Spill
+	testl	%r14d, %r14d
+	je	.LBB148_94
+# BB#93:                                # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	vmovaps	%xmm11, %xmm0
+.LBB148_94:                             # %for demosaiced$3.s0.v1614
+                                        #   in Loop: Header=BB148_79 Depth=3
+	vmovaps	.LCPI148_10(%rip), %ymm1 # ymm1 = <u,0,u,1,u,2,u,3>
+	vpermps	%ymm10, %ymm1, %ymm1
+	vmovaps	.LCPI148_11(%rip), %ymm2 # ymm2 = <0,u,1,u,2,u,3,u>
+	vpermps	%ymm0, %ymm2, %ymm0
+	vblendps	$170, %ymm1, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm1[1],ymm0[2],ymm1[3],ymm0[4],ymm1[5],ymm0[6],ymm1[7]
+	vmovups	%ymm0, (%r8)
+	subq	$-128, %r8
+	addl	$1, %eax
+	cmpl	$2, %eax
+	jne	.LBB148_79
+# BB#95:                                # %end for demosaiced$3.s0.v1615
+                                        #   in Loop: Header=BB148_78 Depth=2
+	addq	$1, %rcx
+	movq	1984(%rsp), %rdx        # 8-byte Reload
+	addl	$1, %edx
+	movq	1480(%rsp), %r8         # 8-byte Reload
+	addq	$32, %r8
+	cmpq	$4, %rcx
+	jne	.LBB148_78
+# BB#96:                                #   in Loop: Header=BB148_43 Depth=1
+	vmovaps	%xmm9, 640(%rsp)        # 16-byte Spill
+	movq	1120(%rsp), %r8         # 8-byte Reload
+	xorl	%r9d, %r9d
+	movq	544(%rsp), %r14         # 8-byte Reload
+	movq	936(%rsp), %r10         # 8-byte Reload
+	movq	944(%rsp), %rcx         # 8-byte Reload
+	.align	16, 0x90
+.LBB148_97:                             # %for f2.s0.v16.v18.yii
+                                        #   Parent Loop BB148_43 Depth=1
+                                        # =>  This Loop Header: Depth=2
+                                        #       Child Loop BB148_98 Depth 3
+	movq	%r9, %rax
+	shlq	$7, %rax
+	vmovaps	2592(%rsp,%rax), %ymm15
+	vmovaps	%ymm15, 1984(%rsp)      # 32-byte Spill
+	vmovaps	2624(%rsp,%rax), %ymm6
+	vmovaps	%ymm6, 2272(%rsp)       # 32-byte Spill
+	vmovaps	2656(%rsp,%rax), %ymm1
+	vmovaps	%ymm1, 2240(%rsp)       # 32-byte Spill
+	vmovaps	2688(%rsp,%rax), %ymm13
+	vmovaps	%ymm13, 1504(%rsp)      # 32-byte Spill
+	vmovaps	2848(%rsp,%rax), %ymm12
+	vmovaps	2880(%rsp,%rax), %ymm10
+	vmovaps	2912(%rsp,%rax), %ymm7
+	vmovaps	2944(%rsp,%rax), %ymm8
+	vmovaps	3104(%rsp,%rax), %ymm5
+	vmovaps	3136(%rsp,%rax), %ymm4
+	vmovaps	3168(%rsp,%rax), %ymm3
+	vmovaps	1344(%rsp), %ymm0       # 32-byte Reload
+	vmulps	%ymm0, %ymm1, %ymm1
+	vmulps	%ymm0, %ymm6, %ymm2
+	vmulps	%ymm0, %ymm15, %ymm6
+	vmulps	%ymm0, %ymm13, %ymm9
+	vmovaps	1376(%rsp), %ymm0       # 32-byte Reload
+	vmovaps	%ymm0, %ymm11
+	vfmadd213ps	%ymm9, %ymm8, %ymm11
+	vmovaps	%ymm0, %ymm9
+	vfmadd213ps	%ymm6, %ymm12, %ymm9
+	vmovaps	%ymm0, %ymm6
+	vfmadd213ps	%ymm2, %ymm10, %ymm6
+	vmovaps	%ymm0, %ymm2
+	vfmadd213ps	%ymm1, %ymm7, %ymm2
+	vmovaps	1408(%rsp), %ymm0       # 32-byte Reload
+	vmovaps	%ymm0, %ymm1
+	vfmadd213ps	%ymm2, %ymm3, %ymm1
+	vmovaps	%ymm1, 2400(%rsp)       # 32-byte Spill
+	vmovaps	%ymm0, %ymm1
+	vfmadd213ps	%ymm6, %ymm4, %ymm1
+	vmovaps	%ymm1, 2368(%rsp)       # 32-byte Spill
+	vmovaps	%ymm0, %ymm1
+	vfmadd213ps	%ymm9, %ymm5, %ymm1
+	vmovaps	%ymm1, 2336(%rsp)       # 32-byte Spill
+	vmovaps	3200(%rsp,%rax), %ymm14
+	vfmadd213ps	%ymm11, %ymm14, %ymm0
+	vmovaps	%ymm0, 2304(%rsp)       # 32-byte Spill
+	vmovaps	1216(%rsp), %ymm1       # 32-byte Reload
+	vmulps	%ymm1, %ymm13, %ymm2
+	vmovaps	1248(%rsp), %ymm0       # 32-byte Reload
+	vmovaps	%ymm0, %ymm11
+	vfmadd213ps	%ymm2, %ymm8, %ymm11
+	vmulps	%ymm1, %ymm15, %ymm2
+	vmovaps	%ymm0, %ymm6
+	vfmadd213ps	%ymm2, %ymm12, %ymm6
+	vmulps	2272(%rsp), %ymm1, %ymm2 # 32-byte Folded Reload
+	vmovaps	%ymm0, %ymm13
+	vfmadd213ps	%ymm2, %ymm10, %ymm13
+	vmovaps	2240(%rsp), %ymm9       # 32-byte Reload
+	vmulps	%ymm1, %ymm9, %ymm2
+	vmovaps	%ymm0, %ymm15
+	vfmadd213ps	%ymm2, %ymm7, %ymm15
+	vmovaps	1312(%rsp), %ymm0       # 32-byte Reload
+	vmovaps	%ymm0, %ymm1
+	vfmadd213ps	%ymm15, %ymm3, %ymm1
+	vmovaps	%ymm1, 2464(%rsp)       # 32-byte Spill
+	vmovaps	%ymm0, %ymm1
+	vfmadd213ps	%ymm13, %ymm4, %ymm1
+	vmovaps	%ymm1, 2432(%rsp)       # 32-byte Spill
+	vmovaps	%ymm0, %ymm13
+	vfmadd213ps	%ymm6, %ymm5, %ymm13
+	vmovaps	%ymm0, %ymm6
+	vfmadd213ps	%ymm11, %ymm14, %ymm6
+	vmovaps	1280(%rsp), %ymm0       # 32-byte Reload
+	vmulps	1504(%rsp), %ymm0, %ymm11 # 32-byte Folded Reload
+	vmovaps	1152(%rsp), %ymm1       # 32-byte Reload
+	vfmadd213ps	%ymm11, %ymm1, %ymm8
+	vmulps	1984(%rsp), %ymm0, %ymm11 # 32-byte Folded Reload
+	vfmadd213ps	%ymm11, %ymm1, %ymm12
+	vmulps	2272(%rsp), %ymm0, %ymm11 # 32-byte Folded Reload
+	vfmadd213ps	%ymm11, %ymm1, %ymm10
+	vmulps	%ymm0, %ymm9, %ymm11
+	vfmadd213ps	%ymm11, %ymm1, %ymm7
+	vmovaps	1184(%rsp), %ymm0       # 32-byte Reload
+	vfmadd213ps	%ymm7, %ymm0, %ymm3
+	vmovaps	%ymm3, %ymm2
+	vfmadd213ps	%ymm10, %ymm0, %ymm4
+	vmovaps	%ymm4, %ymm9
+	vfmadd213ps	%ymm12, %ymm0, %ymm5
+	vfmadd213ps	%ymm8, %ymm0, %ymm14
+	xorl	%esi, %esi
+	movl	$3, %eax
+	movq	%r8, %rdx
+	.align	16, 0x90
+.LBB148_98:                             # %for f2.s0.v17
+                                        #   Parent Loop BB148_43 Depth=1
+                                        #     Parent Loop BB148_97 Depth=2
+                                        # =>    This Inner Loop Header: Depth=3
+	vmovaps	%ymm13, %ymm4
+	cmpl	$1, %esi
+	je	.LBB148_100
+# BB#99:                                # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	2336(%rsp), %ymm4       # 32-byte Reload
+.LBB148_100:                            # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	2432(%rsp), %ymm7       # 32-byte Reload
+	je	.LBB148_102
+# BB#101:                               # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	2368(%rsp), %ymm7       # 32-byte Reload
+.LBB148_102:                            # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	2464(%rsp), %ymm10      # 32-byte Reload
+	je	.LBB148_104
+# BB#103:                               # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	2400(%rsp), %ymm10      # 32-byte Reload
+.LBB148_104:                            # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	%ymm6, %ymm11
+	je	.LBB148_106
+# BB#105:                               # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	2304(%rsp), %ymm11      # 32-byte Reload
+.LBB148_106:                            # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	%ymm14, %ymm8
+	testl	%esi, %esi
+	je	.LBB148_108
+# BB#107:                               # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	%ymm11, %ymm8
+.LBB148_108:                            # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	%ymm2, %ymm11
+	je	.LBB148_110
+# BB#109:                               # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	%ymm10, %ymm11
+.LBB148_110:                            # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	%ymm9, %ymm10
+	je	.LBB148_112
+# BB#111:                               # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	%ymm7, %ymm10
+.LBB148_112:                            # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	%ymm5, %ymm7
+	je	.LBB148_114
+# BB#113:                               # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	%ymm4, %ymm7
+.LBB148_114:                            # %for f2.s0.v17
+                                        #   in Loop: Header=BB148_98 Depth=3
+	vmovaps	1536(%rsp), %ymm0       # 32-byte Reload
+	vminps	%ymm0, %ymm7, %ymm4
+	vminps	%ymm0, %ymm10, %ymm7
+	vminps	%ymm0, %ymm11, %ymm10
+	vminps	%ymm0, %ymm8, %ymm8
+	vxorps	%ymm0, %ymm0, %ymm0
+	vmaxps	%ymm0, %ymm4, %ymm4
+	vmaxps	%ymm0, %ymm7, %ymm7
+	vmaxps	%ymm0, %ymm10, %ymm10
+	vmaxps	%ymm0, %ymm8, %ymm8
+	vcvttps2dq	%ymm4, %ymm4
+	vmovdqa	.LCPI148_3(%rip), %ymm0 # ymm0 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
+	vpshufb	%ymm0, %ymm4, %ymm4
+	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
+	vcvttps2dq	%ymm7, %ymm7
+	vpshufb	%ymm0, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vcvttps2dq	%ymm10, %ymm10
+	vpshufb	%ymm0, %ymm10, %ymm10
+	vpermq	$232, %ymm10, %ymm10    # ymm10 = ymm10[0,2,2,3]
+	vcvttps2dq	%ymm8, %ymm8
+	vpshufb	%ymm0, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vpmovzxwd	%xmm8, %ymm8    # ymm8 = xmm8[0],zero,xmm8[1],zero,xmm8[2],zero,xmm8[3],zero,xmm8[4],zero,xmm8[5],zero,xmm8[6],zero,xmm8[7],zero
+	vpmovzxwd	%xmm10, %ymm10  # ymm10 = xmm10[0],zero,xmm10[1],zero,xmm10[2],zero,xmm10[3],zero,xmm10[4],zero,xmm10[5],zero,xmm10[6],zero,xmm10[7],zero
+	vpmovzxwd	%xmm7, %ymm7    # ymm7 = xmm7[0],zero,xmm7[1],zero,xmm7[2],zero,xmm7[3],zero,xmm7[4],zero,xmm7[5],zero,xmm7[6],zero,xmm7[7],zero
+	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
+	vmovdqa	2176(%rsp), %ymm0       # 32-byte Reload
+	vpmulld	%ymm0, %ymm4, %ymm11
+	vpmulld	%ymm0, %ymm7, %ymm7
+	vpmulld	%ymm0, %ymm10, %ymm4
+	vpmulld	%ymm0, %ymm8, %ymm8
+	vmovd	%esi, %xmm10
+	vpsubd	2208(%rsp), %ymm10, %ymm10 # 32-byte Folded Reload
+	vpbroadcastd	%xmm10, %ymm15
+	vpaddd	%ymm8, %ymm15, %ymm12
+	vpaddd	%ymm4, %ymm15, %ymm4
+	vpaddd	%ymm7, %ymm15, %ymm10
+	vpaddd	%ymm11, %ymm15, %ymm8
+	vmovq	%xmm12, %rdi
+	movslq	%edi, %rbx
+	movzwl	(%r15,%rbx,2), %ebx
+	vmovd	%ebx, %xmm7
+	vpextrq	$1, %xmm12, %rbx
+	sarq	$32, %rdi
+	vpinsrw	$1, (%r15,%rdi,2), %xmm7, %xmm7
+	movslq	%ebx, %rdi
+	sarq	$32, %rbx
+	vextracti128	$1, %ymm12, %xmm1
+	vpinsrw	$2, (%r15,%rdi,2), %xmm7, %xmm7
+	vmovq	%xmm1, %rdi
+	vpinsrw	$3, (%r15,%rbx,2), %xmm7, %xmm7
+	movslq	%edi, %rbx
+	vpinsrw	$4, (%r15,%rbx,2), %xmm7, %xmm7
+	vpextrq	$1, %xmm1, %rbx
+	sarq	$32, %rdi
+	vpinsrw	$5, (%r15,%rdi,2), %xmm7, %xmm1
+	movslq	%ebx, %rdi
+	vpinsrw	$6, (%r15,%rdi,2), %xmm1, %xmm1
+	vmovq	%xmm4, %rdi
+	sarq	$32, %rbx
+	vpinsrw	$7, (%r15,%rbx,2), %xmm1, %xmm7
+	movslq	%edi, %rbx
+	movzwl	(%r15,%rbx,2), %ebx
+	vmovd	%ebx, %xmm1
+	vpextrq	$1, %xmm4, %rbx
+	sarq	$32, %rdi
+	vpinsrw	$1, (%r15,%rdi,2), %xmm1, %xmm1
+	movslq	%ebx, %rdi
+	sarq	$32, %rbx
+	vextracti128	$1, %ymm4, %xmm4
+	vpinsrw	$2, (%r15,%rdi,2), %xmm1, %xmm1
+	vmovq	%xmm4, %rdi
+	vpinsrw	$3, (%r15,%rbx,2), %xmm1, %xmm1
+	movslq	%edi, %rbx
+	vpinsrw	$4, (%r15,%rbx,2), %xmm1, %xmm1
+	vpextrq	$1, %xmm4, %rbx
+	sarq	$32, %rdi
+	vpinsrw	$5, (%r15,%rdi,2), %xmm1, %xmm1
+	movslq	%ebx, %rdi
+	vpinsrw	$6, (%r15,%rdi,2), %xmm1, %xmm1
+	vmovq	%xmm10, %rdi
+	sarq	$32, %rbx
+	vpinsrw	$7, (%r15,%rbx,2), %xmm1, %xmm1
+	movslq	%edi, %rbx
+	movzwl	(%r15,%rbx,2), %ebx
+	vmovd	%ebx, %xmm4
+	vpextrq	$1, %xmm10, %rbx
+	sarq	$32, %rdi
+	vpinsrw	$1, (%r15,%rdi,2), %xmm4, %xmm4
+	movslq	%ebx, %rdi
+	sarq	$32, %rbx
+	vextracti128	$1, %ymm10, %xmm0
+	vpinsrw	$2, (%r15,%rdi,2), %xmm4, %xmm4
+	vmovq	%xmm0, %rdi
+	vpinsrw	$3, (%r15,%rbx,2), %xmm4, %xmm4
+	movslq	%edi, %rbx
+	vpinsrw	$4, (%r15,%rbx,2), %xmm4, %xmm4
+	vpextrq	$1, %xmm0, %rbx
+	sarq	$32, %rdi
+	vpinsrw	$5, (%r15,%rdi,2), %xmm4, %xmm0
+	movslq	%ebx, %rdi
+	vpinsrw	$6, (%r15,%rdi,2), %xmm0, %xmm0
+	vmovq	%xmm8, %rdi
+	sarq	$32, %rbx
+	vpinsrw	$7, (%r15,%rbx,2), %xmm0, %xmm0
+	movslq	%edi, %rbx
+	movzwl	(%r15,%rbx,2), %ebx
+	vmovd	%ebx, %xmm4
+	vpextrq	$1, %xmm8, %rbx
+	sarq	$32, %rdi
+	vpinsrw	$1, (%r15,%rdi,2), %xmm4, %xmm4
+	movslq	%ebx, %rdi
+	sarq	$32, %rbx
+	vextracti128	$1, %ymm8, %xmm3
+	vpinsrw	$2, (%r15,%rdi,2), %xmm4, %xmm4
+	vmovq	%xmm3, %rdi
+	vpinsrw	$3, (%r15,%rbx,2), %xmm4, %xmm4
+	movslq	%edi, %rbx
+	vpinsrw	$4, (%r15,%rbx,2), %xmm4, %xmm4
+	vpextrq	$1, %xmm3, %rbx
+	sarq	$32, %rdi
+	vpinsrw	$5, (%r15,%rdi,2), %xmm4, %xmm3
+	movslq	%ebx, %rdi
+	vpinsrw	$6, (%r15,%rdi,2), %xmm3, %xmm3
+	sarq	$32, %rbx
+	vpinsrw	$7, (%r15,%rbx,2), %xmm3, %xmm3
+	vinserti128	$1, %xmm7, %ymm1, %ymm1
+	vinserti128	$1, %xmm0, %ymm3, %ymm0
+	movq	1960(%rsp), %rdi        # 8-byte Reload
+	vmovdqu	%ymm0, (%rdi,%rdx)
+	movq	1968(%rsp), %rdi        # 8-byte Reload
+	vmovdqu	%ymm1, (%rdi,%rdx)
+	addq	1712(%rsp), %rdx        # 8-byte Folded Reload
+	addl	$1, %esi
+	addq	$-1, %rax
+	jne	.LBB148_98
+# BB#115:                               # %end for f2.s0.v17
+                                        #   in Loop: Header=BB148_97 Depth=2
+	addq	$1, %r9
+	addq	%rcx, %r8
+	cmpq	$2, %r9
+	jne	.LBB148_97
+# BB#116:                               # %end for f2.s0.v16.v18.yii
+                                        #   in Loop: Header=BB148_43 Depth=1
+	movq	1080(%rsp), %rcx        # 8-byte Reload
+	addq	$1, %rcx
+	movq	1112(%rsp), %rbx        # 8-byte Reload
+	addq	$-32, %rbx
+	movl	1088(%rsp), %eax        # 4-byte Reload
+	addl	$32, %eax
+	movq	1104(%rsp), %rdi        # 8-byte Reload
+	addq	$-32, %rdi
+	movq	1096(%rsp), %rdx        # 8-byte Reload
+	addq	$-32, %rdx
+	addq	$64, 1120(%rsp)         # 8-byte Folded Spill
+	cmpl	564(%rsp), %ecx         # 4-byte Folded Reload
+	vmovaps	592(%rsp), %xmm12       # 16-byte Reload
+	vpxor	%xmm8, %xmm8, %xmm8
+	jne	.LBB148_43
+# BB#117:
+	movq	664(%rsp), %r9          # 8-byte Reload
+	movl	788(%rsp), %eax         # 4-byte Reload
+.LBB148_118:                            # %for f2.s0.v16.v18.v18.preheader
+	movl	%eax, 788(%rsp)         # 4-byte Spill
+	movq	496(%rsp), %rbx         # 8-byte Reload
+	movl	%ebx, %eax
+	sarl	$5, %eax
+	leal	1(%rax), %edx
+	addl	$31, %ebx
+	sarl	$5, %ebx
+	cmpl	%ebx, %eax
+	cmovgel	%edx, %ebx
+	xorl	%eax, %eax
+	testl	%ebx, %ebx
+	cmovsl	%eax, %ebx
+	movq	792(%rsp), %rcx         # 8-byte Reload
+	cmpl	%ebx, %ecx
+	movl	%ecx, %r11d
+	cmovgl	%ebx, %r11d
+	movl	%r11d, 584(%rsp)        # 4-byte Spill
+	movq	2168(%rsp), %r8         # 8-byte Reload
+	movq	872(%rsp), %rax         # 8-byte Reload
+	subl	%r8d, %eax
+	leal	(%rax,%r10), %eax
+	movq	800(%rsp), %rsi         # 8-byte Reload
+	cmpl	%eax, %esi
+	cmovlel	%esi, %eax
+	addl	$-31, %eax
+	leal	-30(%rsi), %edx
+	cmpl	%eax, %edx
+	cmovlel	%edx, %eax
+	leal	-1(%rsi), %edx
+	cmpl	%eax, %edx
+	cmovlel	%edx, %eax
+	cmpl	%eax, %esi
+	cmovlel	%esi, %eax
+	movl	856(%rsp), %edx         # 4-byte Reload
+	cmpl	%eax, %edx
+	cmovlel	%edx, %eax
+	sarl	$5, %eax
+	addl	$1, %eax
+	cmpl	%eax, %r11d
+	movl	%eax, %edx
+	cmovgel	%r11d, %edx
+	movl	%edx, 576(%rsp)         # 4-byte Spill
+	movq	%r10, %rdi
+	movl	860(%rsp), %r10d        # 4-byte Reload
+	movl	1072(%rsp), %edx        # 4-byte Reload
+	cmpl	%edx, %r10d
+	cmovgel	%r10d, %edx
+	movl	$1, %esi
+	subl	%edx, %esi
+	movq	%rsi, 2528(%rsp)        # 8-byte Spill
+	movq	568(%rsp), %rdx         # 8-byte Reload
+	leal	-32(%r8,%rdx), %edx
+	movq	552(%rsp), %rsi         # 8-byte Reload
+	leal	30(%r8,%rsi), %esi
+	cmpl	%esi, %edx
+	cmovgel	%edx, %esi
+	movslq	%esi, %rdx
+	movq	%rdx, %r11
+	shlq	$5, %r11
+	leaq	160(%r11), %rsi
+	movq	672(%rsp), %r12         # 8-byte Reload
+	subq	%r12, %rsi
+	movq	%rsi, 1968(%rsp)        # 8-byte Spill
+	subq	%r12, %r11
+	movq	%r11, 1976(%rsp)        # 8-byte Spill
+	leaq	2(%rdx), %rsi
+	movq	880(%rsp), %r12         # 8-byte Reload
+	subq	%r12, %rsi
+	shlq	$2, %rsi
+	movq	%rsi, 712(%rsp)         # 8-byte Spill
+	shlq	$4, %rdx
+	subq	488(%rsp), %rdx         # 8-byte Folded Reload
+	movq	%rdx, 1984(%rsp)        # 8-byte Spill
+	movl	%ecx, %edx
+	notl	%edx
+	notl	%ebx
+	cmpl	%ebx, %edx
+	cmovgel	%edx, %ebx
+	movq	%rbx, 496(%rsp)         # 8-byte Spill
+	movl	788(%rsp), %edx         # 4-byte Reload
+	imull	%r9d, %edx
+	addl	%edx, %edi
+	leal	-32(%r8), %esi
+	movl	%esi, %r8d
+	subl	%edi, %esi
+	movl	%ebx, %edx
+	shll	$5, %edx
+	subl	%edx, %r8d
+	movl	%r8d, 488(%rsp)         # 4-byte Spill
+	subl	%edx, %esi
+	movq	%rsi, 320(%rsp)         # 8-byte Spill
+	movl	%ebx, %edx
+	notl	%edx
+	movslq	%edx, %rsi
+	movq	%rsi, %r8
+	shlq	$7, %r8
+	cmpl	%eax, %esi
+	cmovll	%eax, %esi
+	leal	1(%rbx,%rsi), %eax
+	movl	%eax, 476(%rsp)         # 4-byte Spill
+	movslq	%esi, %rax
+	shll	$5, %esi
+	movq	%rsi, 480(%rsp)         # 8-byte Spill
+	subl	%eax, %ecx
+	movl	%ecx, 472(%rsp)         # 4-byte Spill
+	shlq	$7, %rax
+	movq	%r12, %rcx
+	negq	%rcx
+	movq	%rcx, 312(%rsp)         # 8-byte Spill
+	movq	$-2, %rsi
+	movq	440(%rsp), %rcx         # 8-byte Reload
+	subq	%rcx, %rsi
+	movq	%rsi, 432(%rsp)         # 8-byte Spill
+	movl	$64, %esi
+	subq	%r12, %rsi
+	movq	%rsi, 304(%rsp)         # 8-byte Spill
+	movl	1072(%rsp), %edx        # 4-byte Reload
+	cmpl	%r10d, %edx
+	cmovgel	%edx, %r10d
+	movq	%r14, %rsi
+	subq	%r12, %rsi
+	movq	1064(%rsp), %rdx        # 8-byte Reload
+	addq	$2, %rdx
+	imulq	%rsi, %rdx
+	leaq	(,%r14,4), %rbx
+	leaq	(,%r12,4), %rsi
+	subq	%rsi, %rbx
+	movq	%rbx, 296(%rsp)         # 8-byte Spill
+	movl	$128, %esi
+	subq	%r12, %rsi
+	movq	%rsi, 288(%rsp)         # 8-byte Spill
+	addq	%r14, %r14
+	addq	%r12, %r12
+	subq	%r12, %r14
+	movq	%r14, 544(%rsp)         # 8-byte Spill
+	movq	864(%rsp), %rbx         # 8-byte Reload
+	leaq	32(%rbx,%rdx,2), %rsi
+	movq	%rsi, 424(%rsp)         # 8-byte Spill
+	leaq	(%rbx,%rdx,2), %rsi
+	movq	%rsi, 416(%rsp)         # 8-byte Spill
+	leaq	(%r8,%r13), %rdx
+	movq	%rdx, 464(%rsp)         # 8-byte Spill
+	leaq	(%rax,%r13), %rax
+	movq	%rax, 456(%rsp)         # 8-byte Spill
+	movl	$4, %eax
+	subl	%r10d, %eax
+	movl	%eax, 1464(%rsp)        # 4-byte Spill
+	negl	%r10d
+	movl	%r10d, 860(%rsp)        # 4-byte Spill
+	movl	$-2, %eax
+	subl	%ecx, %eax
+	movq	%rax, 552(%rsp)         # 8-byte Spill
+	movq	504(%rsp), %rax         # 8-byte Reload
+	addq	%rax, %rax
+	movq	%rax, 504(%rsp)         # 8-byte Spill
+	vpabsd	912(%rsp), %xmm0        # 16-byte Folded Reload
+	vmovdqa	%ymm0, 672(%rsp)        # 32-byte Spill
+	vinserti128	$1, %xmm0, %ymm0, %ymm0
+	vmovdqa	%ymm0, 800(%rsp)        # 32-byte Spill
+	vmovaps	1920(%rsp), %ymm0       # 32-byte Reload
+	vextractf128	$1, %ymm0, 1712(%rsp) # 16-byte Folded Spill
+	leal	3(%rcx), %eax
+	movl	%eax, 856(%rsp)         # 4-byte Spill
+	movb	%al, %bl
+	leaq	64(%r11), %rax
+	movq	%rax, 1960(%rsp)        # 8-byte Spill
+	movl	$1, %edx
+	.align	16, 0x90
+.LBB148_119:                            # %for f2.s0.v16.v18.v18
+                                        # =>This Loop Header: Depth=1
+                                        #     Child Loop BB148_120 Depth 2
+                                        #       Child Loop BB148_122 Depth 3
+                                        #     Child Loop BB148_126 Depth 2
+                                        #       Child Loop BB148_128 Depth 3
+                                        #       Child Loop BB148_195 Depth 3
+                                        #       Child Loop BB148_222 Depth 3
+                                        #     Child Loop BB148_161 Depth 2
+                                        #       Child Loop BB148_163 Depth 3
+                                        #     Child Loop BB148_284 Depth 2
+                                        #       Child Loop BB148_285 Depth 3
+                                        #         Child Loop BB148_286 Depth 4
+                                        #       Child Loop BB148_305 Depth 3
+                                        #         Child Loop BB148_306 Depth 4
+                                        #       Child Loop BB148_321 Depth 3
+                                        #         Child Loop BB148_322 Depth 4
+                                        #       Child Loop BB148_340 Depth 3
+                                        #         Child Loop BB148_341 Depth 4
+	movq	%rdx, 448(%rsp)         # 8-byte Spill
+	movb	%bl, 412(%rsp)          # 1-byte Spill
+	movq	%r9, 664(%rsp)          # 8-byte Spill
+	movq	440(%rsp), %rcx         # 8-byte Reload
+	leaq	1(%rcx,%rdx,2), %rdi
+	movq	%rdi, 936(%rsp)         # 8-byte Spill
+	cmpq	%rdi, %r9
+	movl	%edi, %eax
+	cmovgl	%r9d, %eax
+	leaq	3(%rcx,%rdx,2), %rdx
+	cltq
+	cmpq	%rax, %rdx
+	movl	%eax, %esi
+	cmovlel	%edx, %esi
+	movl	%esi, 2400(%rsp)        # 4-byte Spill
+	movl	660(%rsp), %ecx         # 4-byte Reload
+	cmpl	%eax, %ecx
+	cmovgel	%ecx, %eax
+	cltq
+	cmpq	%rax, %rdx
+	cmovlel	%edx, %eax
+	movq	%rax, 912(%rsp)         # 8-byte Spill
+	movslq	%esi, %rax
+	movb	%bl, %dl
+	cmpq	%rax, %rdi
+	movq	1736(%rsp), %rcx        # 8-byte Reload
+	vmovaps	.LCPI148_8(%rip), %ymm12 # ymm12 = <u,4,u,5,u,6,u,7>
+	vmovaps	.LCPI148_9(%rip), %ymm13 # ymm13 = <4,u,5,u,6,u,7,u>
+	jge	.LBB148_124
+	.align	16, 0x90
+.LBB148_120:                            # %for deinterleaved$3.s0.v1618
+                                        #   Parent Loop BB148_119 Depth=1
+                                        # =>  This Loop Header: Depth=2
+                                        #       Child Loop BB148_122 Depth 3
+	movb	%dl, 728(%rsp)          # 1-byte Spill
+	movzbl	%dl, %r9d
+	andl	$3, %r9d
+	movq	792(%rsp), %rax         # 8-byte Reload
+	testl	%eax, %eax
+	jle	.LBB148_158
+# BB#121:                               # %for deinterleaved$3.s0.v15.v1520.preheader
+                                        #   in Loop: Header=BB148_120 Depth=2
+	imulq	712(%rsp), %r9          # 8-byte Folded Reload
+	movq	936(%rsp), %rsi         # 8-byte Reload
+	movl	%esi, %eax
+	movq	664(%rsp), %rbx         # 8-byte Reload
+	subl	%ebx, %eax
+	cltd
+	idivl	628(%rsp)               # 4-byte Folded Reload
+	movl	%edx, %eax
+	sarl	$31, %eax
+	andl	624(%rsp), %eax         # 4-byte Folded Reload
+	movq	%rcx, %r8
+	movq	632(%rsp), %rcx         # 8-byte Reload
+	subl	%ecx, %edx
+	leal	(%rdx,%rax), %edi
+	leal	1(%rdx,%rax), %eax
+	cmpl	$-2, %edi
+	notl	%edi
+	cmovgl	%eax, %edi
+	movl	620(%rsp), %eax         # 4-byte Reload
+	subl	%edi, %eax
+	movl	616(%rsp), %ecx         # 4-byte Reload
+	cmpl	%esi, %ecx
+	cmovgl	%esi, %ecx
+	cmpl	%ebx, %ecx
+	cmovll	%ebx, %ecx
+	cmpl	%esi, 660(%rsp)         # 4-byte Folded Reload
+	cmovlel	%eax, %ecx
+	cmpl	%ebx, %esi
+	cmovll	%eax, %ecx
+	movl	784(%rsp), %eax         # 4-byte Reload
+	testl	%eax, %eax
+	setne	%r10b
+	sete	%r11b
+	imull	788(%rsp), %ecx         # 4-byte Folded Reload
+	leaq	(%r9,%r13), %rdx
+	movl	%esi, %edi
+	andl	$1, %edi
+	movl	%edi, 892(%rsp)         # 4-byte Spill
+	vmovd	%ecx, %xmm0
+	vpsubd	736(%rsp), %ymm0, %ymm0 # 32-byte Folded Reload
+	vpbroadcastd	%xmm0, %ymm0
+	vmovdqa	%ymm0, 2272(%rsp)       # 32-byte Spill
+	sete	%bl
+	movb	%dil, %cl
+	andb	%r11b, %cl
+	movb	%cl, 872(%rsp)          # 1-byte Spill
+	testl	%esi, %eax
+	setne	%r9b
+	movq	2168(%rsp), %rcx        # 8-byte Reload
+	orl	%ecx, %esi
+	movq	%r8, %rcx
+	testb	$1, %sil
+	sete	%al
+	orb	%r9b, %al
+	movb	%al, 864(%rsp)          # 1-byte Spill
+	andb	%r10b, %bl
+	movb	%bl, 880(%rsp)          # 1-byte Spill
+	xorl	%esi, %esi
+	movq	792(%rsp), %rax         # 8-byte Reload
+	.align	16, 0x90
+.LBB148_122:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_120 Depth=2
+                                        # =>    This Inner Loop Header: Depth=3
+	movq	%rsi, 2560(%rsp)        # 8-byte Spill
+	movl	%eax, 1536(%rsp)        # 4-byte Spill
+	movq	%rdx, 2240(%rsp)        # 8-byte Spill
+	testl	%edi, %edi
+	sete	1504(%rsp)              # 1-byte Folded Spill
+	setne	1448(%rsp)              # 1-byte Folded Spill
+	movq	1744(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rsi), %eax
+	vmovd	%eax, %xmm1
+	vpbroadcastd	%xmm1, %ymm1
+	vmovdqa	.LCPI148_7(%rip), %ymm13 # ymm13 = [0,2,4,6,8,10,12,14]
+	vpaddd	%ymm13, %ymm1, %ymm2
+	vextracti128	$1, %ymm2, %xmm3
+	vpextrd	$1, %xmm3, %eax
+	vmovdqa	1712(%rsp), %xmm0       # 16-byte Reload
+	vpextrd	$1, %xmm0, %ebx
+	movl	%ebx, 1280(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ebx
+	movl	%edx, %r9d
+	vmovd	%xmm3, %eax
+	vmovd	%xmm0, %r12d
+	movl	%r12d, 1248(%rsp)       # 4-byte Spill
+	cltd
+	idivl	%r12d
+	movl	%edx, %esi
+	vpextrd	$2, %xmm3, %eax
+	vpextrd	$2, %xmm0, %r10d
+	movl	%r10d, 1216(%rsp)       # 4-byte Spill
+	cltd
+	idivl	%r10d
+	movl	%edx, %r14d
+	vpextrd	$3, %xmm3, %eax
+	vpextrd	$3, %xmm0, %r8d
+	movl	%r8d, 1312(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%r8d
+	movl	%edx, 2496(%rsp)        # 4-byte Spill
+	vpextrd	$1, %xmm2, %eax
+	vmovdqa	1920(%rsp), %ymm0       # 32-byte Reload
+	vpextrd	$1, %xmm0, %edi
+	movl	%edi, 1064(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	movl	%edx, %edi
+	vmovd	%esi, %xmm3
+	vmovd	%xmm2, %eax
+	vmovd	%xmm0, %esi
+	movl	%esi, 1056(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r11d
+	vpinsrd	$1, %r9d, %xmm3, %xmm3
+	vpextrd	$2, %xmm2, %eax
+	vpextrd	$2, %xmm0, %esi
+	movl	%esi, 1016(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r9d
+	vpinsrd	$2, %r14d, %xmm3, %xmm3
+	vpextrd	$3, %xmm2, %eax
+	vpextrd	$3, %xmm0, %esi
+	movl	%esi, 1008(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r14d
+	vmovdqa	.LCPI148_6(%rip), %ymm12 # ymm12 = [16,18,20,22,24,26,28,30]
+	vpaddd	%ymm12, %ymm1, %ymm2
+	vextracti128	$1, %ymm2, %xmm4
+	vpextrd	$1, %xmm4, %eax
+	cltd
+	idivl	%ebx
+	movl	%edx, %esi
+	vpinsrd	$3, 2496(%rsp), %xmm3, %xmm9 # 4-byte Folded Reload
+	vmovd	%r11d, %xmm3
+	vmovd	%xmm4, %eax
+	cltd
+	idivl	%r12d
+	movl	%edx, %ebx
+	vpinsrd	$1, %edi, %xmm3, %xmm3
+	vpinsrd	$2, %r9d, %xmm3, %xmm3
+	vpextrd	$2, %xmm4, %eax
+	cltd
+	idivl	%r10d
+	movl	%edx, %edi
+	vpinsrd	$3, %r14d, %xmm3, %xmm3
+	vmovd	%ebx, %xmm5
+	vpextrd	$3, %xmm4, %eax
+	cltd
+	idivl	%r8d
+	movl	%edx, %ebx
+	vpinsrd	$1, %esi, %xmm5, %xmm4
+	vpextrd	$1, %xmm2, %eax
+	vpextrd	$1, %xmm0, %esi
+	movl	%esi, 1080(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %esi
+	vpinsrd	$2, %edi, %xmm4, %xmm4
+	vmovd	%xmm2, %eax
+	vmovd	%xmm0, %edi
+	movl	%edi, 1072(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	movl	%edx, %edi
+	vpinsrd	$3, %ebx, %xmm4, %xmm5
+	vpextrd	$2, %xmm2, %eax
+	vpextrd	$2, %xmm0, %ebx
+	movl	%ebx, 1184(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ebx
+	movl	%edx, %ebx
+	vmovd	%edi, %xmm4
+	vpextrd	$3, %xmm2, %eax
+	vpextrd	$3, %xmm0, %edi
+	movl	%edi, 1152(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	vpinsrd	$1, %esi, %xmm4, %xmm2
+	movq	2560(%rsp), %rsi        # 8-byte Reload
+	vpinsrd	$2, %ebx, %xmm2, %xmm6
+	vmovd	%esi, %xmm2
+	vpbroadcastd	%xmm2, %ymm10
+	vmovdqa	1856(%rsp), %ymm0       # 32-byte Reload
+	vpcmpgtd	%ymm10, %ymm0, %ymm4
+	vmovdqa	.LCPI148_3(%rip), %ymm0 # ymm0 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
+	vmovdqa	%ymm0, %ymm2
+	vpshufb	%ymm2, %ymm4, %ymm4
+	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
+	vmovdqa	1824(%rsp), %ymm0       # 32-byte Reload
+	vpcmpgtd	%ymm10, %ymm0, %ymm7
+	vpshufb	%ymm2, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vmovdqa	.LCPI148_4(%rip), %xmm0 # xmm0 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
+	vmovdqa	%xmm0, %xmm1
+	vpshufb	%xmm1, %xmm7, %xmm7
+	vpshufb	%xmm1, %xmm4, %xmm4
+	vpunpcklqdq	%xmm7, %xmm4, %xmm4 # xmm4 = xmm4[0],xmm7[0]
+	vpxor	.LCPI148_5(%rip), %xmm4, %xmm4
+	vmovdqa	1664(%rsp), %ymm0       # 32-byte Reload
+	vpcmpgtd	%ymm10, %ymm0, %ymm7
+	vpshufb	%ymm2, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vmovdqa	1632(%rsp), %ymm0       # 32-byte Reload
+	vpcmpgtd	%ymm10, %ymm0, %ymm8
+	vpshufb	%ymm2, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vpshufb	%xmm1, %xmm8, %xmm0
+	vpshufb	%xmm1, %xmm7, %xmm7
+	vpunpcklqdq	%xmm0, %xmm7, %xmm0 # xmm0 = xmm7[0],xmm0[0]
+	vpor	%xmm4, %xmm0, %xmm14
+	vpinsrd	$3, %edx, %xmm6, %xmm0
+	vinserti128	$1, %xmm5, %ymm0, %ymm0
+	vpsrad	$31, %ymm0, %ymm5
+	vmovdqa	800(%rsp), %ymm15       # 32-byte Reload
+	vpand	%ymm5, %ymm15, %ymm5
+	vmovdqa	2112(%rsp), %ymm8       # 32-byte Reload
+	vpaddd	%ymm0, %ymm8, %ymm0
+	vpaddd	%ymm5, %ymm0, %ymm0
+	vpabsd	%xmm0, %xmm5
+	vextracti128	$1, %ymm0, %xmm0
+	vpabsd	%xmm0, %xmm0
+	vinserti128	$1, %xmm0, %ymm5, %ymm0
+	vmovdqa	2048(%rsp), %ymm11      # 32-byte Reload
+	vpsubd	%ymm0, %ymm11, %ymm0
+	movq	1752(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rsi), %r9d
+	movl	%r9d, 1480(%rsp)        # 4-byte Spill
+	vmovd	%r9d, %xmm5
+	vpbroadcastd	%xmm5, %ymm5
+	vpaddd	%ymm12, %ymm5, %ymm6
+	vmovdqa	2032(%rsp), %xmm4       # 16-byte Reload
+	vpminsd	%xmm4, %xmm6, %xmm7
+	vextracti128	$1, %ymm6, %xmm6
+	vpminsd	%xmm4, %xmm6, %xmm6
+	vmovdqa	2096(%rsp), %xmm2       # 16-byte Reload
+	vpmaxsd	%xmm2, %xmm7, %xmm7
+	vpmaxsd	%xmm2, %xmm6, %xmm6
+	vinserti128	$1, %xmm6, %ymm7, %ymm6
+	vpunpckhbw	%xmm14, %xmm14, %xmm7 # xmm7 = xmm14[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
+	vpmovzxwd	%xmm7, %ymm7    # ymm7 = xmm7[0],zero,xmm7[1],zero,xmm7[2],zero,xmm7[3],zero,xmm7[4],zero,xmm7[5],zero,xmm7[6],zero,xmm7[7],zero
+	vpslld	$31, %ymm7, %ymm7
+	vblendvps	%ymm7, %ymm0, %ymm6, %ymm0
+	vmovdqa	2272(%rsp), %ymm7       # 32-byte Reload
+	vpaddd	%ymm0, %ymm7, %ymm6
+	vmovq	%xmm6, %rsi
+	movslq	%esi, %rax
+	movq	%rsi, %r8
+	movq	%rax, 1456(%rsp)        # 8-byte Spill
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	vinserti128	$1, %xmm9, %ymm3, %ymm1
+	vpsrad	$31, %ymm1, %ymm3
+	vpand	%ymm3, %ymm15, %ymm3
+	vpaddd	%ymm1, %ymm8, %ymm1
+	vmovdqa	%ymm8, %ymm9
+	vpaddd	%ymm3, %ymm1, %ymm1
+	vpabsd	%xmm1, %xmm3
+	vextracti128	$1, %ymm1, %xmm1
+	vpabsd	%xmm1, %xmm1
+	vinserti128	$1, %xmm1, %ymm3, %ymm1
+	vpaddd	%ymm13, %ymm5, %ymm3
+	vpminsd	%xmm4, %xmm3, %xmm5
+	vextracti128	$1, %ymm3, %xmm3
+	vpminsd	%xmm4, %xmm3, %xmm3
+	vpmaxsd	%xmm2, %xmm5, %xmm5
+	vpmaxsd	%xmm2, %xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm5, %ymm3
+	vpsubd	%ymm1, %ymm11, %ymm1
+	vmovdqa	%ymm11, %ymm12
+	vpmovzxbd	%xmm14, %ymm4   # ymm4 = xmm14[0],zero,zero,zero,xmm14[1],zero,zero,zero,xmm14[2],zero,zero,zero,xmm14[3],zero,zero,zero,xmm14[4],zero,zero,zero,xmm14[5],zero,zero,zero,xmm14[6],zero,zero,zero,xmm14[7],zero,zero,zero
+	vpslld	$31, %ymm4, %ymm4
+	vblendvps	%ymm4, %ymm1, %ymm3, %ymm1
+	vpaddd	%ymm1, %ymm7, %ymm1
+	vmovq	%xmm1, %rax
+	movslq	%eax, %rdx
+	movq	%rdx, 2304(%rsp)        # 8-byte Spill
+	sarq	$32, %rax
+	vpextrq	$1, %xmm1, %rsi
+	movslq	%esi, %rdi
+	movq	%rdi, 2464(%rsp)        # 8-byte Spill
+	sarq	$32, %rsi
+	vextracti128	$1, %ymm1, %xmm1
+	vmovq	%xmm1, %rdi
+	movslq	%edi, %rdx
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	sarq	$32, %rdi
+	vpextrq	$1, %xmm1, %rbx
+	movslq	%ebx, %rdx
+	movq	%rdx, 2496(%rsp)        # 8-byte Spill
+	sarq	$32, %rbx
+	sarq	$32, %r8
+	movq	%r8, 2368(%rsp)         # 8-byte Spill
+	vpextrq	$1, %xmm6, %r12
+	movslq	%r12d, %rdx
+	movq	%rdx, 2336(%rsp)        # 8-byte Spill
+	sarq	$32, %r12
+	movq	%r12, 1112(%rsp)        # 8-byte Spill
+	vextracti128	$1, %ymm6, %xmm1
+	vmovq	%xmm1, %r10
+	movslq	%r10d, %r8
+	movq	%r8, 1088(%rsp)         # 8-byte Spill
+	sarq	$32, %r10
+	movq	%r10, 1104(%rsp)        # 8-byte Spill
+	vpextrq	$1, %xmm1, %r14
+	movslq	%r14d, %r11
+	movq	%r11, 1096(%rsp)        # 8-byte Spill
+	sarq	$32, %r14
+	movq	%r14, 1120(%rsp)        # 8-byte Spill
+	movl	%r9d, %edx
+	andl	$1, %edx
+	movl	%edx, 1472(%rsp)        # 4-byte Spill
+	sete	%r9b
+	andb	1448(%rsp), %r9b        # 1-byte Folded Reload
+	movq	2368(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rdx,2), %xmm0, %xmm0
+	movq	2336(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rdx,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$4, (%rcx,%r8,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r10,2), %xmm0, %xmm0
+	vpinsrw	$6, (%rcx,%r11,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r14,2), %xmm0, %xmm4
+	jne	.LBB148_123
+# BB#130:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vpxor	%ymm0, %ymm0, %ymm0
+	vmovdqa	%ymm0, 1024(%rsp)       # 32-byte Spill
+	movq	2464(%rsp), %rcx        # 8-byte Reload
+	movq	2496(%rsp), %r8         # 8-byte Reload
+	movq	2432(%rsp), %rdx        # 8-byte Reload
+	jmp	.LBB148_131
+	.align	16, 0x90
+.LBB148_123:                            #   in Loop: Header=BB148_122 Depth=3
+	movq	2304(%rsp), %rdx        # 8-byte Reload
+	movzwl	(%rcx,%rdx,2), %edx
+	vmovd	%edx, %xmm0
+	vpinsrw	$1, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	2464(%rsp), %r8         # 8-byte Reload
+	vpinsrw	$2, (%rcx,%r8,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rsi,2), %xmm0, %xmm0
+	movq	2432(%rsp), %r10        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%r10,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%rdi,2), %xmm0, %xmm0
+	movq	2496(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rdx,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%rbx,2), %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm0
+	vmovaps	%ymm0, 1024(%rsp)       # 32-byte Spill
+	movq	%r8, %rcx
+	movq	%rdx, %r8
+	movq	%r10, %rdx
+.LBB148_131:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	testb	%r9b, %r9b
+	jne	.LBB148_132
+# BB#133:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	movq	%rcx, 2464(%rsp)        # 8-byte Spill
+	movq	%r8, 2496(%rsp)         # 8-byte Spill
+	movq	%rax, 1344(%rsp)        # 8-byte Spill
+	movq	%rdi, 1376(%rsp)        # 8-byte Spill
+	movq	%rsi, 1408(%rsp)        # 8-byte Spill
+	movq	%rbx, 1448(%rsp)        # 8-byte Spill
+	vpxor	%ymm5, %ymm5, %ymm5
+	jmp	.LBB148_134
+	.align	16, 0x90
+.LBB148_132:                            #   in Loop: Header=BB148_122 Depth=3
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	movq	%rcx, 2464(%rsp)        # 8-byte Spill
+	movq	%r8, 2496(%rsp)         # 8-byte Spill
+	movq	%rax, 1344(%rsp)        # 8-byte Spill
+	movq	%rdi, 1376(%rsp)        # 8-byte Spill
+	movq	%rsi, 1408(%rsp)        # 8-byte Spill
+	movq	%rbx, 1448(%rsp)        # 8-byte Spill
+	vpmovzxwd	%xmm4, %ymm0    # ymm0 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
+	vcvtdq2ps	%ymm0, %ymm5
+.LBB148_134:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	movq	1912(%rsp), %rax        # 8-byte Reload
+	movq	2560(%rsp), %r11        # 8-byte Reload
+	leal	(%rax,%r11), %eax
+	vmovd	%eax, %xmm0
+	vpbroadcastd	%xmm0, %ymm4
+	vpaddd	%ymm13, %ymm4, %ymm6
+	vextracti128	$1, %ymm6, %xmm0
+	vpextrd	$1, %xmm0, %eax
+	cltd
+	movl	1280(%rsp), %r10d       # 4-byte Reload
+	idivl	%r10d
+	movl	%edx, 952(%rsp)         # 4-byte Spill
+	vmovd	%xmm0, %eax
+	cltd
+	movl	1248(%rsp), %r9d        # 4-byte Reload
+	idivl	%r9d
+	movl	%edx, 944(%rsp)         # 4-byte Spill
+	vpextrd	$2, %xmm0, %eax
+	cltd
+	movl	1216(%rsp), %r12d       # 4-byte Reload
+	idivl	%r12d
+	movl	%edx, 960(%rsp)         # 4-byte Spill
+	vpextrd	$3, %xmm0, %eax
+	cltd
+	movl	1312(%rsp), %ecx        # 4-byte Reload
+	idivl	%ecx
+	movl	%edx, %r14d
+	vpextrd	$1, %xmm6, %eax
+	cltd
+	idivl	1064(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %r8d
+	vmovd	%xmm6, %eax
+	cltd
+	idivl	1056(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %ebx
+	vpextrd	$2, %xmm6, %eax
+	cltd
+	idivl	1016(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %esi
+	vpextrd	$3, %xmm6, %eax
+	cltd
+	idivl	1008(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %edi
+	vmovdqa	.LCPI148_6(%rip), %ymm1 # ymm1 = [16,18,20,22,24,26,28,30]
+	vpaddd	%ymm1, %ymm4, %ymm4
+	vextracti128	$1, %ymm4, %xmm0
+	vpextrd	$1, %xmm0, %eax
+	cltd
+	idivl	%r10d
+	movl	%edx, %r10d
+	vmovd	%xmm0, %eax
+	cltd
+	idivl	%r9d
+	movl	%edx, 1280(%rsp)        # 4-byte Spill
+	vpextrd	$2, %xmm0, %eax
+	cltd
+	idivl	%r12d
+	movl	%edx, %r12d
+	vmovd	944(%rsp), %xmm6        # 4-byte Folded Reload
+                                        # xmm6 = mem[0],zero,zero,zero
+	vpinsrd	$1, 952(%rsp), %xmm6, %xmm6 # 4-byte Folded Reload
+	vmovdqa	1792(%rsp), %ymm2       # 32-byte Reload
+	vpcmpgtd	%ymm10, %ymm2, %ymm7
+	vmovdqa	.LCPI148_3(%rip), %ymm2 # ymm2 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
+	vmovdqa	%ymm2, %ymm14
+	vpshufb	%ymm14, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vmovdqa	1760(%rsp), %ymm2       # 32-byte Reload
+	vpcmpgtd	%ymm10, %ymm2, %ymm8
+	vpshufb	%ymm14, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vmovdqa	.LCPI148_4(%rip), %xmm11 # xmm11 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
+	vpshufb	%xmm11, %xmm8, %xmm3
+	vpshufb	%xmm11, %xmm7, %xmm7
+	vpunpcklqdq	%xmm3, %xmm7, %xmm3 # xmm3 = xmm7[0],xmm3[0]
+	vpxor	.LCPI148_5(%rip), %xmm3, %xmm3
+	vmovdqa	1600(%rsp), %ymm2       # 32-byte Reload
+	vpcmpgtd	%ymm10, %ymm2, %ymm7
+	vpshufb	%ymm14, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vmovdqa	1568(%rsp), %ymm2       # 32-byte Reload
+	vpcmpgtd	%ymm10, %ymm2, %ymm2
+	vpshufb	%ymm14, %ymm2, %ymm2
+	vpermq	$232, %ymm2, %ymm2      # ymm2 = ymm2[0,2,2,3]
+	vpshufb	%xmm11, %xmm2, %xmm2
+	vpshufb	%xmm11, %xmm7, %xmm7
+	vpunpcklqdq	%xmm2, %xmm7, %xmm2 # xmm2 = xmm7[0],xmm2[0]
+	vpor	%xmm3, %xmm2, %xmm2
+	vpinsrd	$2, 960(%rsp), %xmm6, %xmm3 # 4-byte Folded Reload
+	vpinsrd	$3, %r14d, %xmm3, %xmm3
+	vmovd	%ebx, %xmm6
+	vpextrd	$3, %xmm0, %eax
+	cltd
+	idivl	%ecx
+	movl	%edx, %r9d
+	vpinsrd	$1, %r8d, %xmm6, %xmm0
+	vpinsrd	$2, %esi, %xmm0, %xmm0
+	vpextrd	$1, %xmm4, %eax
+	cltd
+	idivl	1080(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %esi
+	vpinsrd	$3, %edi, %xmm0, %xmm0
+	vinserti128	$1, %xmm3, %ymm0, %ymm0
+	vmovd	%xmm4, %eax
+	cltd
+	idivl	1072(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %ebx
+	vpsrad	$31, %ymm0, %ymm3
+	vmovdqa	%ymm15, %ymm8
+	vpand	%ymm8, %ymm3, %ymm3
+	vpaddd	%ymm0, %ymm9, %ymm0
+	vpaddd	%ymm3, %ymm0, %ymm0
+	vpabsd	%xmm0, %xmm3
+	vextracti128	$1, %ymm0, %xmm0
+	vpabsd	%xmm0, %xmm0
+	vinserti128	$1, %xmm0, %ymm3, %ymm0
+	vpsubd	%ymm0, %ymm12, %ymm0
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%r11), %eax
+	vmovd	%eax, %xmm3
+	vpbroadcastd	%xmm3, %ymm6
+	vpaddd	%ymm13, %ymm6, %ymm3
+	vmovdqa	2032(%rsp), %xmm13      # 16-byte Reload
+	vpminsd	%xmm13, %xmm3, %xmm7
+	vextracti128	$1, %ymm3, %xmm3
+	vpminsd	%xmm13, %xmm3, %xmm3
+	vmovdqa	2096(%rsp), %xmm15      # 16-byte Reload
+	vpmaxsd	%xmm15, %xmm7, %xmm7
+	vpmaxsd	%xmm15, %xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm7, %ymm3
+	vpmovzxbd	%xmm2, %ymm7    # ymm7 = xmm2[0],zero,zero,zero,xmm2[1],zero,zero,zero,xmm2[2],zero,zero,zero,xmm2[3],zero,zero,zero,xmm2[4],zero,zero,zero,xmm2[5],zero,zero,zero,xmm2[6],zero,zero,zero,xmm2[7],zero,zero,zero
+	vpslld	$31, %ymm7, %ymm7
+	vblendvps	%ymm7, %ymm0, %ymm3, %ymm0
+	vmovd	1280(%rsp), %xmm3       # 4-byte Folded Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vpextrd	$2, %xmm4, %eax
+	cltd
+	idivl	1184(%rsp)              # 4-byte Folded Reload
+	vpinsrd	$1, %r10d, %xmm3, %xmm3
+	vpinsrd	$2, %r12d, %xmm3, %xmm3
+	vpinsrd	$3, %r9d, %xmm3, %xmm3
+	vpextrd	$3, %xmm4, %eax
+	vmovd	%ebx, %xmm4
+	vpinsrd	$1, %esi, %xmm4, %xmm4
+	vpinsrd	$2, %edx, %xmm4, %xmm4
+	cltd
+	idivl	1152(%rsp)              # 4-byte Folded Reload
+	vpinsrd	$3, %edx, %xmm4, %xmm4
+	vinserti128	$1, %xmm3, %ymm4, %ymm3
+	vpsrad	$31, %ymm3, %ymm4
+	vpand	%ymm8, %ymm4, %ymm4
+	vpaddd	%ymm3, %ymm9, %ymm3
+	vpaddd	%ymm4, %ymm3, %ymm3
+	vpabsd	%xmm3, %xmm4
+	vextracti128	$1, %ymm3, %xmm3
+	vpabsd	%xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm4, %ymm3
+	vpaddd	%ymm1, %ymm6, %ymm4
+	vpminsd	%xmm13, %xmm4, %xmm6
+	vextracti128	$1, %ymm4, %xmm4
+	vpminsd	%xmm13, %xmm4, %xmm4
+	vpmaxsd	%xmm15, %xmm6, %xmm6
+	vpmaxsd	%xmm15, %xmm4, %xmm4
+	vinserti128	$1, %xmm4, %ymm6, %ymm4
+	vpsubd	%ymm3, %ymm12, %ymm3
+	vpunpckhbw	%xmm2, %xmm2, %xmm2 # xmm2 = xmm2[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
+	vpmovzxwd	%xmm2, %ymm2    # ymm2 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
+	vpslld	$31, %ymm2, %ymm2
+	vblendvps	%ymm2, %ymm3, %ymm4, %ymm2
+	vmovdqa	2272(%rsp), %ymm1       # 32-byte Reload
+	vpaddd	%ymm2, %ymm1, %ymm2
+	vpaddd	%ymm0, %ymm1, %ymm0
+	vpextrq	$1, %xmm0, %r10
+	vmovq	%xmm0, %r9
+	movslq	%r9d, %rax
+	movq	%rax, 1016(%rsp)        # 8-byte Spill
+	sarq	$32, %r9
+	movslq	%r10d, %rax
+	movq	%rax, 952(%rsp)         # 8-byte Spill
+	sarq	$32, %r10
+	vextracti128	$1, %ymm0, %xmm0
+	vpextrq	$1, %xmm0, %r11
+	vmovq	%xmm0, %r8
+	movslq	%r8d, %rax
+	movq	%rax, 1008(%rsp)        # 8-byte Spill
+	sarq	$32, %r8
+	movslq	%r11d, %rax
+	movq	%rax, 960(%rsp)         # 8-byte Spill
+	sarq	$32, %r11
+	vpextrq	$1, %xmm2, %rdi
+	vmovq	%xmm2, %r14
+	movslq	%r14d, %rax
+	movq	%rax, 1064(%rsp)        # 8-byte Spill
+	sarq	$32, %r14
+	movslq	%edi, %r12
+	movq	%r12, 1056(%rsp)        # 8-byte Spill
+	sarq	$32, %rdi
+	vextracti128	$1, %ymm2, %xmm0
+	vmovq	%xmm0, %rbx
+	movq	1736(%rsp), %rcx        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %edx
+	vmovd	%edx, %xmm2
+	movslq	%ebx, %rdx
+	movq	%rdx, 1280(%rsp)        # 8-byte Spill
+	sarq	$32, %rbx
+	movq	%rbx, 1080(%rsp)        # 8-byte Spill
+	vpextrq	$1, %xmm0, %rsi
+	movslq	%esi, %rax
+	movq	%rax, 1312(%rsp)        # 8-byte Spill
+	sarq	$32, %rsi
+	movq	%rsi, 1072(%rsp)        # 8-byte Spill
+	vpinsrw	$1, (%rcx,%r14,2), %xmm2, %xmm0
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rdi,2), %xmm0, %xmm4
+	cmpb	$0, 872(%rsp)           # 1-byte Folded Reload
+	movzwl	(%rcx,%rdx,2), %edx
+	movl	%edx, 1152(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rbx,2), %edx
+	movl	%edx, 1184(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rax,2), %eax
+	movl	%eax, 1216(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rsi,2), %eax
+	movl	%eax, 1248(%rsp)        # 4-byte Spill
+	jne	.LBB148_135
+# BB#136:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	movq	952(%rsp), %r12         # 8-byte Reload
+	vpxor	%ymm2, %ymm2, %ymm2
+	vmovaps	.LCPI148_8(%rip), %ymm12 # ymm12 = <u,4,u,5,u,6,u,7>
+	vmovaps	.LCPI148_9(%rip), %ymm13 # ymm13 = <4,u,5,u,6,u,7,u>
+	movq	2240(%rsp), %rdx        # 8-byte Reload
+	movq	1016(%rsp), %rax        # 8-byte Reload
+	movq	1008(%rsp), %rsi        # 8-byte Reload
+	movq	960(%rsp), %rbx         # 8-byte Reload
+	jmp	.LBB148_137
+	.align	16, 0x90
+.LBB148_135:                            #   in Loop: Header=BB148_122 Depth=3
+	movq	1016(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %r12d
+	vmovd	%r12d, %xmm0
+	vpinsrw	$1, (%rcx,%r9,2), %xmm0, %xmm0
+	movq	952(%rsp), %r12         # 8-byte Reload
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r10,2), %xmm0, %xmm0
+	movq	1008(%rsp), %rsi        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rsi,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r8,2), %xmm0, %xmm0
+	movq	960(%rsp), %rbx         # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rbx,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r11,2), %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm2
+	vmovaps	.LCPI148_8(%rip), %ymm12 # ymm12 = <u,4,u,5,u,6,u,7>
+	vmovaps	.LCPI148_9(%rip), %ymm13 # ymm13 = <4,u,5,u,6,u,7,u>
+	movq	2240(%rsp), %rdx        # 8-byte Reload
+.LBB148_137:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	jne	.LBB148_138
+# BB#139:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vpxor	%ymm4, %ymm4, %ymm4
+	jmp	.LBB148_140
+	.align	16, 0x90
+.LBB148_138:                            #   in Loop: Header=BB148_122 Depth=3
+	vpinsrw	$4, 1152(%rsp), %xmm4, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$5, 1184(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$6, 1216(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$7, 1248(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm4
+.LBB148_140:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vpermps	%ymm4, %ymm12, %ymm0
+	vpermps	%ymm5, %ymm13, %ymm3
+	vblendps	$170, %ymm0, %ymm3, %ymm0 # ymm0 = ymm3[0],ymm0[1],ymm3[2],ymm0[3],ymm3[4],ymm0[5],ymm3[6],ymm0[7]
+	vmovaps	.LCPI148_10(%rip), %ymm1 # ymm1 = <u,0,u,1,u,2,u,3>
+	vpermps	%ymm4, %ymm1, %ymm3
+	vmovaps	.LCPI148_11(%rip), %ymm4 # ymm4 = <0,u,1,u,2,u,3,u>
+	vmovaps	%ymm4, %ymm6
+	vpermps	%ymm5, %ymm6, %ymm4
+	vblendps	$170, %ymm3, %ymm4, %ymm3 # ymm3 = ymm4[0],ymm3[1],ymm4[2],ymm3[3],ymm4[4],ymm3[5],ymm4[6],ymm3[7]
+	vpermps	%ymm2, %ymm12, %ymm4
+	vmovaps	1024(%rsp), %ymm7       # 32-byte Reload
+	vpermps	%ymm7, %ymm13, %ymm5
+	vblendps	$170, %ymm4, %ymm5, %ymm4 # ymm4 = ymm5[0],ymm4[1],ymm5[2],ymm4[3],ymm5[4],ymm4[5],ymm5[6],ymm4[7]
+	vpermps	%ymm2, %ymm1, %ymm2
+	vmovaps	%ymm1, %ymm10
+	vpermps	%ymm7, %ymm6, %ymm1
+	vmovaps	%ymm6, %ymm11
+	vblendps	$170, %ymm2, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm2[1],ymm1[2],ymm2[3],ymm1[4],ymm2[5],ymm1[6],ymm2[7]
+	vmovups	%ymm1, (%rdx)
+	vmovups	%ymm4, 32(%rdx)
+	vmovups	%ymm3, 64(%rdx)
+	vmovups	%ymm0, 96(%rdx)
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	vpinsrw	$1, (%rcx,%r9,2), %xmm0, %xmm0
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r10,2), %xmm0, %xmm0
+	vpinsrw	$4, (%rcx,%rsi,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r8,2), %xmm0, %xmm0
+	vpinsrw	$6, (%rcx,%rbx,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r11,2), %xmm0, %xmm5
+	movq	1064(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$0, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$1, (%rcx,%r14,2), %xmm0, %xmm0
+	movq	1056(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rdi,2), %xmm0, %xmm1
+	movq	1456(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	movq	2368(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	2336(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1112(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$3, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1088(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1104(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1096(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1120(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$7, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	2304(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm2
+	movq	1344(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2464(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1408(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$3, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2432(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1376(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2496(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1448(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$7, (%rcx,%rax,2), %xmm2, %xmm2
+	movl	892(%rsp), %edi         # 4-byte Reload
+	movl	1480(%rsp), %ebx        # 4-byte Reload
+	testl	%ebx, %edi
+	setne	%al
+	movq	936(%rsp), %rsi         # 8-byte Reload
+	orl	%esi, %ebx
+	testb	$1, %bl
+	sete	%bl
+	orb	%al, %bl
+	vpmovzxwd	%xmm0, %ymm4    # ymm4 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vpmovzxwd	%xmm2, %ymm0    # ymm0 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
+	vcvtdq2ps	%ymm0, %ymm2
+	vmovaps	%ymm2, %ymm6
+	jne	.LBB148_142
+# BB#141:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vxorps	%ymm6, %ymm6, %ymm6
+.LBB148_142:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vcvtdq2ps	%ymm4, %ymm4
+	vmovaps	%ymm4, %ymm7
+	jne	.LBB148_144
+# BB#143:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vxorps	%ymm7, %ymm7, %ymm7
+.LBB148_144:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vpmovzxwd	%xmm5, %ymm0    # ymm0 = xmm5[0],zero,xmm5[1],zero,xmm5[2],zero,xmm5[3],zero,xmm5[4],zero,xmm5[5],zero,xmm5[6],zero,xmm5[7],zero
+	vcvtdq2ps	%ymm0, %ymm5
+	vmovaps	%ymm5, %ymm8
+	cmpb	$0, 864(%rsp)           # 1-byte Folded Reload
+	jne	.LBB148_146
+# BB#145:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vxorps	%ymm8, %ymm8, %ymm8
+.LBB148_146:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	jne	.LBB148_147
+# BB#148:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vpxor	%ymm9, %ymm9, %ymm9
+	jmp	.LBB148_149
+	.align	16, 0x90
+.LBB148_147:                            #   in Loop: Header=BB148_122 Depth=3
+	vpinsrw	$4, 1152(%rsp), %xmm1, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$5, 1184(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$6, 1216(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$7, 1248(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm9
+.LBB148_149:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vpermps	%ymm9, %ymm12, %ymm0
+	vpermps	%ymm7, %ymm13, %ymm3
+	vblendps	$170, %ymm0, %ymm3, %ymm0 # ymm0 = ymm3[0],ymm0[1],ymm3[2],ymm0[3],ymm3[4],ymm0[5],ymm3[6],ymm0[7]
+	vpermps	%ymm9, %ymm10, %ymm3
+	vpermps	%ymm7, %ymm11, %ymm7
+	vblendps	$170, %ymm3, %ymm7, %ymm3 # ymm3 = ymm7[0],ymm3[1],ymm7[2],ymm3[3],ymm7[4],ymm3[5],ymm7[6],ymm3[7]
+	vpermps	%ymm8, %ymm12, %ymm7
+	vpermps	%ymm6, %ymm13, %ymm9
+	vblendps	$170, %ymm7, %ymm9, %ymm7 # ymm7 = ymm9[0],ymm7[1],ymm9[2],ymm7[3],ymm9[4],ymm7[5],ymm9[6],ymm7[7]
+	vpermps	%ymm8, %ymm10, %ymm8
+	vmovaps	%ymm10, %ymm9
+	vpermps	%ymm6, %ymm11, %ymm6
+	vmovaps	%ymm11, %ymm10
+	vblendps	$170, %ymm8, %ymm6, %ymm6 # ymm6 = ymm6[0],ymm8[1],ymm6[2],ymm8[3],ymm6[4],ymm8[5],ymm6[6],ymm8[7]
+	movq	1984(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm6, 32(%rax,%rdx)
+	vmovups	%ymm7, 64(%rax,%rdx)
+	vmovups	%ymm3, 96(%rax,%rdx)
+	vmovups	%ymm0, 128(%rax,%rdx)
+	movb	1504(%rsp), %al         # 1-byte Reload
+	movl	1472(%rsp), %esi        # 4-byte Reload
+	andb	%sil, %al
+	jne	.LBB148_151
+# BB#150:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vxorps	%ymm2, %ymm2, %ymm2
+.LBB148_151:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	testb	%al, %al
+	vxorps	%ymm3, %ymm3, %ymm3
+	jne	.LBB148_153
+# BB#152:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vxorps	%ymm4, %ymm4, %ymm4
+.LBB148_153:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	movq	1280(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm1, %xmm0
+	movq	1080(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm0, %xmm1
+	movq	1312(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	movq	1072(%rsp), %rsi        # 8-byte Reload
+	movzwl	(%rcx,%rsi,2), %esi
+	cmpb	$0, 880(%rsp)           # 1-byte Folded Reload
+	jne	.LBB148_155
+# BB#154:                               # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	vxorps	%ymm5, %ymm5, %ymm5
+.LBB148_155:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	je	.LBB148_157
+# BB#156:                               #   in Loop: Header=BB148_122 Depth=3
+	vpinsrw	$6, %eax, %xmm1, %xmm0
+	vpinsrw	$7, %esi, %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm3
+.LBB148_157:                            # %for deinterleaved$3.s0.v15.v1520
+                                        #   in Loop: Header=BB148_122 Depth=3
+	movq	2560(%rsp), %rsi        # 8-byte Reload
+	vpermps	%ymm4, %ymm13, %ymm0
+	vpermps	%ymm3, %ymm12, %ymm1
+	vblendps	$170, %ymm1, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm1[1],ymm0[2],ymm1[3],ymm0[4],ymm1[5],ymm0[6],ymm1[7]
+	vpermps	%ymm4, %ymm10, %ymm1
+	vpermps	%ymm3, %ymm9, %ymm3
+	vblendps	$170, %ymm3, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm3[1],ymm1[2],ymm3[3],ymm1[4],ymm3[5],ymm1[6],ymm3[7]
+	vpermps	%ymm5, %ymm12, %ymm3
+	vpermps	%ymm2, %ymm13, %ymm4
+	vblendps	$170, %ymm3, %ymm4, %ymm3 # ymm3 = ymm4[0],ymm3[1],ymm4[2],ymm3[3],ymm4[4],ymm3[5],ymm4[6],ymm3[7]
+	vpermps	%ymm5, %ymm9, %ymm4
+	vpermps	%ymm2, %ymm10, %ymm2
+	vblendps	$170, %ymm4, %ymm2, %ymm2 # ymm2 = ymm2[0],ymm4[1],ymm2[2],ymm4[3],ymm2[4],ymm4[5],ymm2[6],ymm4[7]
+	movq	1960(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm2, (%rax,%rdx)
+	movq	1976(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm3, 96(%rax,%rdx)
+	vmovups	%ymm1, 128(%rax,%rdx)
+	movq	1968(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm0, (%rax,%rdx)
+	addl	$32, %esi
+	subq	$-128, %rdx
+	movl	1536(%rsp), %eax        # 4-byte Reload
+	addl	$-1, %eax
+	jne	.LBB148_122
+.LBB148_158:                            # %end for deinterleaved$3.s0.v15.v1521
+                                        #   in Loop: Header=BB148_120 Depth=2
+	movq	936(%rsp), %rax         # 8-byte Reload
+	addl	$1, %eax
+	movq	%rax, 936(%rsp)         # 8-byte Spill
+	movb	728(%rsp), %dl          # 1-byte Reload
+	addb	$1, %dl
+	cmpl	2400(%rsp), %eax        # 4-byte Folded Reload
+	jne	.LBB148_120
+.LBB148_124:                            # %end for deinterleaved$3.s0.v1619
+                                        #   in Loop: Header=BB148_119 Depth=1
+	movq	440(%rsp), %rax         # 8-byte Reload
+	movq	448(%rsp), %rdx         # 8-byte Reload
+	leaq	(%rax,%rdx,2), %rax
+	movq	%rax, 1504(%rsp)        # 8-byte Spill
+	movq	912(%rsp), %rax         # 8-byte Reload
+	cmpl	%eax, 2400(%rsp)        # 4-byte Folded Reload
+	jge	.LBB148_159
+# BB#125:                               # %for deinterleaved$3.s0.v1623.preheader
+                                        #   in Loop: Header=BB148_119 Depth=1
+	movl	788(%rsp), %eax         # 4-byte Reload
+	movl	2400(%rsp), %esi        # 4-byte Reload
+	imull	%esi, %eax
+	movq	320(%rsp), %rdx         # 8-byte Reload
+	leal	(%rax,%rdx), %eax
+	movl	%eax, 720(%rsp)         # 4-byte Spill
+	movb	%sil, %bl
+	.align	16, 0x90
+.LBB148_126:                            # %for deinterleaved$3.s0.v1623
+                                        #   Parent Loop BB148_119 Depth=1
+                                        # =>  This Loop Header: Depth=2
+                                        #       Child Loop BB148_128 Depth 3
+                                        #       Child Loop BB148_195 Depth 3
+                                        #       Child Loop BB148_222 Depth 3
+	movb	%bl, 568(%rsp)          # 1-byte Spill
+	movzbl	%bl, %eax
+	andl	$3, %eax
+	imulq	712(%rsp), %rax         # 8-byte Folded Reload
+	movq	%rax, 728(%rsp)         # 8-byte Spill
+	cmpl	$0, 584(%rsp)           # 4-byte Folded Reload
+	jle	.LBB148_193
+# BB#127:                               # %for deinterleaved$3.s0.v15.v1525.preheader
+                                        #   in Loop: Header=BB148_126 Depth=2
+	movl	784(%rsp), %r10d        # 4-byte Reload
+	testl	%r10d, %r10d
+	setne	%r8b
+	sete	%r9b
+	movl	2400(%rsp), %ebx        # 4-byte Reload
+	movl	%ebx, %esi
+	imull	788(%rsp), %esi         # 4-byte Folded Reload
+	movq	728(%rsp), %rax         # 8-byte Reload
+	leaq	(%r13,%rax), %rdx
+	movl	%ebx, %edi
+	andl	$1, %edi
+	movl	%edi, 892(%rsp)         # 4-byte Spill
+	vmovd	%esi, %xmm1
+	vmovaps	672(%rsp), %ymm0        # 32-byte Reload
+	vinsertf128	$1, %xmm0, %ymm0, %ymm0
+	vmovaps	%ymm0, 2272(%rsp)       # 32-byte Spill
+	vpsubd	736(%rsp), %ymm1, %ymm1 # 32-byte Folded Reload
+	vpbroadcastd	%xmm1, %ymm0
+	vmovdqa	%ymm0, 2240(%rsp)       # 32-byte Spill
+	sete	%r11b
+	movb	%dil, %al
+	andb	%r9b, %al
+	movb	%al, 872(%rsp)          # 1-byte Spill
+	testl	%ebx, %r10d
+	setne	%r9b
+	movl	%ebx, %esi
+	movq	%rcx, %rbx
+	movq	2168(%rsp), %rcx        # 8-byte Reload
+	orl	%ecx, %esi
+	movq	%rbx, %rcx
+	testb	$1, %sil
+	sete	%al
+	orb	%r9b, %al
+	movb	%al, 864(%rsp)          # 1-byte Spill
+	andb	%r8b, %r11b
+	movb	%r11b, 880(%rsp)        # 1-byte Spill
+	xorl	%esi, %esi
+	movq	496(%rsp), %rax         # 8-byte Reload
+	.align	16, 0x90
+.LBB148_128:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_126 Depth=2
+                                        # =>    This Inner Loop Header: Depth=3
+	movq	%rsi, 2560(%rsp)        # 8-byte Spill
+	movl	%eax, 1480(%rsp)        # 4-byte Spill
+	movq	%rdx, 1536(%rsp)        # 8-byte Spill
+	testl	%edi, %edi
+	sete	1472(%rsp)              # 1-byte Folded Spill
+	setne	1376(%rsp)              # 1-byte Folded Spill
+	movq	1744(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rsi), %eax
+	vmovd	%eax, %xmm1
+	vpbroadcastd	%xmm1, %ymm1
+	vmovdqa	.LCPI148_7(%rip), %ymm12 # ymm12 = [0,2,4,6,8,10,12,14]
+	vpaddd	%ymm12, %ymm1, %ymm2
+	vextracti128	$1, %ymm2, %xmm4
+	vpextrd	$1, %xmm4, %eax
+	vmovdqa	1712(%rsp), %xmm0       # 16-byte Reload
+	vpextrd	$1, %xmm0, %ebx
+	movl	%ebx, 1216(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ebx
+	movl	%edx, %r9d
+	vmovd	%xmm4, %eax
+	vmovd	%xmm0, %r12d
+	movl	%r12d, 1184(%rsp)       # 4-byte Spill
+	cltd
+	idivl	%r12d
+	movl	%edx, %esi
+	vpextrd	$2, %xmm4, %eax
+	vpextrd	$2, %xmm0, %r10d
+	movl	%r10d, 1152(%rsp)       # 4-byte Spill
+	cltd
+	idivl	%r10d
+	movl	%edx, %r14d
+	vpextrd	$3, %xmm4, %eax
+	vpextrd	$3, %xmm0, %r8d
+	movl	%r8d, 1248(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%r8d
+	movl	%edx, 2496(%rsp)        # 4-byte Spill
+	vpextrd	$1, %xmm2, %eax
+	vmovdqa	1920(%rsp), %ymm0       # 32-byte Reload
+	vpextrd	$1, %xmm0, %edi
+	movl	%edi, 1024(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	movl	%edx, %edi
+	vmovd	%esi, %xmm4
+	vmovd	%xmm2, %eax
+	vmovd	%xmm0, %esi
+	movl	%esi, 1016(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r11d
+	vpinsrd	$1, %r9d, %xmm4, %xmm4
+	vpextrd	$2, %xmm2, %eax
+	vpextrd	$2, %xmm0, %esi
+	movl	%esi, 1008(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r9d
+	vpinsrd	$2, %r14d, %xmm4, %xmm4
+	vpextrd	$3, %xmm2, %eax
+	vpextrd	$3, %xmm0, %esi
+	movl	%esi, 960(%rsp)         # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r14d
+	vmovdqa	.LCPI148_6(%rip), %ymm9 # ymm9 = [16,18,20,22,24,26,28,30]
+	vpaddd	%ymm9, %ymm1, %ymm2
+	vextracti128	$1, %ymm2, %xmm6
+	vpextrd	$1, %xmm6, %eax
+	cltd
+	idivl	%ebx
+	movl	%edx, %esi
+	vpinsrd	$3, 2496(%rsp), %xmm4, %xmm15 # 4-byte Folded Reload
+	vmovd	%r11d, %xmm4
+	vmovd	%xmm6, %eax
+	cltd
+	idivl	%r12d
+	movl	%edx, %ebx
+	vpinsrd	$1, %edi, %xmm4, %xmm4
+	vpinsrd	$2, %r9d, %xmm4, %xmm4
+	vpextrd	$2, %xmm6, %eax
+	cltd
+	idivl	%r10d
+	movl	%edx, %edi
+	vpinsrd	$3, %r14d, %xmm4, %xmm5
+	vmovd	%ebx, %xmm4
+	vpextrd	$3, %xmm6, %eax
+	cltd
+	idivl	%r8d
+	movl	%edx, %ebx
+	vpinsrd	$1, %esi, %xmm4, %xmm4
+	vpextrd	$1, %xmm2, %eax
+	vpextrd	$1, %xmm0, %esi
+	movl	%esi, 1064(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %esi
+	vpinsrd	$2, %edi, %xmm4, %xmm4
+	vmovd	%xmm2, %eax
+	vmovd	%xmm0, %edi
+	movl	%edi, 1056(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	movl	%edx, %edi
+	vpinsrd	$3, %ebx, %xmm4, %xmm6
+	vpextrd	$2, %xmm2, %eax
+	vpextrd	$2, %xmm0, %ebx
+	movl	%ebx, 1120(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ebx
+	movl	%edx, %ebx
+	vmovd	%edi, %xmm4
+	vpextrd	$3, %xmm2, %eax
+	vpextrd	$3, %xmm0, %edi
+	movl	%edi, 1112(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	vpinsrd	$1, %esi, %xmm4, %xmm2
+	movq	2560(%rsp), %rsi        # 8-byte Reload
+	vpinsrd	$2, %ebx, %xmm2, %xmm7
+	vmovd	%esi, %xmm2
+	vpbroadcastd	%xmm2, %ymm2
+	vmovdqa	1856(%rsp), %ymm0       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm0, %ymm4
+	vmovdqa	.LCPI148_3(%rip), %ymm0 # ymm0 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
+	vmovdqa	%ymm0, %ymm10
+	vpshufb	%ymm10, %ymm4, %ymm4
+	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
+	vmovdqa	1824(%rsp), %ymm0       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm0, %ymm8
+	vpshufb	%ymm10, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vmovdqa	.LCPI148_4(%rip), %xmm0 # xmm0 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
+	vmovdqa	%xmm0, %xmm1
+	vpshufb	%xmm1, %xmm8, %xmm0
+	vpshufb	%xmm1, %xmm4, %xmm4
+	vpunpcklqdq	%xmm0, %xmm4, %xmm0 # xmm0 = xmm4[0],xmm0[0]
+	vpxor	.LCPI148_5(%rip), %xmm0, %xmm0
+	vmovdqa	1664(%rsp), %ymm3       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm3, %ymm4
+	vpshufb	%ymm10, %ymm4, %ymm4
+	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
+	vmovdqa	1632(%rsp), %ymm3       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm3, %ymm8
+	vpshufb	%ymm10, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vpshufb	%xmm1, %xmm8, %xmm3
+	vpshufb	%xmm1, %xmm4, %xmm4
+	vpunpcklqdq	%xmm3, %xmm4, %xmm3 # xmm3 = xmm4[0],xmm3[0]
+	vpor	%xmm0, %xmm3, %xmm13
+	vpinsrd	$3, %edx, %xmm7, %xmm0
+	vinserti128	$1, %xmm6, %ymm0, %ymm0
+	vpsrad	$31, %ymm0, %ymm3
+	vmovdqa	2272(%rsp), %ymm11      # 32-byte Reload
+	vpand	%ymm3, %ymm11, %ymm3
+	vmovdqa	2112(%rsp), %ymm8       # 32-byte Reload
+	vpaddd	%ymm0, %ymm8, %ymm0
+	vpaddd	%ymm3, %ymm0, %ymm0
+	vpabsd	%xmm0, %xmm3
+	vextracti128	$1, %ymm0, %xmm0
+	vpabsd	%xmm0, %xmm0
+	vinserti128	$1, %xmm0, %ymm3, %ymm0
+	vmovdqa	2048(%rsp), %ymm10      # 32-byte Reload
+	vpsubd	%ymm0, %ymm10, %ymm0
+	movq	1752(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rsi), %r9d
+	movl	%r9d, 1456(%rsp)        # 4-byte Spill
+	vmovd	%r9d, %xmm3
+	vpbroadcastd	%xmm3, %ymm14
+	vpaddd	%ymm9, %ymm14, %ymm3
+	vmovdqa	2032(%rsp), %xmm4       # 16-byte Reload
+	vpminsd	%xmm4, %xmm3, %xmm7
+	vextracti128	$1, %ymm3, %xmm3
+	vpminsd	%xmm4, %xmm3, %xmm3
+	vmovdqa	2096(%rsp), %xmm6       # 16-byte Reload
+	vpmaxsd	%xmm6, %xmm7, %xmm7
+	vpmaxsd	%xmm6, %xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm7, %ymm3
+	vpunpckhbw	%xmm13, %xmm13, %xmm7 # xmm7 = xmm13[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
+	vpmovzxwd	%xmm7, %ymm7    # ymm7 = xmm7[0],zero,xmm7[1],zero,xmm7[2],zero,xmm7[3],zero,xmm7[4],zero,xmm7[5],zero,xmm7[6],zero,xmm7[7],zero
+	vpslld	$31, %ymm7, %ymm7
+	vblendvps	%ymm7, %ymm0, %ymm3, %ymm0
+	vmovdqa	2240(%rsp), %ymm9       # 32-byte Reload
+	vpaddd	%ymm0, %ymm9, %ymm7
+	vmovq	%xmm7, %rsi
+	movslq	%esi, %rax
+	movq	%rsi, %r8
+	movq	%rax, 1408(%rsp)        # 8-byte Spill
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	vinserti128	$1, %xmm15, %ymm5, %ymm1
+	vpsrad	$31, %ymm1, %ymm3
+	vpand	%ymm3, %ymm11, %ymm3
+	vpaddd	%ymm1, %ymm8, %ymm1
+	vpaddd	%ymm3, %ymm1, %ymm1
+	vpabsd	%xmm1, %xmm3
+	vextracti128	$1, %ymm1, %xmm1
+	vpabsd	%xmm1, %xmm1
+	vinserti128	$1, %xmm1, %ymm3, %ymm1
+	vpaddd	%ymm12, %ymm14, %ymm3
+	vmovdqa	%ymm12, %ymm15
+	vpminsd	%xmm4, %xmm3, %xmm5
+	vextracti128	$1, %ymm3, %xmm3
+	vpminsd	%xmm4, %xmm3, %xmm3
+	vmovdqa	%xmm4, %xmm14
+	vpmaxsd	%xmm6, %xmm5, %xmm5
+	vpmaxsd	%xmm6, %xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm5, %ymm3
+	vpsubd	%ymm1, %ymm10, %ymm1
+	vpmovzxbd	%xmm13, %ymm4   # ymm4 = xmm13[0],zero,zero,zero,xmm13[1],zero,zero,zero,xmm13[2],zero,zero,zero,xmm13[3],zero,zero,zero,xmm13[4],zero,zero,zero,xmm13[5],zero,zero,zero,xmm13[6],zero,zero,zero,xmm13[7],zero,zero,zero
+	vpslld	$31, %ymm4, %ymm4
+	vblendvps	%ymm4, %ymm1, %ymm3, %ymm1
+	vpaddd	%ymm1, %ymm9, %ymm1
+	vmovq	%xmm1, %rax
+	movslq	%eax, %rdx
+	movq	%rdx, 2304(%rsp)        # 8-byte Spill
+	sarq	$32, %rax
+	vpextrq	$1, %xmm1, %rsi
+	movslq	%esi, %rdi
+	movq	%rdi, 2464(%rsp)        # 8-byte Spill
+	sarq	$32, %rsi
+	vextracti128	$1, %ymm1, %xmm1
+	vmovq	%xmm1, %rdi
+	movslq	%edi, %rdx
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	sarq	$32, %rdi
+	vpextrq	$1, %xmm1, %rbx
+	movslq	%ebx, %rdx
+	movq	%rdx, 2496(%rsp)        # 8-byte Spill
+	sarq	$32, %rbx
+	sarq	$32, %r8
+	movq	%r8, 2368(%rsp)         # 8-byte Spill
+	vpextrq	$1, %xmm7, %r12
+	movslq	%r12d, %rdx
+	movq	%rdx, 2336(%rsp)        # 8-byte Spill
+	sarq	$32, %r12
+	movq	%r12, 1096(%rsp)        # 8-byte Spill
+	vextracti128	$1, %ymm7, %xmm1
+	vmovq	%xmm1, %r10
+	movslq	%r10d, %r8
+	movq	%r8, 1072(%rsp)         # 8-byte Spill
+	sarq	$32, %r10
+	movq	%r10, 1088(%rsp)        # 8-byte Spill
+	vpextrq	$1, %xmm1, %r14
+	movslq	%r14d, %r11
+	movq	%r11, 1080(%rsp)        # 8-byte Spill
+	sarq	$32, %r14
+	movq	%r14, 1104(%rsp)        # 8-byte Spill
+	movl	%r9d, %edx
+	andl	$1, %edx
+	movl	%edx, 1448(%rsp)        # 4-byte Spill
+	sete	%r9b
+	andb	1376(%rsp), %r9b        # 1-byte Folded Reload
+	movq	2368(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rdx,2), %xmm0, %xmm0
+	movq	2336(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rdx,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$4, (%rcx,%r8,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r10,2), %xmm0, %xmm0
+	vpinsrw	$6, (%rcx,%r11,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r14,2), %xmm0, %xmm4
+	jne	.LBB148_129
+# BB#165:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vpxor	%ymm1, %ymm1, %ymm1
+	movq	2464(%rsp), %rcx        # 8-byte Reload
+	movq	2496(%rsp), %r8         # 8-byte Reload
+	movq	2432(%rsp), %rdx        # 8-byte Reload
+	jmp	.LBB148_166
+	.align	16, 0x90
+.LBB148_129:                            #   in Loop: Header=BB148_128 Depth=3
+	movq	2304(%rsp), %rdx        # 8-byte Reload
+	movzwl	(%rcx,%rdx,2), %edx
+	vmovd	%edx, %xmm0
+	vpinsrw	$1, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	2464(%rsp), %r8         # 8-byte Reload
+	vpinsrw	$2, (%rcx,%r8,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rsi,2), %xmm0, %xmm0
+	movq	2432(%rsp), %r10        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%r10,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%rdi,2), %xmm0, %xmm0
+	movq	2496(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rdx,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%rbx,2), %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm1
+	movq	%r8, %rcx
+	movq	%rdx, %r8
+	movq	%r10, %rdx
+.LBB148_166:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	testb	%r9b, %r9b
+	jne	.LBB148_167
+# BB#168:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	movq	%rcx, 2464(%rsp)        # 8-byte Spill
+	movq	%r8, 2496(%rsp)         # 8-byte Spill
+	movq	%rax, 1280(%rsp)        # 8-byte Spill
+	movq	%rdi, 1312(%rsp)        # 8-byte Spill
+	movq	%rsi, 1344(%rsp)        # 8-byte Spill
+	movq	%rbx, 1376(%rsp)        # 8-byte Spill
+	vpxor	%ymm6, %ymm6, %ymm6
+	jmp	.LBB148_169
+	.align	16, 0x90
+.LBB148_167:                            #   in Loop: Header=BB148_128 Depth=3
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	movq	%rcx, 2464(%rsp)        # 8-byte Spill
+	movq	%r8, 2496(%rsp)         # 8-byte Spill
+	movq	%rax, 1280(%rsp)        # 8-byte Spill
+	movq	%rdi, 1312(%rsp)        # 8-byte Spill
+	movq	%rsi, 1344(%rsp)        # 8-byte Spill
+	movq	%rbx, 1376(%rsp)        # 8-byte Spill
+	vpmovzxwd	%xmm4, %ymm0    # ymm0 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
+	vcvtdq2ps	%ymm0, %ymm6
+.LBB148_169:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	movq	1912(%rsp), %rax        # 8-byte Reload
+	movq	2560(%rsp), %r11        # 8-byte Reload
+	leal	(%rax,%r11), %eax
+	vmovd	%eax, %xmm0
+	vpbroadcastd	%xmm0, %ymm4
+	vpaddd	%ymm15, %ymm4, %ymm7
+	vextracti128	$1, %ymm7, %xmm0
+	vpextrd	$1, %xmm0, %eax
+	cltd
+	movl	1216(%rsp), %r10d       # 4-byte Reload
+	idivl	%r10d
+	movl	%edx, 944(%rsp)         # 4-byte Spill
+	vmovd	%xmm0, %eax
+	cltd
+	movl	1184(%rsp), %r9d        # 4-byte Reload
+	idivl	%r9d
+	movl	%edx, 936(%rsp)         # 4-byte Spill
+	vpextrd	$2, %xmm0, %eax
+	cltd
+	movl	1152(%rsp), %r12d       # 4-byte Reload
+	idivl	%r12d
+	movl	%edx, 952(%rsp)         # 4-byte Spill
+	vpextrd	$3, %xmm0, %eax
+	cltd
+	movl	1248(%rsp), %ecx        # 4-byte Reload
+	idivl	%ecx
+	movl	%edx, %r14d
+	vpextrd	$1, %xmm7, %eax
+	cltd
+	idivl	1024(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %r8d
+	vmovd	%xmm7, %eax
+	cltd
+	idivl	1016(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %ebx
+	vpextrd	$2, %xmm7, %eax
+	cltd
+	idivl	1008(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %esi
+	vpextrd	$3, %xmm7, %eax
+	cltd
+	idivl	960(%rsp)               # 4-byte Folded Reload
+	movl	%edx, %edi
+	vmovdqa	.LCPI148_6(%rip), %ymm13 # ymm13 = [16,18,20,22,24,26,28,30]
+	vpaddd	%ymm13, %ymm4, %ymm4
+	vextracti128	$1, %ymm4, %xmm0
+	vpextrd	$1, %xmm0, %eax
+	cltd
+	idivl	%r10d
+	movl	%edx, %r10d
+	vmovd	%xmm0, %eax
+	cltd
+	idivl	%r9d
+	movl	%edx, 1216(%rsp)        # 4-byte Spill
+	vpextrd	$2, %xmm0, %eax
+	cltd
+	idivl	%r12d
+	movl	%edx, %r12d
+	vmovd	936(%rsp), %xmm3        # 4-byte Folded Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vpinsrd	$1, 944(%rsp), %xmm3, %xmm3 # 4-byte Folded Reload
+	vmovdqa	1792(%rsp), %ymm5       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm5, %ymm7
+	vmovdqa	.LCPI148_3(%rip), %ymm11 # ymm11 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
+	vpshufb	%ymm11, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vmovdqa	1760(%rsp), %ymm5       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm5, %ymm8
+	vpshufb	%ymm11, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vmovdqa	.LCPI148_4(%rip), %xmm12 # xmm12 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
+	vpshufb	%xmm12, %xmm8, %xmm5
+	vpshufb	%xmm12, %xmm7, %xmm7
+	vpunpcklqdq	%xmm5, %xmm7, %xmm5 # xmm5 = xmm7[0],xmm5[0]
+	vpxor	.LCPI148_5(%rip), %xmm5, %xmm5
+	vmovdqa	1600(%rsp), %ymm7       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm7, %ymm7
+	vpshufb	%ymm11, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vmovdqa	1568(%rsp), %ymm8       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm8, %ymm2
+	vpshufb	%ymm11, %ymm2, %ymm2
+	vpermq	$232, %ymm2, %ymm2      # ymm2 = ymm2[0,2,2,3]
+	vpshufb	%xmm12, %xmm2, %xmm2
+	vpshufb	%xmm12, %xmm7, %xmm7
+	vpunpcklqdq	%xmm2, %xmm7, %xmm2 # xmm2 = xmm7[0],xmm2[0]
+	vpor	%xmm5, %xmm2, %xmm2
+	vpinsrd	$2, 952(%rsp), %xmm3, %xmm3 # 4-byte Folded Reload
+	vpinsrd	$3, %r14d, %xmm3, %xmm3
+	vmovd	%ebx, %xmm5
+	vpextrd	$3, %xmm0, %eax
+	cltd
+	idivl	%ecx
+	movl	%edx, %r9d
+	vpinsrd	$1, %r8d, %xmm5, %xmm0
+	vpinsrd	$2, %esi, %xmm0, %xmm0
+	vpextrd	$1, %xmm4, %eax
+	cltd
+	idivl	1064(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %esi
+	vpinsrd	$3, %edi, %xmm0, %xmm0
+	vinserti128	$1, %xmm3, %ymm0, %ymm0
+	vmovd	%xmm4, %eax
+	cltd
+	idivl	1056(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %ebx
+	vpsrad	$31, %ymm0, %ymm3
+	vmovdqa	2272(%rsp), %ymm8       # 32-byte Reload
+	vpand	%ymm8, %ymm3, %ymm3
+	vmovdqa	2112(%rsp), %ymm9       # 32-byte Reload
+	vpaddd	%ymm0, %ymm9, %ymm0
+	vpaddd	%ymm3, %ymm0, %ymm0
+	vpabsd	%xmm0, %xmm3
+	vextracti128	$1, %ymm0, %xmm0
+	vpabsd	%xmm0, %xmm0
+	vinserti128	$1, %xmm0, %ymm3, %ymm0
+	vpsubd	%ymm0, %ymm10, %ymm0
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%r11), %eax
+	vmovd	%eax, %xmm3
+	vpbroadcastd	%xmm3, %ymm7
+	vpaddd	%ymm15, %ymm7, %ymm3
+	vpminsd	%xmm14, %xmm3, %xmm5
+	vextracti128	$1, %ymm3, %xmm3
+	vpminsd	%xmm14, %xmm3, %xmm3
+	vmovdqa	2096(%rsp), %xmm15      # 16-byte Reload
+	vpmaxsd	%xmm15, %xmm5, %xmm5
+	vpmaxsd	%xmm15, %xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm5, %ymm3
+	vpmovzxbd	%xmm2, %ymm5    # ymm5 = xmm2[0],zero,zero,zero,xmm2[1],zero,zero,zero,xmm2[2],zero,zero,zero,xmm2[3],zero,zero,zero,xmm2[4],zero,zero,zero,xmm2[5],zero,zero,zero,xmm2[6],zero,zero,zero,xmm2[7],zero,zero,zero
+	vpslld	$31, %ymm5, %ymm5
+	vblendvps	%ymm5, %ymm0, %ymm3, %ymm0
+	vmovd	1216(%rsp), %xmm3       # 4-byte Folded Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vpextrd	$2, %xmm4, %eax
+	cltd
+	idivl	1120(%rsp)              # 4-byte Folded Reload
+	vpinsrd	$1, %r10d, %xmm3, %xmm3
+	vpinsrd	$2, %r12d, %xmm3, %xmm3
+	vpinsrd	$3, %r9d, %xmm3, %xmm3
+	vpextrd	$3, %xmm4, %eax
+	vmovd	%ebx, %xmm4
+	vpinsrd	$1, %esi, %xmm4, %xmm4
+	vpinsrd	$2, %edx, %xmm4, %xmm4
+	cltd
+	idivl	1112(%rsp)              # 4-byte Folded Reload
+	vpinsrd	$3, %edx, %xmm4, %xmm4
+	vinserti128	$1, %xmm3, %ymm4, %ymm3
+	vpsrad	$31, %ymm3, %ymm4
+	vpand	%ymm8, %ymm4, %ymm4
+	vpaddd	%ymm3, %ymm9, %ymm3
+	vpaddd	%ymm4, %ymm3, %ymm3
+	vpabsd	%xmm3, %xmm4
+	vextracti128	$1, %ymm3, %xmm3
+	vpabsd	%xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm4, %ymm3
+	vpaddd	%ymm13, %ymm7, %ymm4
+	vpminsd	%xmm14, %xmm4, %xmm5
+	vextracti128	$1, %ymm4, %xmm4
+	vpminsd	%xmm14, %xmm4, %xmm4
+	vpmaxsd	%xmm15, %xmm5, %xmm5
+	vpmaxsd	%xmm15, %xmm4, %xmm4
+	vinserti128	$1, %xmm4, %ymm5, %ymm4
+	vpsubd	%ymm3, %ymm10, %ymm3
+	vpunpckhbw	%xmm2, %xmm2, %xmm2 # xmm2 = xmm2[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
+	vpmovzxwd	%xmm2, %ymm2    # ymm2 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
+	vpslld	$31, %ymm2, %ymm2
+	vblendvps	%ymm2, %ymm3, %ymm4, %ymm2
+	vmovdqa	2240(%rsp), %ymm3       # 32-byte Reload
+	vpaddd	%ymm2, %ymm3, %ymm2
+	vpaddd	%ymm0, %ymm3, %ymm0
+	vpextrq	$1, %xmm0, %r10
+	vmovq	%xmm0, %r9
+	movslq	%r9d, %rax
+	movq	%rax, 1008(%rsp)        # 8-byte Spill
+	sarq	$32, %r9
+	movslq	%r10d, %rax
+	movq	%rax, 944(%rsp)         # 8-byte Spill
+	sarq	$32, %r10
+	vextracti128	$1, %ymm0, %xmm0
+	vpextrq	$1, %xmm0, %r11
+	vmovq	%xmm0, %r8
+	movslq	%r8d, %rax
+	movq	%rax, 960(%rsp)         # 8-byte Spill
+	sarq	$32, %r8
+	movslq	%r11d, %rax
+	movq	%rax, 952(%rsp)         # 8-byte Spill
+	sarq	$32, %r11
+	vpextrq	$1, %xmm2, %rdi
+	vmovq	%xmm2, %r14
+	movslq	%r14d, %rax
+	movq	%rax, 1024(%rsp)        # 8-byte Spill
+	sarq	$32, %r14
+	movslq	%edi, %r12
+	movq	%r12, 1016(%rsp)        # 8-byte Spill
+	sarq	$32, %rdi
+	vextracti128	$1, %ymm2, %xmm0
+	vmovq	%xmm0, %rbx
+	movq	1736(%rsp), %rcx        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %edx
+	vmovd	%edx, %xmm2
+	movslq	%ebx, %rdx
+	movq	%rdx, 1216(%rsp)        # 8-byte Spill
+	sarq	$32, %rbx
+	movq	%rbx, 1064(%rsp)        # 8-byte Spill
+	vpextrq	$1, %xmm0, %rsi
+	movslq	%esi, %rax
+	movq	%rax, 1248(%rsp)        # 8-byte Spill
+	sarq	$32, %rsi
+	movq	%rsi, 1056(%rsp)        # 8-byte Spill
+	vpinsrw	$1, (%rcx,%r14,2), %xmm2, %xmm0
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rdi,2), %xmm0, %xmm4
+	cmpb	$0, 872(%rsp)           # 1-byte Folded Reload
+	movzwl	(%rcx,%rdx,2), %edx
+	movl	%edx, 1112(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rbx,2), %edx
+	movl	%edx, 1120(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rax,2), %eax
+	movl	%eax, 1152(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rsi,2), %eax
+	movl	%eax, 1184(%rsp)        # 4-byte Spill
+	jne	.LBB148_170
+# BB#171:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	movq	944(%rsp), %r12         # 8-byte Reload
+	vpxor	%ymm2, %ymm2, %ymm2
+	vmovaps	.LCPI148_8(%rip), %ymm12 # ymm12 = <u,4,u,5,u,6,u,7>
+	vmovaps	.LCPI148_9(%rip), %ymm13 # ymm13 = <4,u,5,u,6,u,7,u>
+	movq	1536(%rsp), %rdx        # 8-byte Reload
+	movq	1008(%rsp), %rax        # 8-byte Reload
+	movq	960(%rsp), %rsi         # 8-byte Reload
+	movq	952(%rsp), %rbx         # 8-byte Reload
+	jmp	.LBB148_172
+	.align	16, 0x90
+.LBB148_170:                            #   in Loop: Header=BB148_128 Depth=3
+	movq	1008(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %r12d
+	vmovd	%r12d, %xmm0
+	vpinsrw	$1, (%rcx,%r9,2), %xmm0, %xmm0
+	movq	944(%rsp), %r12         # 8-byte Reload
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r10,2), %xmm0, %xmm0
+	movq	960(%rsp), %rsi         # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rsi,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r8,2), %xmm0, %xmm0
+	movq	952(%rsp), %rbx         # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rbx,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r11,2), %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm2
+	vmovaps	.LCPI148_8(%rip), %ymm12 # ymm12 = <u,4,u,5,u,6,u,7>
+	vmovaps	.LCPI148_9(%rip), %ymm13 # ymm13 = <4,u,5,u,6,u,7,u>
+	movq	1536(%rsp), %rdx        # 8-byte Reload
+.LBB148_172:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	jne	.LBB148_173
+# BB#174:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vpxor	%ymm4, %ymm4, %ymm4
+	jmp	.LBB148_175
+	.align	16, 0x90
+.LBB148_173:                            #   in Loop: Header=BB148_128 Depth=3
+	vpinsrw	$4, 1112(%rsp), %xmm4, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$5, 1120(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$6, 1152(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$7, 1184(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm4
+.LBB148_175:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vpermps	%ymm4, %ymm12, %ymm0
+	vpermps	%ymm6, %ymm13, %ymm3
+	vblendps	$170, %ymm0, %ymm3, %ymm0 # ymm0 = ymm3[0],ymm0[1],ymm3[2],ymm0[3],ymm3[4],ymm0[5],ymm3[6],ymm0[7]
+	vmovaps	.LCPI148_10(%rip), %ymm3 # ymm3 = <u,0,u,1,u,2,u,3>
+	vmovaps	%ymm3, %ymm7
+	vpermps	%ymm4, %ymm7, %ymm3
+	vmovaps	.LCPI148_11(%rip), %ymm4 # ymm4 = <0,u,1,u,2,u,3,u>
+	vmovaps	%ymm4, %ymm8
+	vpermps	%ymm6, %ymm8, %ymm4
+	vblendps	$170, %ymm3, %ymm4, %ymm3 # ymm3 = ymm4[0],ymm3[1],ymm4[2],ymm3[3],ymm4[4],ymm3[5],ymm4[6],ymm3[7]
+	vpermps	%ymm2, %ymm12, %ymm4
+	vpermps	%ymm1, %ymm13, %ymm5
+	vblendps	$170, %ymm4, %ymm5, %ymm4 # ymm4 = ymm5[0],ymm4[1],ymm5[2],ymm4[3],ymm5[4],ymm4[5],ymm5[6],ymm4[7]
+	vpermps	%ymm2, %ymm7, %ymm2
+	vmovaps	%ymm7, %ymm5
+	vpermps	%ymm1, %ymm8, %ymm1
+	vmovaps	%ymm8, %ymm14
+	vblendps	$170, %ymm2, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm2[1],ymm1[2],ymm2[3],ymm1[4],ymm2[5],ymm1[6],ymm2[7]
+	vmovups	%ymm1, (%rdx)
+	vmovups	%ymm4, 32(%rdx)
+	vmovups	%ymm3, 64(%rdx)
+	vmovups	%ymm0, 96(%rdx)
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	vpinsrw	$1, (%rcx,%r9,2), %xmm0, %xmm0
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r10,2), %xmm0, %xmm0
+	vpinsrw	$4, (%rcx,%rsi,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r8,2), %xmm0, %xmm0
+	vpinsrw	$6, (%rcx,%rbx,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r11,2), %xmm0, %xmm6
+	movq	1024(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$0, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$1, (%rcx,%r14,2), %xmm0, %xmm0
+	movq	1016(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rdi,2), %xmm0, %xmm1
+	movq	1408(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	movq	2368(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	2336(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1096(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$3, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1072(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1088(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1080(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1104(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$7, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	2304(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm2
+	movq	1280(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2464(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1344(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$3, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2432(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1312(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2496(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1376(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$7, (%rcx,%rax,2), %xmm2, %xmm2
+	movl	892(%rsp), %edi         # 4-byte Reload
+	movl	1456(%rsp), %esi        # 4-byte Reload
+	testl	%esi, %edi
+	setne	%al
+	orl	2400(%rsp), %esi        # 4-byte Folded Reload
+	testb	$1, %sil
+	sete	%bl
+	orb	%al, %bl
+	vpmovzxwd	%xmm0, %ymm4    # ymm4 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vpmovzxwd	%xmm2, %ymm0    # ymm0 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
+	vcvtdq2ps	%ymm0, %ymm2
+	vmovaps	%ymm2, %ymm7
+	jne	.LBB148_177
+# BB#176:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vxorps	%ymm7, %ymm7, %ymm7
+.LBB148_177:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vcvtdq2ps	%ymm4, %ymm4
+	vmovaps	%ymm4, %ymm8
+	jne	.LBB148_179
+# BB#178:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vxorps	%ymm8, %ymm8, %ymm8
+.LBB148_179:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vpmovzxwd	%xmm6, %ymm0    # ymm0 = xmm6[0],zero,xmm6[1],zero,xmm6[2],zero,xmm6[3],zero,xmm6[4],zero,xmm6[5],zero,xmm6[6],zero,xmm6[7],zero
+	vcvtdq2ps	%ymm0, %ymm6
+	vmovaps	%ymm6, %ymm9
+	cmpb	$0, 864(%rsp)           # 1-byte Folded Reload
+	jne	.LBB148_181
+# BB#180:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vxorps	%ymm9, %ymm9, %ymm9
+.LBB148_181:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	jne	.LBB148_182
+# BB#183:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vpxor	%ymm10, %ymm10, %ymm10
+	jmp	.LBB148_184
+	.align	16, 0x90
+.LBB148_182:                            #   in Loop: Header=BB148_128 Depth=3
+	vpinsrw	$4, 1112(%rsp), %xmm1, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$5, 1120(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$6, 1152(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$7, 1184(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm10
+.LBB148_184:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vpermps	%ymm10, %ymm12, %ymm0
+	vpermps	%ymm8, %ymm13, %ymm3
+	vblendps	$170, %ymm0, %ymm3, %ymm0 # ymm0 = ymm3[0],ymm0[1],ymm3[2],ymm0[3],ymm3[4],ymm0[5],ymm3[6],ymm0[7]
+	vmovaps	%ymm5, %ymm11
+	vpermps	%ymm10, %ymm11, %ymm3
+	vpermps	%ymm8, %ymm14, %ymm5
+	vblendps	$170, %ymm3, %ymm5, %ymm3 # ymm3 = ymm5[0],ymm3[1],ymm5[2],ymm3[3],ymm5[4],ymm3[5],ymm5[6],ymm3[7]
+	vpermps	%ymm9, %ymm12, %ymm5
+	vpermps	%ymm7, %ymm13, %ymm8
+	vblendps	$170, %ymm5, %ymm8, %ymm5 # ymm5 = ymm8[0],ymm5[1],ymm8[2],ymm5[3],ymm8[4],ymm5[5],ymm8[6],ymm5[7]
+	vpermps	%ymm9, %ymm11, %ymm8
+	vmovaps	%ymm11, %ymm9
+	vpermps	%ymm7, %ymm14, %ymm7
+	vmovaps	%ymm14, %ymm10
+	vblendps	$170, %ymm8, %ymm7, %ymm7 # ymm7 = ymm7[0],ymm8[1],ymm7[2],ymm8[3],ymm7[4],ymm8[5],ymm7[6],ymm8[7]
+	movq	1984(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm7, 32(%rax,%rdx)
+	vmovups	%ymm5, 64(%rax,%rdx)
+	vmovups	%ymm3, 96(%rax,%rdx)
+	vmovups	%ymm0, 128(%rax,%rdx)
+	movb	1472(%rsp), %al         # 1-byte Reload
+	movl	1448(%rsp), %esi        # 4-byte Reload
+	andb	%sil, %al
+	jne	.LBB148_186
+# BB#185:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vxorps	%ymm2, %ymm2, %ymm2
+.LBB148_186:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	testb	%al, %al
+	vxorps	%ymm3, %ymm3, %ymm3
+	jne	.LBB148_188
+# BB#187:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vxorps	%ymm4, %ymm4, %ymm4
+.LBB148_188:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	movq	1216(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm1, %xmm0
+	movq	1064(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm0, %xmm1
+	movq	1248(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	movq	1056(%rsp), %rsi        # 8-byte Reload
+	movzwl	(%rcx,%rsi,2), %esi
+	cmpb	$0, 880(%rsp)           # 1-byte Folded Reload
+	jne	.LBB148_190
+# BB#189:                               # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	vxorps	%ymm6, %ymm6, %ymm6
+.LBB148_190:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	je	.LBB148_192
+# BB#191:                               #   in Loop: Header=BB148_128 Depth=3
+	vpinsrw	$6, %eax, %xmm1, %xmm0
+	vpinsrw	$7, %esi, %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm3
+.LBB148_192:                            # %for deinterleaved$3.s0.v15.v1525
+                                        #   in Loop: Header=BB148_128 Depth=3
+	movq	2560(%rsp), %rsi        # 8-byte Reload
+	vpermps	%ymm4, %ymm13, %ymm0
+	vpermps	%ymm3, %ymm12, %ymm1
+	vblendps	$170, %ymm1, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm1[1],ymm0[2],ymm1[3],ymm0[4],ymm1[5],ymm0[6],ymm1[7]
+	vpermps	%ymm4, %ymm10, %ymm1
+	vpermps	%ymm3, %ymm9, %ymm3
+	vblendps	$170, %ymm3, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm3[1],ymm1[2],ymm3[3],ymm1[4],ymm3[5],ymm1[6],ymm3[7]
+	vpermps	%ymm6, %ymm12, %ymm3
+	vpermps	%ymm2, %ymm13, %ymm4
+	vblendps	$170, %ymm3, %ymm4, %ymm3 # ymm3 = ymm4[0],ymm3[1],ymm4[2],ymm3[3],ymm4[4],ymm3[5],ymm4[6],ymm3[7]
+	vpermps	%ymm6, %ymm9, %ymm4
+	vpermps	%ymm2, %ymm10, %ymm2
+	vblendps	$170, %ymm4, %ymm2, %ymm2 # ymm2 = ymm2[0],ymm4[1],ymm2[2],ymm4[3],ymm2[4],ymm4[5],ymm2[6],ymm4[7]
+	movq	1960(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm2, (%rax,%rdx)
+	movq	1976(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm3, 96(%rax,%rdx)
+	vmovups	%ymm1, 128(%rax,%rdx)
+	movq	1968(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm0, (%rax,%rdx)
+	addl	$32, %esi
+	subq	$-128, %rdx
+	movl	1480(%rsp), %eax        # 4-byte Reload
+	addl	$1, %eax
+	cmpl	$-1, %eax
+	jne	.LBB148_128
+.LBB148_193:                            # %end for deinterleaved$3.s0.v15.v1526
+                                        #   in Loop: Header=BB148_126 Depth=2
+	movl	576(%rsp), %eax         # 4-byte Reload
+	cmpl	%eax, 584(%rsp)         # 4-byte Folded Reload
+	vmovdqa	.LCPI148_17(%rip), %ymm14 # ymm14 = [0,1,4,5,8,9,12,13,2,3,6,7,10,11,14,15,16,17,20,21,24,25,28,29,18,19,22,23,26,27,30,31]
+	vmovdqa	.LCPI148_18(%rip), %ymm15 # ymm15 = [2,3,6,7,10,11,14,15,0,1,4,5,8,9,12,13,18,19,22,23,26,27,30,31,16,17,20,21,24,25,28,29]
+	jge	.LBB148_220
+# BB#194:                               # %for deinterleaved$3.s0.v15.v1528.preheader
+                                        #   in Loop: Header=BB148_126 Depth=2
+	movq	464(%rsp), %rax         # 8-byte Reload
+	movq	728(%rsp), %rdx         # 8-byte Reload
+	leaq	(%rax,%rdx), %rax
+	movl	784(%rsp), %esi         # 4-byte Reload
+	testl	%esi, %esi
+	setne	%r9b
+	sete	%r10b
+	movl	2400(%rsp), %edi        # 4-byte Reload
+	movl	%edi, %r8d
+	andl	$1, %r8d
+	sete	%dl
+	movb	%r8b, %bl
+	andb	%r10b, %bl
+	movb	%bl, 2496(%rsp)         # 1-byte Spill
+	testl	%edi, %esi
+	setne	%bl
+	movl	%edi, %esi
+	movq	%rcx, %rdi
+	movq	2168(%rsp), %rcx        # 8-byte Reload
+	orl	%ecx, %esi
+	movq	%rdi, %rcx
+	testb	$1, %sil
+	sete	%r10b
+	orb	%bl, %r10b
+	andb	%r9b, %dl
+	movb	%dl, 2560(%rsp)         # 1-byte Spill
+	movl	476(%rsp), %r12d        # 4-byte Reload
+	movl	720(%rsp), %edi         # 4-byte Reload
+	movl	488(%rsp), %r9d         # 4-byte Reload
+	.align	16, 0x90
+.LBB148_195:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_126 Depth=2
+                                        # =>    This Inner Loop Header: Depth=3
+	testl	%r8d, %r8d
+	sete	%dl
+	movslq	%edi, %rsi
+	vmovdqu	-2(%rcx,%rsi,2), %ymm0
+	vpblendw	$170, 28(%rcx,%rsi,2), %ymm0, %ymm0 # ymm0 = ymm0[0],mem[1],ymm0[2],mem[3],ymm0[4],mem[5],ymm0[6],mem[7],ymm0[8],mem[9],ymm0[10],mem[11],ymm0[12],mem[13],ymm0[14],mem[15]
+	setne	%r14b
+	vpshufb	%ymm14, %ymm0, %ymm1
+	vperm2i128	$35, %ymm0, %ymm0, %ymm0 # ymm0 = ymm0[2,3,0,1]
+	vpshufb	%ymm15, %ymm0, %ymm0
+	vpblendd	$60, %ymm0, %ymm1, %ymm1 # ymm1 = ymm1[0,1],ymm0[2,3,4,5],ymm1[6,7]
+	movl	%r8d, %r11d
+	vpmovzxwd	%xmm1, %ymm0    # ymm0 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
+	vcvtdq2ps	%ymm0, %ymm0
+	vmovaps	%ymm0, %ymm4
+	andl	%r9d, %r11d
+	jne	.LBB148_197
+# BB#196:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm4, %ymm4, %ymm4
+.LBB148_197:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vextracti128	$1, %ymm1, %xmm1
+	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
+	vcvtdq2ps	%ymm1, %ymm1
+	vmovaps	%ymm1, %ymm5
+	testl	%r11d, %r11d
+	jne	.LBB148_199
+# BB#198:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm5, %ymm5, %ymm5
+.LBB148_199:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vmovdqu	(%rcx,%rsi,2), %ymm2
+	vpblendw	$170, 30(%rcx,%rsi,2), %ymm2, %ymm2 # ymm2 = ymm2[0],mem[1],ymm2[2],mem[3],ymm2[4],mem[5],ymm2[6],mem[7],ymm2[8],mem[9],ymm2[10],mem[11],ymm2[12],mem[13],ymm2[14],mem[15]
+	vpshufb	%ymm14, %ymm2, %ymm3
+	vperm2f128	$35, %ymm2, %ymm0, %ymm2 # ymm2 = ymm2[2,3,0,1]
+	vpshufb	%ymm15, %ymm2, %ymm2
+	vpblendd	$60, %ymm2, %ymm3, %ymm2 # ymm2 = ymm3[0,1],ymm2[2,3,4,5],ymm3[6,7]
+	vextracti128	$1, %ymm2, %xmm3
+	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
+	vpmovzxwd	%xmm2, %ymm2    # ymm2 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
+	vcvtdq2ps	%ymm2, %ymm2
+	vmovaps	%ymm2, %ymm6
+	cmpb	$0, 2496(%rsp)          # 1-byte Folded Reload
+	jne	.LBB148_201
+# BB#200:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm6, %ymm6, %ymm6
+.LBB148_201:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vcvtdq2ps	%ymm3, %ymm3
+	vmovaps	%ymm3, %ymm7
+	jne	.LBB148_203
+# BB#202:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm7, %ymm7, %ymm7
+.LBB148_203:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	movl	%r9d, %esi
+	andl	$1, %esi
+	vpermps	%ymm7, %ymm12, %ymm8
+	vpermps	%ymm5, %ymm13, %ymm9
+	vblendps	$170, %ymm8, %ymm9, %ymm8 # ymm8 = ymm9[0],ymm8[1],ymm9[2],ymm8[3],ymm9[4],ymm8[5],ymm9[6],ymm8[7]
+	vmovaps	.LCPI148_10(%rip), %ymm9 # ymm9 = <u,0,u,1,u,2,u,3>
+	vmovaps	%ymm9, %ymm10
+	vpermps	%ymm7, %ymm10, %ymm7
+	vmovaps	.LCPI148_11(%rip), %ymm9 # ymm9 = <0,u,1,u,2,u,3,u>
+	vmovaps	%ymm9, %ymm11
+	vpermps	%ymm5, %ymm11, %ymm5
+	vblendps	$170, %ymm7, %ymm5, %ymm5 # ymm5 = ymm5[0],ymm7[1],ymm5[2],ymm7[3],ymm5[4],ymm7[5],ymm5[6],ymm7[7]
+	vpermps	%ymm6, %ymm12, %ymm7
+	vpermps	%ymm4, %ymm13, %ymm9
+	vblendps	$170, %ymm7, %ymm9, %ymm7 # ymm7 = ymm9[0],ymm7[1],ymm9[2],ymm7[3],ymm9[4],ymm7[5],ymm9[6],ymm7[7]
+	vpermps	%ymm6, %ymm10, %ymm6
+	vpermps	%ymm4, %ymm11, %ymm4
+	vblendps	$170, %ymm6, %ymm4, %ymm4 # ymm4 = ymm4[0],ymm6[1],ymm4[2],ymm6[3],ymm4[4],ymm6[5],ymm4[6],ymm6[7]
+	vmovups	%ymm4, (%rax)
+	vmovups	%ymm7, 32(%rax)
+	vmovups	%ymm5, 64(%rax)
+	vmovups	%ymm8, 96(%rax)
+	sete	%bl
+	andb	%bl, %r14b
+	andb	%sil, %dl
+	orb	%r14b, %dl
+	vmovaps	%ymm0, %ymm4
+	jne	.LBB148_205
+# BB#204:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm4, %ymm4, %ymm4
+.LBB148_205:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vmovaps	%ymm1, %ymm5
+	jne	.LBB148_207
+# BB#206:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm5, %ymm5, %ymm5
+.LBB148_207:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vmovaps	%ymm2, %ymm6
+	testb	%r10b, %r10b
+	jne	.LBB148_209
+# BB#208:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm6, %ymm6, %ymm6
+.LBB148_209:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vmovaps	%ymm3, %ymm7
+	jne	.LBB148_211
+# BB#210:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm7, %ymm7, %ymm7
+.LBB148_211:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vpermps	%ymm5, %ymm13, %ymm8
+	vpermps	%ymm7, %ymm12, %ymm9
+	vblendps	$170, %ymm9, %ymm8, %ymm8 # ymm8 = ymm8[0],ymm9[1],ymm8[2],ymm9[3],ymm8[4],ymm9[5],ymm8[6],ymm9[7]
+	vpermps	%ymm5, %ymm11, %ymm5
+	vpermps	%ymm7, %ymm10, %ymm7
+	vblendps	$170, %ymm7, %ymm5, %ymm5 # ymm5 = ymm5[0],ymm7[1],ymm5[2],ymm7[3],ymm5[4],ymm7[5],ymm5[6],ymm7[7]
+	vpermps	%ymm4, %ymm13, %ymm7
+	vpermps	%ymm6, %ymm12, %ymm9
+	vblendps	$170, %ymm9, %ymm7, %ymm7 # ymm7 = ymm7[0],ymm9[1],ymm7[2],ymm9[3],ymm7[4],ymm9[5],ymm7[6],ymm9[7]
+	vpermps	%ymm4, %ymm11, %ymm4
+	vpermps	%ymm6, %ymm10, %ymm6
+	vmovaps	%ymm10, %ymm9
+	vblendps	$170, %ymm6, %ymm4, %ymm4 # ymm4 = ymm4[0],ymm6[1],ymm4[2],ymm6[3],ymm4[4],ymm6[5],ymm4[6],ymm6[7]
+	movq	1984(%rsp), %rdx        # 8-byte Reload
+	vmovups	%ymm4, 32(%rdx,%rax)
+	vmovups	%ymm7, 64(%rdx,%rax)
+	vmovups	%ymm5, 96(%rdx,%rax)
+	vmovups	%ymm8, 128(%rdx,%rax)
+	movl	%r9d, %edx
+	orl	2400(%rsp), %edx        # 4-byte Folded Reload
+	andl	$1, %edx
+	je	.LBB148_213
+# BB#212:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm0, %ymm0, %ymm0
+.LBB148_213:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	testl	%edx, %edx
+	je	.LBB148_215
+# BB#214:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm1, %ymm1, %ymm1
+.LBB148_215:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	cmpb	$0, 2560(%rsp)          # 1-byte Folded Reload
+	jne	.LBB148_217
+# BB#216:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm2, %ymm2, %ymm2
+.LBB148_217:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	jne	.LBB148_219
+# BB#218:                               # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vxorps	%ymm3, %ymm3, %ymm3
+.LBB148_219:                            # %for deinterleaved$3.s0.v15.v1528
+                                        #   in Loop: Header=BB148_195 Depth=3
+	vpermps	%ymm3, %ymm12, %ymm4
+	vpermps	%ymm1, %ymm13, %ymm5
+	vblendps	$170, %ymm4, %ymm5, %ymm4 # ymm4 = ymm5[0],ymm4[1],ymm5[2],ymm4[3],ymm5[4],ymm4[5],ymm5[6],ymm4[7]
+	vpermps	%ymm3, %ymm9, %ymm3
+	vpermps	%ymm1, %ymm11, %ymm1
+	vblendps	$170, %ymm3, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm3[1],ymm1[2],ymm3[3],ymm1[4],ymm3[5],ymm1[6],ymm3[7]
+	vpermps	%ymm2, %ymm12, %ymm3
+	vpermps	%ymm0, %ymm13, %ymm5
+	vblendps	$170, %ymm3, %ymm5, %ymm3 # ymm3 = ymm5[0],ymm3[1],ymm5[2],ymm3[3],ymm5[4],ymm3[5],ymm5[6],ymm3[7]
+	vpermps	%ymm2, %ymm9, %ymm2
+	vpermps	%ymm0, %ymm11, %ymm0
+	vblendps	$170, %ymm2, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm2[1],ymm0[2],ymm2[3],ymm0[4],ymm2[5],ymm0[6],ymm2[7]
+	movq	1960(%rsp), %rdx        # 8-byte Reload
+	vmovups	%ymm0, (%rdx,%rax)
+	movq	1976(%rsp), %rdx        # 8-byte Reload
+	vmovups	%ymm3, 96(%rdx,%rax)
+	vmovups	%ymm1, 128(%rdx,%rax)
+	movq	1968(%rsp), %rdx        # 8-byte Reload
+	vmovups	%ymm4, (%rdx,%rax)
+	addl	$32, %r9d
+	addl	$32, %edi
+	subq	$-128, %rax
+	addl	$-1, %r12d
+	jne	.LBB148_195
+.LBB148_220:                            # %end for deinterleaved$3.s0.v15.v1529
+                                        #   in Loop: Header=BB148_126 Depth=2
+	movq	792(%rsp), %rax         # 8-byte Reload
+	cmpl	%eax, 576(%rsp)         # 4-byte Folded Reload
+	jge	.LBB148_252
+# BB#221:                               # %for deinterleaved$3.s0.v15.v1531.preheader
+                                        #   in Loop: Header=BB148_126 Depth=2
+	movl	784(%rsp), %r10d        # 4-byte Reload
+	testl	%r10d, %r10d
+	setne	%r8b
+	sete	%r9b
+	movl	2400(%rsp), %eax        # 4-byte Reload
+	movl	%eax, %esi
+	imull	788(%rsp), %esi         # 4-byte Folded Reload
+	movq	456(%rsp), %rbx         # 8-byte Reload
+	movq	728(%rsp), %rdx         # 8-byte Reload
+	leaq	(%rdx,%rbx), %rdi
+	movl	%eax, %r11d
+	andl	$1, %r11d
+	movl	%r11d, 1008(%rsp)       # 4-byte Spill
+	vmovd	%esi, %xmm0
+	vmovdqa	672(%rsp), %ymm1        # 32-byte Reload
+	vinserti128	$1, %xmm1, %ymm1, %ymm14
+	vpsubd	736(%rsp), %ymm0, %ymm0 # 32-byte Folded Reload
+	vpbroadcastd	%xmm0, %ymm15
+	vmovdqa	%ymm15, 960(%rsp)       # 32-byte Spill
+	sete	%bl
+	movb	%r11b, %dl
+	andb	%r9b, %dl
+	movb	%dl, 944(%rsp)          # 1-byte Spill
+	testl	%eax, %r10d
+	setne	%dl
+	movl	%eax, %esi
+	movq	%rcx, %rax
+	movq	2168(%rsp), %rcx        # 8-byte Reload
+	orl	%ecx, %esi
+	movq	%rax, %rcx
+	testb	$1, %sil
+	sete	%al
+	orb	%dl, %al
+	movb	%al, 936(%rsp)          # 1-byte Spill
+	andb	%r8b, %bl
+	movb	%bl, 952(%rsp)          # 1-byte Spill
+	movl	472(%rsp), %edx         # 4-byte Reload
+	movq	480(%rsp), %rax         # 8-byte Reload
+	movl	%eax, %esi
+	.align	16, 0x90
+.LBB148_222:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_126 Depth=2
+                                        # =>    This Inner Loop Header: Depth=3
+	movq	%rsi, 2560(%rsp)        # 8-byte Spill
+	movl	%edx, 1480(%rsp)        # 4-byte Spill
+	movq	%rdi, 1536(%rsp)        # 8-byte Spill
+	testl	%r11d, %r11d
+	sete	1472(%rsp)              # 1-byte Folded Spill
+	setne	1376(%rsp)              # 1-byte Folded Spill
+	movq	1744(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rsi), %eax
+	vmovd	%eax, %xmm0
+	vpbroadcastd	%xmm0, %ymm0
+	vmovdqa	.LCPI148_7(%rip), %ymm12 # ymm12 = [0,2,4,6,8,10,12,14]
+	vpaddd	%ymm12, %ymm0, %ymm1
+	vextracti128	$1, %ymm1, %xmm2
+	vpextrd	$1, %xmm2, %eax
+	vmovdqa	1712(%rsp), %xmm3       # 16-byte Reload
+	vpextrd	$1, %xmm3, %ebx
+	movl	%ebx, 1216(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ebx
+	movl	%edx, 2496(%rsp)        # 4-byte Spill
+	vmovd	%xmm2, %eax
+	vmovd	%xmm3, %r9d
+	movl	%r9d, 2464(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%r9d
+	movl	%edx, 2432(%rsp)        # 4-byte Spill
+	vpextrd	$2, %xmm2, %eax
+	vpextrd	$2, %xmm3, %r10d
+	movl	%r10d, 1248(%rsp)       # 4-byte Spill
+	cltd
+	idivl	%r10d
+	movl	%edx, 2368(%rsp)        # 4-byte Spill
+	vpextrd	$3, %xmm2, %eax
+	vpextrd	$3, %xmm3, %r8d
+	movl	%r8d, 2240(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%r8d
+	movl	%edx, %r11d
+	vpextrd	$1, %xmm1, %eax
+	vmovdqa	1920(%rsp), %ymm5       # 32-byte Reload
+	vpextrd	$1, %xmm5, %esi
+	movl	%esi, 1024(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r14d
+	vmovd	%xmm1, %eax
+	vmovd	%xmm5, %esi
+	movl	%esi, 1016(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %esi
+	vpextrd	$2, %xmm1, %eax
+	vpextrd	$2, %xmm5, %edi
+	movl	%edi, 1064(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	movl	%edx, %r12d
+	vpextrd	$3, %xmm1, %eax
+	vpextrd	$3, %xmm5, %edi
+	movl	%edi, 1056(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	movl	%edx, %edi
+	vmovd	2432(%rsp), %xmm1       # 4-byte Folded Reload
+                                        # xmm1 = mem[0],zero,zero,zero
+	vpinsrd	$1, 2496(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
+	vpinsrd	$2, 2368(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
+	vmovdqa	.LCPI148_6(%rip), %ymm6 # ymm6 = [16,18,20,22,24,26,28,30]
+	vpaddd	%ymm6, %ymm0, %ymm0
+	vpinsrd	$3, %r11d, %xmm1, %xmm10
+	vextracti128	$1, %ymm0, %xmm3
+	vpextrd	$1, %xmm3, %eax
+	cltd
+	idivl	%ebx
+	movl	%edx, %ebx
+	vmovd	%esi, %xmm2
+	vpinsrd	$1, %r14d, %xmm2, %xmm2
+	movq	2560(%rsp), %r11        # 8-byte Reload
+	vmovd	%xmm3, %eax
+	cltd
+	idivl	%r9d
+	movl	%edx, %esi
+	vpinsrd	$2, %r12d, %xmm2, %xmm2
+	vpinsrd	$3, %edi, %xmm2, %xmm11
+	vpextrd	$2, %xmm3, %eax
+	cltd
+	idivl	%r10d
+	movl	%edx, %edi
+	vmovd	%esi, %xmm4
+	vpinsrd	$1, %ebx, %xmm4, %xmm4
+	vpextrd	$3, %xmm3, %eax
+	cltd
+	idivl	%r8d
+	movl	%edx, %esi
+	vpinsrd	$2, %edi, %xmm4, %xmm3
+	vpextrd	$1, %xmm0, %eax
+	vpextrd	$1, %xmm5, %edi
+	movl	%edi, 1184(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	movl	%edx, %edi
+	vpinsrd	$3, %esi, %xmm3, %xmm3
+	vmovd	%xmm0, %eax
+	vmovd	%xmm5, %esi
+	movl	%esi, 1152(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	vmovd	%edx, %xmm4
+	vpextrd	$2, %xmm0, %eax
+	vpextrd	$2, %xmm5, %esi
+	movl	%esi, 1080(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %esi
+	vpinsrd	$1, %edi, %xmm4, %xmm4
+	vpextrd	$3, %xmm0, %eax
+	vpextrd	$3, %xmm5, %edi
+	movl	%edi, 1072(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	vpinsrd	$2, %esi, %xmm4, %xmm0
+	vpinsrd	$3, %edx, %xmm0, %xmm5
+	movq	1752(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%r11), %r12d
+	movl	%r12d, 1456(%rsp)       # 4-byte Spill
+	vmovd	%r12d, %xmm0
+	vpbroadcastd	%xmm0, %ymm4
+	vpaddd	%ymm6, %ymm4, %ymm0
+	vmovdqa	2032(%rsp), %xmm1       # 16-byte Reload
+	vpminsd	%xmm1, %xmm0, %xmm6
+	vextracti128	$1, %ymm0, %xmm0
+	vpminsd	%xmm1, %xmm0, %xmm0
+	vmovdqa	2096(%rsp), %xmm13      # 16-byte Reload
+	vpmaxsd	%xmm13, %xmm6, %xmm6
+	vpmaxsd	%xmm13, %xmm0, %xmm0
+	vinserti128	$1, %xmm0, %ymm6, %ymm6
+	vmovd	%r11d, %xmm0
+	vpbroadcastd	%xmm0, %ymm0
+	vinserti128	$1, %xmm3, %ymm5, %ymm3
+	vpsrad	$31, %ymm3, %ymm5
+	vmovdqa	%ymm14, %ymm8
+	vpand	%ymm5, %ymm8, %ymm5
+	vmovdqa	2112(%rsp), %ymm7       # 32-byte Reload
+	vpaddd	%ymm3, %ymm7, %ymm3
+	vpaddd	%ymm5, %ymm3, %ymm3
+	vpabsd	%xmm3, %xmm5
+	vextracti128	$1, %ymm3, %xmm3
+	vpabsd	%xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm5, %ymm3
+	vmovdqa	1824(%rsp), %ymm5       # 32-byte Reload
+	vpcmpgtd	%ymm0, %ymm5, %ymm5
+	vmovdqa	2048(%rsp), %ymm9       # 32-byte Reload
+	vpsubd	%ymm3, %ymm9, %ymm3
+	vblendvps	%ymm5, %ymm6, %ymm3, %ymm3
+	vpaddd	%ymm3, %ymm15, %ymm3
+	vmovq	%xmm3, %rsi
+	movslq	%esi, %rax
+	movq	%rsi, %r8
+	movq	%rax, 1408(%rsp)        # 8-byte Spill
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm5
+	vpaddd	%ymm12, %ymm4, %ymm4
+	vpminsd	%xmm1, %xmm4, %xmm6
+	vextracti128	$1, %ymm4, %xmm4
+	vpminsd	%xmm1, %xmm4, %xmm4
+	vmovdqa	%xmm1, %xmm14
+	vpmaxsd	%xmm13, %xmm6, %xmm6
+	vpmaxsd	%xmm13, %xmm4, %xmm4
+	vinserti128	$1, %xmm4, %ymm6, %ymm4
+	vinserti128	$1, %xmm10, %ymm11, %ymm1
+	vpsrad	$31, %ymm1, %ymm2
+	vpand	%ymm2, %ymm8, %ymm2
+	vmovdqa	%ymm8, %ymm10
+	vpaddd	%ymm1, %ymm7, %ymm1
+	vpaddd	%ymm2, %ymm1, %ymm1
+	vpabsd	%xmm1, %xmm2
+	vextracti128	$1, %ymm1, %xmm1
+	vpabsd	%xmm1, %xmm1
+	vinserti128	$1, %xmm1, %ymm2, %ymm1
+	vmovdqa	1856(%rsp), %ymm2       # 32-byte Reload
+	vpcmpgtd	%ymm0, %ymm2, %ymm2
+	vpsubd	%ymm1, %ymm9, %ymm1
+	vblendvps	%ymm2, %ymm4, %ymm1, %ymm1
+	vpaddd	%ymm1, %ymm15, %ymm1
+	vmovq	%xmm1, %rax
+	movslq	%eax, %rsi
+	movq	%rsi, 2272(%rsp)        # 8-byte Spill
+	sarq	$32, %rax
+	vpextrq	$1, %xmm1, %rbx
+	movslq	%ebx, %rsi
+	movq	%rsi, 2336(%rsp)        # 8-byte Spill
+	sarq	$32, %rbx
+	vextracti128	$1, %ymm1, %xmm1
+	vmovq	%xmm1, %rsi
+	movslq	%esi, %rdx
+	movq	%rdx, 2304(%rsp)        # 8-byte Spill
+	sarq	$32, %rsi
+	vpextrq	$1, %xmm1, %rdi
+	movslq	%edi, %rdx
+	movq	%rdx, 2368(%rsp)        # 8-byte Spill
+	sarq	$32, %rdi
+	sarq	$32, %r8
+	movq	%r8, 2496(%rsp)         # 8-byte Spill
+	vpextrq	$1, %xmm3, %r10
+	movslq	%r10d, %rdx
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	sarq	$32, %r10
+	movq	%r10, 1112(%rsp)        # 8-byte Spill
+	vextracti128	$1, %ymm3, %xmm1
+	vmovq	%xmm1, %r11
+	movslq	%r11d, %r8
+	movq	%r8, 1088(%rsp)         # 8-byte Spill
+	sarq	$32, %r11
+	movq	%r11, 1104(%rsp)        # 8-byte Spill
+	vpextrq	$1, %xmm1, %r9
+	movslq	%r9d, %r14
+	movq	%r14, 1096(%rsp)        # 8-byte Spill
+	sarq	$32, %r9
+	movq	%r9, 1120(%rsp)         # 8-byte Spill
+	movl	%r12d, %edx
+	andl	$1, %edx
+	movl	%edx, 1448(%rsp)        # 4-byte Spill
+	sete	%r12b
+	andb	1376(%rsp), %r12b       # 1-byte Folded Reload
+	movq	2496(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rdx,2), %xmm5, %xmm1
+	movq	2432(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rdx,2), %xmm1, %xmm1
+	vpinsrw	$3, (%rcx,%r10,2), %xmm1, %xmm1
+	vpinsrw	$4, (%rcx,%r8,2), %xmm1, %xmm1
+	vpinsrw	$5, (%rcx,%r11,2), %xmm1, %xmm1
+	vpinsrw	$6, (%rcx,%r14,2), %xmm1, %xmm1
+	vpinsrw	$7, (%rcx,%r9,2), %xmm1, %xmm2
+	jne	.LBB148_223
+# BB#224:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vpxor	%ymm11, %ymm11, %ymm11
+	jmp	.LBB148_225
+	.align	16, 0x90
+.LBB148_223:                            #   in Loop: Header=BB148_222 Depth=3
+	movq	2272(%rsp), %rdx        # 8-byte Reload
+	movzwl	(%rcx,%rdx,2), %edx
+	vmovd	%edx, %xmm1
+	vpinsrw	$1, (%rcx,%rax,2), %xmm1, %xmm1
+	movq	2336(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rdx,2), %xmm1, %xmm1
+	vpinsrw	$3, (%rcx,%rbx,2), %xmm1, %xmm1
+	movq	2304(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rdx,2), %xmm1, %xmm1
+	vpinsrw	$5, (%rcx,%rsi,2), %xmm1, %xmm1
+	movq	2368(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rdx,2), %xmm1, %xmm1
+	vpinsrw	$7, (%rcx,%rdi,2), %xmm1, %xmm1
+	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
+	vcvtdq2ps	%ymm1, %ymm11
+.LBB148_225:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	testb	%r12b, %r12b
+	jne	.LBB148_226
+# BB#227:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	movq	%rax, 1280(%rsp)        # 8-byte Spill
+	movq	%rsi, 1312(%rsp)        # 8-byte Spill
+	movq	%rbx, 1344(%rsp)        # 8-byte Spill
+	movq	%rdi, 1376(%rsp)        # 8-byte Spill
+	vpxor	%ymm2, %ymm2, %ymm2
+	jmp	.LBB148_228
+	.align	16, 0x90
+.LBB148_226:                            #   in Loop: Header=BB148_222 Depth=3
+	movq	%rax, 1280(%rsp)        # 8-byte Spill
+	movq	%rsi, 1312(%rsp)        # 8-byte Spill
+	movq	%rbx, 1344(%rsp)        # 8-byte Spill
+	movq	%rdi, 1376(%rsp)        # 8-byte Spill
+	vpmovzxwd	%xmm2, %ymm2    # ymm2 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
+	vcvtdq2ps	%ymm2, %ymm2
+.LBB148_228:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	movq	1912(%rsp), %rax        # 8-byte Reload
+	movq	2560(%rsp), %rcx        # 8-byte Reload
+	leal	(%rax,%rcx), %eax
+	vmovd	%eax, %xmm3
+	vpbroadcastd	%xmm3, %ymm4
+	vpaddd	%ymm12, %ymm4, %ymm3
+	vextracti128	$1, %ymm3, %xmm6
+	vpextrd	$1, %xmm6, %eax
+	cltd
+	movl	1216(%rsp), %r11d       # 4-byte Reload
+	idivl	%r11d
+	movl	%edx, %r8d
+	vmovd	%xmm6, %eax
+	cltd
+	idivl	2464(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %r9d
+	vpextrd	$2, %xmm6, %eax
+	cltd
+	movl	1248(%rsp), %r12d       # 4-byte Reload
+	idivl	%r12d
+	movl	%edx, %r10d
+	vpextrd	$3, %xmm6, %eax
+	cltd
+	movl	2240(%rsp), %r14d       # 4-byte Reload
+	idivl	%r14d
+	movl	%edx, %esi
+	vpextrd	$1, %xmm3, %eax
+	cltd
+	idivl	1024(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %edi
+	vmovd	%xmm3, %eax
+	cltd
+	idivl	1016(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %ebx
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rcx), %eax
+	vmovd	%eax, %xmm6
+	vmovd	%r9d, %xmm7
+	vpinsrd	$1, %r8d, %xmm7, %xmm5
+	vpbroadcastd	%xmm6, %ymm6
+	vpaddd	%ymm12, %ymm6, %ymm7
+	vpminsd	%xmm14, %xmm7, %xmm1
+	vextracti128	$1, %ymm7, %xmm7
+	vpminsd	%xmm14, %xmm7, %xmm7
+	vmovdqa	%xmm13, %xmm15
+	vpmaxsd	%xmm15, %xmm1, %xmm1
+	vpmaxsd	%xmm15, %xmm7, %xmm7
+	vinserti128	$1, %xmm7, %ymm1, %ymm7
+	vmovdqa	.LCPI148_6(%rip), %ymm9 # ymm9 = [16,18,20,22,24,26,28,30]
+	vpaddd	%ymm9, %ymm4, %ymm4
+	vpinsrd	$2, %r10d, %xmm5, %xmm1
+	vpinsrd	$3, %esi, %xmm1, %xmm1
+	vpextrd	$2, %xmm3, %eax
+	cltd
+	idivl	1064(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %esi
+	vmovd	%ebx, %xmm5
+	vpinsrd	$1, %edi, %xmm5, %xmm5
+	vpextrd	$3, %xmm3, %eax
+	cltd
+	idivl	1056(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %edi
+	vpinsrd	$2, %esi, %xmm5, %xmm5
+	vextracti128	$1, %ymm4, %xmm3
+	vpextrd	$1, %xmm3, %eax
+	cltd
+	idivl	%r11d
+	movl	%edx, %r8d
+	vpinsrd	$3, %edi, %xmm5, %xmm5
+	vinserti128	$1, %xmm1, %ymm5, %ymm8
+	vpsrad	$31, %ymm8, %ymm1
+	vpand	%ymm10, %ymm1, %ymm1
+	vmovdqa	2112(%rsp), %ymm12      # 32-byte Reload
+	vpaddd	%ymm8, %ymm12, %ymm5
+	vpaddd	%ymm1, %ymm5, %ymm1
+	vpabsd	%xmm1, %xmm5
+	vextracti128	$1, %ymm1, %xmm1
+	vpabsd	%xmm1, %xmm1
+	vinserti128	$1, %xmm1, %ymm5, %ymm1
+	vmovdqa	1792(%rsp), %ymm5       # 32-byte Reload
+	vpcmpgtd	%ymm0, %ymm5, %ymm5
+	vmovdqa	2048(%rsp), %ymm13      # 32-byte Reload
+	vpsubd	%ymm1, %ymm13, %ymm1
+	vblendvps	%ymm5, %ymm7, %ymm1, %ymm7
+	vpaddd	%ymm9, %ymm6, %ymm1
+	vmovd	%xmm3, %eax
+	cltd
+	idivl	2464(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %edi
+	vpextrd	$2, %xmm3, %eax
+	vpextrd	$3, %xmm3, %ebx
+	vpminsd	%xmm14, %xmm1, %xmm3
+	cltd
+	idivl	%r12d
+	movl	%edx, %r9d
+	vextracti128	$1, %ymm1, %xmm1
+	vpminsd	%xmm14, %xmm1, %xmm1
+	vpmaxsd	%xmm15, %xmm3, %xmm3
+	movl	%ebx, %eax
+	cltd
+	idivl	%r14d
+	movl	%edx, %ebx
+	vpmaxsd	%xmm15, %xmm1, %xmm1
+	vinserti128	$1, %xmm1, %ymm3, %ymm1
+	vpextrd	$1, %xmm4, %eax
+	cltd
+	idivl	1184(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %esi
+	vmovd	%edi, %xmm3
+	vpinsrd	$1, %r8d, %xmm3, %xmm3
+	vmovd	%xmm4, %eax
+	cltd
+	idivl	1152(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %edi
+	vpinsrd	$2, %r9d, %xmm3, %xmm3
+	vpinsrd	$3, %ebx, %xmm3, %xmm3
+	vpextrd	$2, %xmm4, %eax
+	cltd
+	idivl	1080(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %ebx
+	vpextrd	$3, %xmm4, %eax
+	vmovd	%edi, %xmm4
+	vpinsrd	$1, %esi, %xmm4, %xmm4
+	cltd
+	idivl	1072(%rsp)              # 4-byte Folded Reload
+	vpinsrd	$2, %ebx, %xmm4, %xmm4
+	vpinsrd	$3, %edx, %xmm4, %xmm4
+	vinserti128	$1, %xmm3, %ymm4, %ymm3
+	vpsrad	$31, %ymm3, %ymm4
+	vpand	%ymm10, %ymm4, %ymm4
+	vmovdqa	%ymm10, %ymm14
+	vpaddd	%ymm3, %ymm12, %ymm3
+	vpaddd	%ymm4, %ymm3, %ymm3
+	vpabsd	%xmm3, %xmm4
+	vextracti128	$1, %ymm3, %xmm3
+	vpabsd	%xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm4, %ymm3
+	vmovdqa	1760(%rsp), %ymm4       # 32-byte Reload
+	vpcmpgtd	%ymm0, %ymm4, %ymm0
+	vpsubd	%ymm3, %ymm13, %ymm3
+	vblendvps	%ymm0, %ymm1, %ymm3, %ymm0
+	vmovdqa	960(%rsp), %ymm15       # 32-byte Reload
+	vpaddd	%ymm0, %ymm15, %ymm0
+	vpaddd	%ymm7, %ymm15, %ymm1
+	vpextrq	$1, %xmm1, %r8
+	vmovq	%xmm1, %r10
+	movslq	%r10d, %rax
+	movq	%rax, 1024(%rsp)        # 8-byte Spill
+	sarq	$32, %r10
+	movslq	%r8d, %rax
+	movq	%rax, 1016(%rsp)        # 8-byte Spill
+	sarq	$32, %r8
+	vextracti128	$1, %ymm1, %xmm1
+	vpextrq	$1, %xmm1, %r9
+	vmovq	%xmm1, %r14
+	movslq	%r14d, %rax
+	movq	%rax, 2464(%rsp)        # 8-byte Spill
+	sarq	$32, %r14
+	movslq	%r9d, %rax
+	movq	%rax, 2240(%rsp)        # 8-byte Spill
+	sarq	$32, %r9
+	vpextrq	$1, %xmm0, %rbx
+	vmovq	%xmm0, %r11
+	movslq	%r11d, %rdx
+	movq	%rdx, 1064(%rsp)        # 8-byte Spill
+	sarq	$32, %r11
+	movslq	%ebx, %r12
+	movq	%r12, 1056(%rsp)        # 8-byte Spill
+	sarq	$32, %rbx
+	vextracti128	$1, %ymm0, %xmm0
+	vmovq	%xmm0, %rax
+	movq	1736(%rsp), %rcx        # 8-byte Reload
+	movzwl	(%rcx,%rdx,2), %edx
+	vmovd	%edx, %xmm1
+	movslq	%eax, %rsi
+	movq	%rsi, 1184(%rsp)        # 8-byte Spill
+	sarq	$32, %rax
+	movq	%rax, 1248(%rsp)        # 8-byte Spill
+	vpextrq	$1, %xmm0, %rdx
+	movslq	%edx, %rdi
+	movq	%rdi, 1216(%rsp)        # 8-byte Spill
+	sarq	$32, %rdx
+	movq	%rdx, 1072(%rsp)        # 8-byte Spill
+	vpinsrw	$1, (%rcx,%r11,2), %xmm1, %xmm0
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rbx,2), %xmm0, %xmm3
+	cmpb	$0, 944(%rsp)           # 1-byte Folded Reload
+	movzwl	(%rcx,%rsi,2), %esi
+	movl	%esi, 1080(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rax,2), %eax
+	movl	%eax, 1152(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rdi,2), %esi
+	movzwl	(%rcx,%rdx,2), %eax
+	jne	.LBB148_229
+# BB#230:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	movq	1024(%rsp), %rdx        # 8-byte Reload
+	movq	1016(%rsp), %r12        # 8-byte Reload
+	vpxor	%ymm0, %ymm0, %ymm0
+	jmp	.LBB148_231
+	.align	16, 0x90
+.LBB148_229:                            #   in Loop: Header=BB148_222 Depth=3
+	movq	1024(%rsp), %rdx        # 8-byte Reload
+	movzwl	(%rcx,%rdx,2), %r12d
+	vmovd	%r12d, %xmm0
+	vpinsrw	$1, (%rcx,%r10,2), %xmm0, %xmm0
+	movq	1016(%rsp), %r12        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r8,2), %xmm0, %xmm0
+	movq	2464(%rsp), %rdi        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rdi,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r14,2), %xmm0, %xmm0
+	movq	2240(%rsp), %rdi        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rdi,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r9,2), %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm0
+.LBB148_231:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vmovaps	.LCPI148_8(%rip), %ymm12 # ymm12 = <u,4,u,5,u,6,u,7>
+	vmovaps	.LCPI148_9(%rip), %ymm13 # ymm13 = <4,u,5,u,6,u,7,u>
+	movq	1536(%rsp), %rdi        # 8-byte Reload
+	jne	.LBB148_232
+# BB#233:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	movl	%esi, 1016(%rsp)        # 4-byte Spill
+	movl	%eax, 1024(%rsp)        # 4-byte Spill
+	vpxor	%ymm3, %ymm3, %ymm3
+	jmp	.LBB148_234
+	.align	16, 0x90
+.LBB148_232:                            #   in Loop: Header=BB148_222 Depth=3
+	vpinsrw	$4, 1080(%rsp), %xmm3, %xmm1 # 4-byte Folded Reload
+	vpinsrw	$5, 1152(%rsp), %xmm1, %xmm1 # 4-byte Folded Reload
+	vpinsrw	$6, %esi, %xmm1, %xmm1
+	movl	%esi, 1016(%rsp)        # 4-byte Spill
+	vpinsrw	$7, %eax, %xmm1, %xmm1
+	movl	%eax, 1024(%rsp)        # 4-byte Spill
+	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
+	vcvtdq2ps	%ymm1, %ymm3
+.LBB148_234:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vpermps	%ymm3, %ymm12, %ymm1
+	vpermps	%ymm2, %ymm13, %ymm4
+	vblendps	$170, %ymm1, %ymm4, %ymm1 # ymm1 = ymm4[0],ymm1[1],ymm4[2],ymm1[3],ymm4[4],ymm1[5],ymm4[6],ymm1[7]
+	vmovaps	.LCPI148_10(%rip), %ymm4 # ymm4 = <u,0,u,1,u,2,u,3>
+	vmovaps	%ymm4, %ymm5
+	vpermps	%ymm3, %ymm5, %ymm3
+	vmovaps	.LCPI148_11(%rip), %ymm4 # ymm4 = <0,u,1,u,2,u,3,u>
+	vmovaps	%ymm4, %ymm6
+	vpermps	%ymm2, %ymm6, %ymm2
+	vblendps	$170, %ymm3, %ymm2, %ymm2 # ymm2 = ymm2[0],ymm3[1],ymm2[2],ymm3[3],ymm2[4],ymm3[5],ymm2[6],ymm3[7]
+	vpermps	%ymm0, %ymm12, %ymm3
+	vpermps	%ymm11, %ymm13, %ymm4
+	vblendps	$170, %ymm3, %ymm4, %ymm3 # ymm3 = ymm4[0],ymm3[1],ymm4[2],ymm3[3],ymm4[4],ymm3[5],ymm4[6],ymm3[7]
+	vpermps	%ymm0, %ymm5, %ymm0
+	vmovaps	%ymm5, %ymm9
+	vpermps	%ymm11, %ymm6, %ymm4
+	vmovaps	%ymm6, %ymm10
+	vblendps	$170, %ymm0, %ymm4, %ymm0 # ymm0 = ymm4[0],ymm0[1],ymm4[2],ymm0[3],ymm4[4],ymm0[5],ymm4[6],ymm0[7]
+	vmovups	%ymm0, (%rdi)
+	vmovups	%ymm3, 32(%rdi)
+	vmovups	%ymm2, 64(%rdi)
+	vmovups	%ymm1, 96(%rdi)
+	movzwl	(%rcx,%rdx,2), %eax
+	vmovd	%eax, %xmm0
+	vpinsrw	$1, (%rcx,%r10,2), %xmm0, %xmm0
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r8,2), %xmm0, %xmm0
+	movq	2464(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r14,2), %xmm0, %xmm0
+	movq	2240(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r9,2), %xmm0, %xmm3
+	movq	1064(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$0, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$1, (%rcx,%r11,2), %xmm0, %xmm0
+	movq	1056(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rbx,2), %xmm0, %xmm0
+	movq	1408(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm1
+	movq	2496(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rax,2), %xmm1, %xmm1
+	movq	2432(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm1, %xmm1
+	movq	1112(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$3, (%rcx,%rax,2), %xmm1, %xmm1
+	movq	1088(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm1, %xmm1
+	movq	1104(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm1, %xmm1
+	movq	1096(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rax,2), %xmm1, %xmm1
+	movq	1120(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$7, (%rcx,%rax,2), %xmm1, %xmm1
+	movq	2272(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm2
+	movq	1280(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2336(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1344(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$3, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2304(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1312(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2368(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1376(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$7, (%rcx,%rax,2), %xmm2, %xmm4
+	movl	1008(%rsp), %r11d       # 4-byte Reload
+	movl	1456(%rsp), %esi        # 4-byte Reload
+	testl	%esi, %r11d
+	setne	%al
+	orl	2400(%rsp), %esi        # 4-byte Folded Reload
+	testb	$1, %sil
+	sete	%bl
+	orb	%al, %bl
+	vpmovzxwd	%xmm1, %ymm2    # ymm2 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
+	vpmovzxwd	%xmm4, %ymm1    # ymm1 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
+	vcvtdq2ps	%ymm1, %ymm1
+	vmovaps	%ymm1, %ymm6
+	jne	.LBB148_236
+# BB#235:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vxorps	%ymm6, %ymm6, %ymm6
+.LBB148_236:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vcvtdq2ps	%ymm2, %ymm2
+	vmovaps	%ymm2, %ymm7
+	movq	2560(%rsp), %rsi        # 8-byte Reload
+	jne	.LBB148_238
+# BB#237:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vxorps	%ymm7, %ymm7, %ymm7
+.LBB148_238:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vpmovzxwd	%xmm3, %ymm3    # ymm3 = xmm3[0],zero,xmm3[1],zero,xmm3[2],zero,xmm3[3],zero,xmm3[4],zero,xmm3[5],zero,xmm3[6],zero,xmm3[7],zero
+	vcvtdq2ps	%ymm3, %ymm4
+	vmovaps	%ymm4, %ymm3
+	cmpb	$0, 936(%rsp)           # 1-byte Folded Reload
+	jne	.LBB148_240
+# BB#239:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vxorps	%ymm3, %ymm3, %ymm3
+.LBB148_240:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	jne	.LBB148_241
+# BB#242:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vpxor	%ymm8, %ymm8, %ymm8
+	jmp	.LBB148_243
+	.align	16, 0x90
+.LBB148_241:                            #   in Loop: Header=BB148_222 Depth=3
+	vpinsrw	$4, 1080(%rsp), %xmm0, %xmm5 # 4-byte Folded Reload
+	vpinsrw	$5, 1152(%rsp), %xmm5, %xmm5 # 4-byte Folded Reload
+	vpinsrw	$6, 1016(%rsp), %xmm5, %xmm5 # 4-byte Folded Reload
+	vpinsrw	$7, 1024(%rsp), %xmm5, %xmm5 # 4-byte Folded Reload
+	vpmovzxwd	%xmm5, %ymm5    # ymm5 = xmm5[0],zero,xmm5[1],zero,xmm5[2],zero,xmm5[3],zero,xmm5[4],zero,xmm5[5],zero,xmm5[6],zero,xmm5[7],zero
+	vcvtdq2ps	%ymm5, %ymm8
+.LBB148_243:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vpermps	%ymm8, %ymm12, %ymm5
+	vpermps	%ymm7, %ymm13, %ymm11
+	vblendps	$170, %ymm5, %ymm11, %ymm5 # ymm5 = ymm11[0],ymm5[1],ymm11[2],ymm5[3],ymm11[4],ymm5[5],ymm11[6],ymm5[7]
+	vpermps	%ymm8, %ymm9, %ymm8
+	vpermps	%ymm7, %ymm10, %ymm7
+	vblendps	$170, %ymm8, %ymm7, %ymm7 # ymm7 = ymm7[0],ymm8[1],ymm7[2],ymm8[3],ymm7[4],ymm8[5],ymm7[6],ymm8[7]
+	vpermps	%ymm3, %ymm12, %ymm8
+	vpermps	%ymm6, %ymm13, %ymm11
+	vblendps	$170, %ymm8, %ymm11, %ymm8 # ymm8 = ymm11[0],ymm8[1],ymm11[2],ymm8[3],ymm11[4],ymm8[5],ymm11[6],ymm8[7]
+	vpermps	%ymm3, %ymm9, %ymm3
+	vpermps	%ymm6, %ymm10, %ymm6
+	vblendps	$170, %ymm3, %ymm6, %ymm3 # ymm3 = ymm6[0],ymm3[1],ymm6[2],ymm3[3],ymm6[4],ymm3[5],ymm6[6],ymm3[7]
+	movq	1984(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm3, 32(%rax,%rdi)
+	vmovups	%ymm8, 64(%rax,%rdi)
+	vmovups	%ymm7, 96(%rax,%rdi)
+	vmovups	%ymm5, 128(%rax,%rdi)
+	movb	1472(%rsp), %al         # 1-byte Reload
+	movl	1448(%rsp), %ebx        # 4-byte Reload
+	andb	%bl, %al
+	jne	.LBB148_245
+# BB#244:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vxorps	%ymm1, %ymm1, %ymm1
+.LBB148_245:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	testb	%al, %al
+	vxorps	%ymm5, %ymm5, %ymm5
+	jne	.LBB148_247
+# BB#246:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vxorps	%ymm2, %ymm2, %ymm2
+.LBB148_247:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	movq	1184(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1248(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1216(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	movq	1072(%rsp), %rdx        # 8-byte Reload
+	movzwl	(%rcx,%rdx,2), %edx
+	cmpb	$0, 952(%rsp)           # 1-byte Folded Reload
+	jne	.LBB148_249
+# BB#248:                               # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	vxorps	%ymm4, %ymm4, %ymm4
+.LBB148_249:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	je	.LBB148_251
+# BB#250:                               #   in Loop: Header=BB148_222 Depth=3
+	vpinsrw	$6, %eax, %xmm0, %xmm0
+	vpinsrw	$7, %edx, %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm5
+.LBB148_251:                            # %for deinterleaved$3.s0.v15.v1531
+                                        #   in Loop: Header=BB148_222 Depth=3
+	movl	1480(%rsp), %edx        # 4-byte Reload
+	vpermps	%ymm2, %ymm13, %ymm0
+	vpermps	%ymm5, %ymm12, %ymm3
+	vblendps	$170, %ymm3, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm3[1],ymm0[2],ymm3[3],ymm0[4],ymm3[5],ymm0[6],ymm3[7]
+	vpermps	%ymm2, %ymm10, %ymm2
+	vpermps	%ymm5, %ymm9, %ymm3
+	vblendps	$170, %ymm3, %ymm2, %ymm2 # ymm2 = ymm2[0],ymm3[1],ymm2[2],ymm3[3],ymm2[4],ymm3[5],ymm2[6],ymm3[7]
+	vpermps	%ymm4, %ymm12, %ymm3
+	vpermps	%ymm1, %ymm13, %ymm5
+	vblendps	$170, %ymm3, %ymm5, %ymm3 # ymm3 = ymm5[0],ymm3[1],ymm5[2],ymm3[3],ymm5[4],ymm3[5],ymm5[6],ymm3[7]
+	vpermps	%ymm4, %ymm9, %ymm4
+	vpermps	%ymm1, %ymm10, %ymm1
+	vblendps	$170, %ymm4, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm4[1],ymm1[2],ymm4[3],ymm1[4],ymm4[5],ymm1[6],ymm4[7]
+	movq	1960(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm1, (%rax,%rdi)
+	movq	1976(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm3, 96(%rax,%rdi)
+	vmovups	%ymm2, 128(%rax,%rdi)
+	movq	1968(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm0, (%rax,%rdi)
+	addl	$32, %esi
+	subq	$-128, %rdi
+	addl	$-1, %edx
+	jne	.LBB148_222
+.LBB148_252:                            # %end for deinterleaved$3.s0.v15.v1532
+                                        #   in Loop: Header=BB148_126 Depth=2
+	movl	2400(%rsp), %edx        # 4-byte Reload
+	addl	$1, %edx
+	movl	%edx, 2400(%rsp)        # 4-byte Spill
+	movb	568(%rsp), %bl          # 1-byte Reload
+	addb	$1, %bl
+	movl	720(%rsp), %eax         # 4-byte Reload
+	addl	788(%rsp), %eax         # 4-byte Folded Reload
+	movl	%eax, 720(%rsp)         # 4-byte Spill
+	movq	912(%rsp), %rax         # 8-byte Reload
+	cmpl	%eax, %edx
+	jne	.LBB148_126
+.LBB148_159:                            # %end for deinterleaved$3.s0.v1624
+                                        #   in Loop: Header=BB148_119 Depth=1
+	movq	1504(%rsp), %rax        # 8-byte Reload
+	leal	3(%rax), %edx
+	movl	%edx, 728(%rsp)         # 4-byte Spill
+	movq	912(%rsp), %rax         # 8-byte Reload
+	cmpl	%edx, %eax
+	jge	.LBB148_282
+# BB#160:                               # %for deinterleaved$3.s0.v1634.preheader
+                                        #   in Loop: Header=BB148_119 Depth=1
+	movq	912(%rsp), %rax         # 8-byte Reload
+	movb	%al, %dl
+	.align	16, 0x90
+.LBB148_161:                            # %for deinterleaved$3.s0.v1634
+                                        #   Parent Loop BB148_119 Depth=1
+                                        # =>  This Loop Header: Depth=2
+                                        #       Child Loop BB148_163 Depth 3
+	movb	%dl, 864(%rsp)          # 1-byte Spill
+	movzbl	%dl, %r14d
+	andl	$3, %r14d
+	movq	792(%rsp), %rax         # 8-byte Reload
+	testl	%eax, %eax
+	jle	.LBB148_281
+# BB#162:                               # %for deinterleaved$3.s0.v15.v1537.preheader
+                                        #   in Loop: Header=BB148_161 Depth=2
+	imulq	712(%rsp), %r14         # 8-byte Folded Reload
+	movl	784(%rsp), %r11d        # 4-byte Reload
+	testl	%r11d, %r11d
+	setne	%r8b
+	sete	%r9b
+	movl	616(%rsp), %eax         # 4-byte Reload
+	movq	912(%rsp), %rsi         # 8-byte Reload
+	cmpl	%esi, %eax
+	movl	%eax, %edi
+	cmovgl	%esi, %edi
+	movq	%rcx, %r10
+	movq	664(%rsp), %rcx         # 8-byte Reload
+	cmpl	%ecx, %edi
+	cmovll	%ecx, %edi
+	movl	%esi, %eax
+	subl	%ecx, %eax
+	cltd
+	idivl	628(%rsp)               # 4-byte Folded Reload
+	movl	%edx, %eax
+	sarl	$31, %eax
+	andl	624(%rsp), %eax         # 4-byte Folded Reload
+	movq	632(%rsp), %rcx         # 8-byte Reload
+	subl	%ecx, %edx
+	leal	(%rdx,%rax), %ebx
+	leal	1(%rdx,%rax), %eax
+	cmpl	$-2, %ebx
+	notl	%ebx
+	cmovgl	%eax, %ebx
+	movl	620(%rsp), %eax         # 4-byte Reload
+	subl	%ebx, %eax
+	cmpl	%esi, 660(%rsp)         # 4-byte Folded Reload
+	cmovgl	%edi, %eax
+	imull	788(%rsp), %eax         # 4-byte Folded Reload
+	leaq	(%r14,%r13), %rdi
+	movl	%esi, %r14d
+	andl	$1, %r14d
+	movl	%r14d, 936(%rsp)        # 4-byte Spill
+	vmovd	%eax, %xmm1
+	vmovaps	672(%rsp), %ymm0        # 32-byte Reload
+	vinsertf128	$1, %xmm0, %ymm0, %ymm0
+	vmovaps	%ymm0, 2272(%rsp)       # 32-byte Spill
+	vpsubd	736(%rsp), %ymm1, %ymm1 # 32-byte Folded Reload
+	vpbroadcastd	%xmm1, %ymm0
+	vmovdqa	%ymm0, 2240(%rsp)       # 32-byte Spill
+	sete	%bl
+	movb	%r14b, %al
+	andb	%r9b, %al
+	movb	%al, 880(%rsp)          # 1-byte Spill
+	testl	%esi, %r11d
+	setne	%al
+	movl	%esi, %edx
+	movq	2168(%rsp), %rcx        # 8-byte Reload
+	orl	%ecx, %edx
+	movq	%r10, %rcx
+	testb	$1, %dl
+	sete	%dl
+	orb	%al, %dl
+	movb	%dl, 872(%rsp)          # 1-byte Spill
+	andb	%r8b, %bl
+	movb	%bl, 892(%rsp)          # 1-byte Spill
+	xorl	%esi, %esi
+	movq	792(%rsp), %rax         # 8-byte Reload
+	.align	16, 0x90
+.LBB148_163:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_161 Depth=2
+                                        # =>    This Inner Loop Header: Depth=3
+	movq	%rsi, 2560(%rsp)        # 8-byte Spill
+	movl	%eax, 1480(%rsp)        # 4-byte Spill
+	movq	%rdi, 1536(%rsp)        # 8-byte Spill
+	testl	%r14d, %r14d
+	sete	1472(%rsp)              # 1-byte Folded Spill
+	setne	1376(%rsp)              # 1-byte Folded Spill
+	movq	1744(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rsi), %eax
+	vmovd	%eax, %xmm1
+	vpbroadcastd	%xmm1, %ymm1
+	vmovdqa	.LCPI148_7(%rip), %ymm12 # ymm12 = [0,2,4,6,8,10,12,14]
+	vpaddd	%ymm12, %ymm1, %ymm2
+	vextracti128	$1, %ymm2, %xmm4
+	vpextrd	$1, %xmm4, %eax
+	vmovdqa	1712(%rsp), %xmm0       # 16-byte Reload
+	vpextrd	$1, %xmm0, %ebx
+	movl	%ebx, 1248(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ebx
+	movl	%edx, %r9d
+	vmovd	%xmm4, %eax
+	vmovd	%xmm0, %r12d
+	movl	%r12d, 1216(%rsp)       # 4-byte Spill
+	cltd
+	idivl	%r12d
+	movl	%edx, %esi
+	vpextrd	$2, %xmm4, %eax
+	vpextrd	$2, %xmm0, %r10d
+	movl	%r10d, 1184(%rsp)       # 4-byte Spill
+	cltd
+	idivl	%r10d
+	movl	%edx, %r14d
+	vpextrd	$3, %xmm4, %eax
+	vpextrd	$3, %xmm0, %r8d
+	movl	%r8d, 2304(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%r8d
+	movl	%edx, 2496(%rsp)        # 4-byte Spill
+	vpextrd	$1, %xmm2, %eax
+	vmovdqa	1920(%rsp), %ymm0       # 32-byte Reload
+	vpextrd	$1, %xmm0, %edi
+	movl	%edi, 1056(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	movl	%edx, %edi
+	vmovd	%esi, %xmm4
+	vmovd	%xmm2, %eax
+	vmovd	%xmm0, %esi
+	movl	%esi, 1024(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r11d
+	vpinsrd	$1, %r9d, %xmm4, %xmm4
+	vpextrd	$2, %xmm2, %eax
+	vpextrd	$2, %xmm0, %esi
+	movl	%esi, 1016(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r9d
+	vpinsrd	$2, %r14d, %xmm4, %xmm4
+	vpextrd	$3, %xmm2, %eax
+	vpextrd	$3, %xmm0, %esi
+	movl	%esi, 1008(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %r14d
+	vmovdqa	.LCPI148_6(%rip), %ymm9 # ymm9 = [16,18,20,22,24,26,28,30]
+	vpaddd	%ymm9, %ymm1, %ymm2
+	vextracti128	$1, %ymm2, %xmm6
+	vpextrd	$1, %xmm6, %eax
+	cltd
+	idivl	%ebx
+	movl	%edx, %esi
+	vpinsrd	$3, 2496(%rsp), %xmm4, %xmm15 # 4-byte Folded Reload
+	vmovd	%r11d, %xmm4
+	vmovd	%xmm6, %eax
+	cltd
+	idivl	%r12d
+	movl	%edx, %ebx
+	vpinsrd	$1, %edi, %xmm4, %xmm4
+	vpinsrd	$2, %r9d, %xmm4, %xmm4
+	vpextrd	$2, %xmm6, %eax
+	cltd
+	idivl	%r10d
+	movl	%edx, %edi
+	vpinsrd	$3, %r14d, %xmm4, %xmm5
+	vmovd	%ebx, %xmm4
+	vpextrd	$3, %xmm6, %eax
+	cltd
+	idivl	%r8d
+	movl	%edx, %ebx
+	vpinsrd	$1, %esi, %xmm4, %xmm4
+	vpextrd	$1, %xmm2, %eax
+	vpextrd	$1, %xmm0, %esi
+	movl	%esi, 1072(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%esi
+	movl	%edx, %esi
+	vpinsrd	$2, %edi, %xmm4, %xmm4
+	vmovd	%xmm2, %eax
+	vmovd	%xmm0, %edi
+	movl	%edi, 1064(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	movl	%edx, %edi
+	vpinsrd	$3, %ebx, %xmm4, %xmm6
+	vpextrd	$2, %xmm2, %eax
+	vpextrd	$2, %xmm0, %ebx
+	movl	%ebx, 1152(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%ebx
+	movl	%edx, %ebx
+	vmovd	%edi, %xmm4
+	vpextrd	$3, %xmm2, %eax
+	vpextrd	$3, %xmm0, %edi
+	movl	%edi, 1120(%rsp)        # 4-byte Spill
+	cltd
+	idivl	%edi
+	vpinsrd	$1, %esi, %xmm4, %xmm2
+	movq	2560(%rsp), %rsi        # 8-byte Reload
+	vpinsrd	$2, %ebx, %xmm2, %xmm7
+	vmovd	%esi, %xmm2
+	vpbroadcastd	%xmm2, %ymm2
+	vmovdqa	1856(%rsp), %ymm0       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm0, %ymm4
+	vmovdqa	.LCPI148_3(%rip), %ymm0 # ymm0 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
+	vmovdqa	%ymm0, %ymm10
+	vpshufb	%ymm10, %ymm4, %ymm4
+	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
+	vmovdqa	1824(%rsp), %ymm0       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm0, %ymm8
+	vpshufb	%ymm10, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vmovdqa	.LCPI148_4(%rip), %xmm0 # xmm0 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
+	vmovdqa	%xmm0, %xmm1
+	vpshufb	%xmm1, %xmm8, %xmm0
+	vpshufb	%xmm1, %xmm4, %xmm4
+	vpunpcklqdq	%xmm0, %xmm4, %xmm0 # xmm0 = xmm4[0],xmm0[0]
+	vpxor	.LCPI148_5(%rip), %xmm0, %xmm0
+	vmovdqa	1664(%rsp), %ymm3       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm3, %ymm4
+	vpshufb	%ymm10, %ymm4, %ymm4
+	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
+	vmovdqa	1632(%rsp), %ymm3       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm3, %ymm8
+	vpshufb	%ymm10, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vpshufb	%xmm1, %xmm8, %xmm3
+	vpshufb	%xmm1, %xmm4, %xmm4
+	vpunpcklqdq	%xmm3, %xmm4, %xmm3 # xmm3 = xmm4[0],xmm3[0]
+	vpor	%xmm0, %xmm3, %xmm13
+	vpinsrd	$3, %edx, %xmm7, %xmm0
+	vinserti128	$1, %xmm6, %ymm0, %ymm0
+	vpsrad	$31, %ymm0, %ymm3
+	vmovdqa	2272(%rsp), %ymm11      # 32-byte Reload
+	vpand	%ymm3, %ymm11, %ymm3
+	vmovdqa	2112(%rsp), %ymm8       # 32-byte Reload
+	vpaddd	%ymm0, %ymm8, %ymm0
+	vpaddd	%ymm3, %ymm0, %ymm0
+	vpabsd	%xmm0, %xmm3
+	vextracti128	$1, %ymm0, %xmm0
+	vpabsd	%xmm0, %xmm0
+	vinserti128	$1, %xmm0, %ymm3, %ymm0
+	vmovdqa	2048(%rsp), %ymm10      # 32-byte Reload
+	vpsubd	%ymm0, %ymm10, %ymm0
+	movq	1752(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rsi), %r9d
+	movl	%r9d, 1456(%rsp)        # 4-byte Spill
+	vmovd	%r9d, %xmm3
+	vpbroadcastd	%xmm3, %ymm14
+	vpaddd	%ymm9, %ymm14, %ymm3
+	vmovdqa	2032(%rsp), %xmm4       # 16-byte Reload
+	vpminsd	%xmm4, %xmm3, %xmm7
+	vextracti128	$1, %ymm3, %xmm3
+	vpminsd	%xmm4, %xmm3, %xmm3
+	vmovdqa	2096(%rsp), %xmm6       # 16-byte Reload
+	vpmaxsd	%xmm6, %xmm7, %xmm7
+	vpmaxsd	%xmm6, %xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm7, %ymm3
+	vpunpckhbw	%xmm13, %xmm13, %xmm7 # xmm7 = xmm13[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
+	vpmovzxwd	%xmm7, %ymm7    # ymm7 = xmm7[0],zero,xmm7[1],zero,xmm7[2],zero,xmm7[3],zero,xmm7[4],zero,xmm7[5],zero,xmm7[6],zero,xmm7[7],zero
+	vpslld	$31, %ymm7, %ymm7
+	vblendvps	%ymm7, %ymm0, %ymm3, %ymm0
+	vmovdqa	2240(%rsp), %ymm9       # 32-byte Reload
+	vpaddd	%ymm0, %ymm9, %ymm7
+	vmovq	%xmm7, %rsi
+	movslq	%esi, %rax
+	movq	%rsi, %r8
+	movq	%rax, 1408(%rsp)        # 8-byte Spill
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	vinserti128	$1, %xmm15, %ymm5, %ymm1
+	vpsrad	$31, %ymm1, %ymm3
+	vpand	%ymm3, %ymm11, %ymm3
+	vpaddd	%ymm1, %ymm8, %ymm1
+	vpaddd	%ymm3, %ymm1, %ymm1
+	vpabsd	%xmm1, %xmm3
+	vextracti128	$1, %ymm1, %xmm1
+	vpabsd	%xmm1, %xmm1
+	vinserti128	$1, %xmm1, %ymm3, %ymm1
+	vpaddd	%ymm12, %ymm14, %ymm3
+	vmovdqa	%ymm12, %ymm15
+	vpminsd	%xmm4, %xmm3, %xmm5
+	vextracti128	$1, %ymm3, %xmm3
+	vpminsd	%xmm4, %xmm3, %xmm3
+	vmovdqa	%xmm4, %xmm14
+	vpmaxsd	%xmm6, %xmm5, %xmm5
+	vpmaxsd	%xmm6, %xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm5, %ymm3
+	vpsubd	%ymm1, %ymm10, %ymm1
+	vpmovzxbd	%xmm13, %ymm4   # ymm4 = xmm13[0],zero,zero,zero,xmm13[1],zero,zero,zero,xmm13[2],zero,zero,zero,xmm13[3],zero,zero,zero,xmm13[4],zero,zero,zero,xmm13[5],zero,zero,zero,xmm13[6],zero,zero,zero,xmm13[7],zero,zero,zero
+	vpslld	$31, %ymm4, %ymm4
+	vblendvps	%ymm4, %ymm1, %ymm3, %ymm1
+	vpaddd	%ymm1, %ymm9, %ymm1
+	vmovq	%xmm1, %rax
+	movslq	%eax, %rdx
+	movq	%rdx, 2336(%rsp)        # 8-byte Spill
+	sarq	$32, %rax
+	vpextrq	$1, %xmm1, %rsi
+	movslq	%esi, %rdi
+	movq	%rdi, 2464(%rsp)        # 8-byte Spill
+	sarq	$32, %rsi
+	vextracti128	$1, %ymm1, %xmm1
+	vmovq	%xmm1, %rdi
+	movslq	%edi, %rdx
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	sarq	$32, %rdi
+	vpextrq	$1, %xmm1, %rbx
+	movslq	%ebx, %rdx
+	movq	%rdx, 2496(%rsp)        # 8-byte Spill
+	sarq	$32, %rbx
+	sarq	$32, %r8
+	movq	%r8, 2400(%rsp)         # 8-byte Spill
+	vpextrq	$1, %xmm7, %r12
+	movslq	%r12d, %rdx
+	movq	%rdx, 2368(%rsp)        # 8-byte Spill
+	sarq	$32, %r12
+	movq	%r12, 1104(%rsp)        # 8-byte Spill
+	vextracti128	$1, %ymm7, %xmm1
+	vmovq	%xmm1, %r10
+	movslq	%r10d, %r8
+	movq	%r8, 1080(%rsp)         # 8-byte Spill
+	sarq	$32, %r10
+	movq	%r10, 1096(%rsp)        # 8-byte Spill
+	vpextrq	$1, %xmm1, %r14
+	movslq	%r14d, %r11
+	movq	%r11, 1088(%rsp)        # 8-byte Spill
+	sarq	$32, %r14
+	movq	%r14, 1112(%rsp)        # 8-byte Spill
+	movl	%r9d, %edx
+	andl	$1, %edx
+	movl	%edx, 1448(%rsp)        # 4-byte Spill
+	sete	%r9b
+	andb	1376(%rsp), %r9b        # 1-byte Folded Reload
+	movq	2400(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rdx,2), %xmm0, %xmm0
+	movq	2368(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rdx,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$4, (%rcx,%r8,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r10,2), %xmm0, %xmm0
+	vpinsrw	$6, (%rcx,%r11,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r14,2), %xmm0, %xmm4
+	jne	.LBB148_164
+# BB#253:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vpxor	%ymm1, %ymm1, %ymm1
+	movq	2464(%rsp), %rcx        # 8-byte Reload
+	movq	2496(%rsp), %r8         # 8-byte Reload
+	movq	2432(%rsp), %rdx        # 8-byte Reload
+	jmp	.LBB148_254
+	.align	16, 0x90
+.LBB148_164:                            #   in Loop: Header=BB148_163 Depth=3
+	movq	2336(%rsp), %rdx        # 8-byte Reload
+	movzwl	(%rcx,%rdx,2), %edx
+	vmovd	%edx, %xmm0
+	vpinsrw	$1, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	2464(%rsp), %r8         # 8-byte Reload
+	vpinsrw	$2, (%rcx,%r8,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rsi,2), %xmm0, %xmm0
+	movq	2432(%rsp), %r10        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%r10,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%rdi,2), %xmm0, %xmm0
+	movq	2496(%rsp), %rdx        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rdx,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%rbx,2), %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm1
+	movq	%r8, %rcx
+	movq	%rdx, %r8
+	movq	%r10, %rdx
+.LBB148_254:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	testb	%r9b, %r9b
+	jne	.LBB148_255
+# BB#256:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	movq	%rcx, 2464(%rsp)        # 8-byte Spill
+	movq	%r8, 2496(%rsp)         # 8-byte Spill
+	movq	%rax, 1280(%rsp)        # 8-byte Spill
+	movq	%rdi, 1312(%rsp)        # 8-byte Spill
+	movq	%rsi, 1344(%rsp)        # 8-byte Spill
+	movq	%rbx, 1376(%rsp)        # 8-byte Spill
+	vpxor	%ymm6, %ymm6, %ymm6
+	jmp	.LBB148_257
+	.align	16, 0x90
+.LBB148_255:                            #   in Loop: Header=BB148_163 Depth=3
+	movq	%rdx, 2432(%rsp)        # 8-byte Spill
+	movq	%rcx, 2464(%rsp)        # 8-byte Spill
+	movq	%r8, 2496(%rsp)         # 8-byte Spill
+	movq	%rax, 1280(%rsp)        # 8-byte Spill
+	movq	%rdi, 1312(%rsp)        # 8-byte Spill
+	movq	%rsi, 1344(%rsp)        # 8-byte Spill
+	movq	%rbx, 1376(%rsp)        # 8-byte Spill
+	vpmovzxwd	%xmm4, %ymm0    # ymm0 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
+	vcvtdq2ps	%ymm0, %ymm6
+.LBB148_257:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	movq	1912(%rsp), %rax        # 8-byte Reload
+	movq	2560(%rsp), %r11        # 8-byte Reload
+	leal	(%rax,%r11), %eax
+	vmovd	%eax, %xmm0
+	vpbroadcastd	%xmm0, %ymm4
+	vpaddd	%ymm15, %ymm4, %ymm7
+	vextracti128	$1, %ymm7, %xmm0
+	vpextrd	$1, %xmm0, %eax
+	cltd
+	movl	1248(%rsp), %r10d       # 4-byte Reload
+	idivl	%r10d
+	movl	%edx, 952(%rsp)         # 4-byte Spill
+	vmovd	%xmm0, %eax
+	cltd
+	movl	1216(%rsp), %r9d        # 4-byte Reload
+	idivl	%r9d
+	movl	%edx, 944(%rsp)         # 4-byte Spill
+	vpextrd	$2, %xmm0, %eax
+	cltd
+	movl	1184(%rsp), %r12d       # 4-byte Reload
+	idivl	%r12d
+	movl	%edx, 960(%rsp)         # 4-byte Spill
+	vpextrd	$3, %xmm0, %eax
+	cltd
+	movl	2304(%rsp), %ecx        # 4-byte Reload
+	idivl	%ecx
+	movl	%edx, %r14d
+	vpextrd	$1, %xmm7, %eax
+	cltd
+	idivl	1056(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %r8d
+	vmovd	%xmm7, %eax
+	cltd
+	idivl	1024(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %ebx
+	vpextrd	$2, %xmm7, %eax
+	cltd
+	idivl	1016(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %esi
+	vpextrd	$3, %xmm7, %eax
+	cltd
+	idivl	1008(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %edi
+	vmovdqa	.LCPI148_6(%rip), %ymm13 # ymm13 = [16,18,20,22,24,26,28,30]
+	vpaddd	%ymm13, %ymm4, %ymm4
+	vextracti128	$1, %ymm4, %xmm0
+	vpextrd	$1, %xmm0, %eax
+	cltd
+	idivl	%r10d
+	movl	%edx, %r10d
+	vmovd	%xmm0, %eax
+	cltd
+	idivl	%r9d
+	movl	%edx, 1248(%rsp)        # 4-byte Spill
+	vpextrd	$2, %xmm0, %eax
+	cltd
+	idivl	%r12d
+	movl	%edx, %r12d
+	vmovd	944(%rsp), %xmm3        # 4-byte Folded Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vpinsrd	$1, 952(%rsp), %xmm3, %xmm3 # 4-byte Folded Reload
+	vmovdqa	1792(%rsp), %ymm5       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm5, %ymm7
+	vmovdqa	.LCPI148_3(%rip), %ymm11 # ymm11 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
+	vpshufb	%ymm11, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vmovdqa	1760(%rsp), %ymm5       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm5, %ymm8
+	vpshufb	%ymm11, %ymm8, %ymm8
+	vpermq	$232, %ymm8, %ymm8      # ymm8 = ymm8[0,2,2,3]
+	vmovdqa	.LCPI148_4(%rip), %xmm12 # xmm12 = <0,2,4,6,8,10,12,14,u,u,u,u,u,u,u,u>
+	vpshufb	%xmm12, %xmm8, %xmm5
+	vpshufb	%xmm12, %xmm7, %xmm7
+	vpunpcklqdq	%xmm5, %xmm7, %xmm5 # xmm5 = xmm7[0],xmm5[0]
+	vpxor	.LCPI148_5(%rip), %xmm5, %xmm5
+	vmovdqa	1600(%rsp), %ymm7       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm7, %ymm7
+	vpshufb	%ymm11, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vmovdqa	1568(%rsp), %ymm8       # 32-byte Reload
+	vpcmpgtd	%ymm2, %ymm8, %ymm2
+	vpshufb	%ymm11, %ymm2, %ymm2
+	vpermq	$232, %ymm2, %ymm2      # ymm2 = ymm2[0,2,2,3]
+	vpshufb	%xmm12, %xmm2, %xmm2
+	vpshufb	%xmm12, %xmm7, %xmm7
+	vpunpcklqdq	%xmm2, %xmm7, %xmm2 # xmm2 = xmm7[0],xmm2[0]
+	vpor	%xmm5, %xmm2, %xmm2
+	vpinsrd	$2, 960(%rsp), %xmm3, %xmm3 # 4-byte Folded Reload
+	vpinsrd	$3, %r14d, %xmm3, %xmm3
+	vmovd	%ebx, %xmm5
+	vpextrd	$3, %xmm0, %eax
+	cltd
+	idivl	%ecx
+	movl	%edx, %r9d
+	vpinsrd	$1, %r8d, %xmm5, %xmm0
+	vpinsrd	$2, %esi, %xmm0, %xmm0
+	vpextrd	$1, %xmm4, %eax
+	cltd
+	idivl	1072(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %esi
+	vpinsrd	$3, %edi, %xmm0, %xmm0
+	vinserti128	$1, %xmm3, %ymm0, %ymm0
+	vmovd	%xmm4, %eax
+	cltd
+	idivl	1064(%rsp)              # 4-byte Folded Reload
+	movl	%edx, %ebx
+	vpsrad	$31, %ymm0, %ymm3
+	vmovdqa	2272(%rsp), %ymm8       # 32-byte Reload
+	vpand	%ymm8, %ymm3, %ymm3
+	vmovdqa	2112(%rsp), %ymm9       # 32-byte Reload
+	vpaddd	%ymm0, %ymm9, %ymm0
+	vpaddd	%ymm3, %ymm0, %ymm0
+	vpabsd	%xmm0, %xmm3
+	vextracti128	$1, %ymm0, %xmm0
+	vpabsd	%xmm0, %xmm0
+	vinserti128	$1, %xmm0, %ymm3, %ymm0
+	vpsubd	%ymm0, %ymm10, %ymm0
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%r11), %eax
+	vmovd	%eax, %xmm3
+	vpbroadcastd	%xmm3, %ymm7
+	vpaddd	%ymm15, %ymm7, %ymm3
+	vpminsd	%xmm14, %xmm3, %xmm5
+	vextracti128	$1, %ymm3, %xmm3
+	vpminsd	%xmm14, %xmm3, %xmm3
+	vmovdqa	2096(%rsp), %xmm15      # 16-byte Reload
+	vpmaxsd	%xmm15, %xmm5, %xmm5
+	vpmaxsd	%xmm15, %xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm5, %ymm3
+	vpmovzxbd	%xmm2, %ymm5    # ymm5 = xmm2[0],zero,zero,zero,xmm2[1],zero,zero,zero,xmm2[2],zero,zero,zero,xmm2[3],zero,zero,zero,xmm2[4],zero,zero,zero,xmm2[5],zero,zero,zero,xmm2[6],zero,zero,zero,xmm2[7],zero,zero,zero
+	vpslld	$31, %ymm5, %ymm5
+	vblendvps	%ymm5, %ymm0, %ymm3, %ymm0
+	vmovd	1248(%rsp), %xmm3       # 4-byte Folded Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vpextrd	$2, %xmm4, %eax
+	cltd
+	idivl	1152(%rsp)              # 4-byte Folded Reload
+	vpinsrd	$1, %r10d, %xmm3, %xmm3
+	vpinsrd	$2, %r12d, %xmm3, %xmm3
+	vpinsrd	$3, %r9d, %xmm3, %xmm3
+	vpextrd	$3, %xmm4, %eax
+	vmovd	%ebx, %xmm4
+	vpinsrd	$1, %esi, %xmm4, %xmm4
+	vpinsrd	$2, %edx, %xmm4, %xmm4
+	cltd
+	idivl	1120(%rsp)              # 4-byte Folded Reload
+	vpinsrd	$3, %edx, %xmm4, %xmm4
+	vinserti128	$1, %xmm3, %ymm4, %ymm3
+	vpsrad	$31, %ymm3, %ymm4
+	vpand	%ymm8, %ymm4, %ymm4
+	vpaddd	%ymm3, %ymm9, %ymm3
+	vpaddd	%ymm4, %ymm3, %ymm3
+	vpabsd	%xmm3, %xmm4
+	vextracti128	$1, %ymm3, %xmm3
+	vpabsd	%xmm3, %xmm3
+	vinserti128	$1, %xmm3, %ymm4, %ymm3
+	vpaddd	%ymm13, %ymm7, %ymm4
+	vpminsd	%xmm14, %xmm4, %xmm5
+	vextracti128	$1, %ymm4, %xmm4
+	vpminsd	%xmm14, %xmm4, %xmm4
+	vpmaxsd	%xmm15, %xmm5, %xmm5
+	vpmaxsd	%xmm15, %xmm4, %xmm4
+	vinserti128	$1, %xmm4, %ymm5, %ymm4
+	vpsubd	%ymm3, %ymm10, %ymm3
+	vpunpckhbw	%xmm2, %xmm2, %xmm2 # xmm2 = xmm2[8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15]
+	vpmovzxwd	%xmm2, %ymm2    # ymm2 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
+	vpslld	$31, %ymm2, %ymm2
+	vblendvps	%ymm2, %ymm3, %ymm4, %ymm2
+	vmovdqa	2240(%rsp), %ymm3       # 32-byte Reload
+	vpaddd	%ymm2, %ymm3, %ymm2
+	vpaddd	%ymm0, %ymm3, %ymm0
+	vpextrq	$1, %xmm0, %r10
+	vmovq	%xmm0, %r9
+	movslq	%r9d, %rax
+	movq	%rax, 1016(%rsp)        # 8-byte Spill
+	sarq	$32, %r9
+	movslq	%r10d, %rax
+	movq	%rax, 960(%rsp)         # 8-byte Spill
+	sarq	$32, %r10
+	vextracti128	$1, %ymm0, %xmm0
+	vpextrq	$1, %xmm0, %r11
+	vmovq	%xmm0, %r8
+	movslq	%r8d, %rax
+	movq	%rax, 1008(%rsp)        # 8-byte Spill
+	sarq	$32, %r8
+	movslq	%r11d, %rax
+	movq	%rax, 2304(%rsp)        # 8-byte Spill
+	sarq	$32, %r11
+	vpextrq	$1, %xmm2, %rsi
+	vmovq	%xmm2, %r14
+	movslq	%r14d, %rax
+	movq	%rax, 1056(%rsp)        # 8-byte Spill
+	sarq	$32, %r14
+	movslq	%esi, %r12
+	movq	%r12, 1024(%rsp)        # 8-byte Spill
+	sarq	$32, %rsi
+	vextracti128	$1, %ymm2, %xmm0
+	vmovq	%xmm0, %rbx
+	movq	1736(%rsp), %rcx        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %edx
+	vmovd	%edx, %xmm2
+	movslq	%ebx, %rdi
+	movq	%rdi, 1216(%rsp)        # 8-byte Spill
+	sarq	$32, %rbx
+	movq	%rbx, 1064(%rsp)        # 8-byte Spill
+	vpextrq	$1, %xmm0, %rdx
+	movslq	%edx, %rax
+	movq	%rax, 1248(%rsp)        # 8-byte Spill
+	sarq	$32, %rdx
+	vpinsrw	$1, (%rcx,%r14,2), %xmm2, %xmm0
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rsi,2), %xmm0, %xmm4
+	cmpb	$0, 880(%rsp)           # 1-byte Folded Reload
+	movzwl	(%rcx,%rdi,2), %edi
+	movl	%edi, 1072(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rbx,2), %edi
+	movl	%edi, 1120(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rax,2), %eax
+	movl	%eax, 1152(%rsp)        # 4-byte Spill
+	movzwl	(%rcx,%rdx,2), %eax
+	movl	%eax, 1184(%rsp)        # 4-byte Spill
+	jne	.LBB148_258
+# BB#259:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	movq	960(%rsp), %r12         # 8-byte Reload
+	vpxor	%ymm2, %ymm2, %ymm2
+	vmovaps	.LCPI148_8(%rip), %ymm11 # ymm11 = <u,4,u,5,u,6,u,7>
+	vmovaps	.LCPI148_9(%rip), %ymm12 # ymm12 = <4,u,5,u,6,u,7,u>
+	movq	1536(%rsp), %rdi        # 8-byte Reload
+	movq	1016(%rsp), %rax        # 8-byte Reload
+	movq	1008(%rsp), %rbx        # 8-byte Reload
+	jmp	.LBB148_260
+	.align	16, 0x90
+.LBB148_258:                            #   in Loop: Header=BB148_163 Depth=3
+	movq	1016(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %r12d
+	vmovd	%r12d, %xmm0
+	vpinsrw	$1, (%rcx,%r9,2), %xmm0, %xmm0
+	movq	960(%rsp), %r12         # 8-byte Reload
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r10,2), %xmm0, %xmm0
+	movq	1008(%rsp), %rbx        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rbx,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r8,2), %xmm0, %xmm0
+	movq	2304(%rsp), %rdi        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rdi,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r11,2), %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm2
+	vmovaps	.LCPI148_8(%rip), %ymm11 # ymm11 = <u,4,u,5,u,6,u,7>
+	vmovaps	.LCPI148_9(%rip), %ymm12 # ymm12 = <4,u,5,u,6,u,7,u>
+	movq	1536(%rsp), %rdi        # 8-byte Reload
+.LBB148_260:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	jne	.LBB148_261
+# BB#262:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vpxor	%ymm4, %ymm4, %ymm4
+	jmp	.LBB148_263
+	.align	16, 0x90
+.LBB148_261:                            #   in Loop: Header=BB148_163 Depth=3
+	vpinsrw	$4, 1072(%rsp), %xmm4, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$5, 1120(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$6, 1152(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$7, 1184(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm4
+.LBB148_263:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vpermps	%ymm4, %ymm11, %ymm0
+	vpermps	%ymm6, %ymm12, %ymm3
+	vblendps	$170, %ymm0, %ymm3, %ymm0 # ymm0 = ymm3[0],ymm0[1],ymm3[2],ymm0[3],ymm3[4],ymm0[5],ymm3[6],ymm0[7]
+	vmovaps	.LCPI148_10(%rip), %ymm3 # ymm3 = <u,0,u,1,u,2,u,3>
+	vmovaps	%ymm3, %ymm7
+	vpermps	%ymm4, %ymm7, %ymm3
+	vmovaps	.LCPI148_11(%rip), %ymm4 # ymm4 = <0,u,1,u,2,u,3,u>
+	vmovaps	%ymm4, %ymm8
+	vpermps	%ymm6, %ymm8, %ymm4
+	vblendps	$170, %ymm3, %ymm4, %ymm3 # ymm3 = ymm4[0],ymm3[1],ymm4[2],ymm3[3],ymm4[4],ymm3[5],ymm4[6],ymm3[7]
+	vpermps	%ymm2, %ymm11, %ymm4
+	vpermps	%ymm1, %ymm12, %ymm5
+	vblendps	$170, %ymm4, %ymm5, %ymm4 # ymm4 = ymm5[0],ymm4[1],ymm5[2],ymm4[3],ymm5[4],ymm4[5],ymm5[6],ymm4[7]
+	vpermps	%ymm2, %ymm7, %ymm2
+	vmovaps	%ymm7, %ymm5
+	vpermps	%ymm1, %ymm8, %ymm1
+	vmovaps	%ymm8, %ymm14
+	vblendps	$170, %ymm2, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm2[1],ymm1[2],ymm2[3],ymm1[4],ymm2[5],ymm1[6],ymm2[7]
+	vmovups	%ymm1, (%rdi)
+	vmovups	%ymm4, 32(%rdi)
+	vmovups	%ymm3, 64(%rdi)
+	vmovups	%ymm0, 96(%rdi)
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	vpinsrw	$1, (%rcx,%r9,2), %xmm0, %xmm0
+	vpinsrw	$2, (%rcx,%r12,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%r10,2), %xmm0, %xmm0
+	vpinsrw	$4, (%rcx,%rbx,2), %xmm0, %xmm0
+	vpinsrw	$5, (%rcx,%r8,2), %xmm0, %xmm0
+	movq	2304(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$7, (%rcx,%r11,2), %xmm0, %xmm6
+	movq	1056(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$0, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$1, (%rcx,%r14,2), %xmm0, %xmm0
+	movq	1024(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm0, %xmm0
+	vpinsrw	$3, (%rcx,%rsi,2), %xmm0, %xmm1
+	movq	1408(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm0
+	movq	2400(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	2368(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1104(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$3, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1080(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1096(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1088(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	1112(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$7, (%rcx,%rax,2), %xmm0, %xmm0
+	movq	2336(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	vmovd	%eax, %xmm2
+	movq	1280(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$1, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2464(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$2, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1344(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$3, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2432(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1312(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	2496(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$6, (%rcx,%rax,2), %xmm2, %xmm2
+	movq	1376(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$7, (%rcx,%rax,2), %xmm2, %xmm2
+	movl	936(%rsp), %r14d        # 4-byte Reload
+	movl	1456(%rsp), %ebx        # 4-byte Reload
+	testl	%ebx, %r14d
+	setne	%al
+	movq	912(%rsp), %rsi         # 8-byte Reload
+	orl	%esi, %ebx
+	testb	$1, %bl
+	sete	%bl
+	orb	%al, %bl
+	vpmovzxwd	%xmm0, %ymm4    # ymm4 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vpmovzxwd	%xmm2, %ymm0    # ymm0 = xmm2[0],zero,xmm2[1],zero,xmm2[2],zero,xmm2[3],zero,xmm2[4],zero,xmm2[5],zero,xmm2[6],zero,xmm2[7],zero
+	vcvtdq2ps	%ymm0, %ymm2
+	vmovaps	%ymm2, %ymm7
+	jne	.LBB148_265
+# BB#264:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vxorps	%ymm7, %ymm7, %ymm7
+.LBB148_265:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vcvtdq2ps	%ymm4, %ymm4
+	vmovaps	%ymm4, %ymm8
+	movq	2560(%rsp), %rsi        # 8-byte Reload
+	jne	.LBB148_267
+# BB#266:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vxorps	%ymm8, %ymm8, %ymm8
+.LBB148_267:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vpmovzxwd	%xmm6, %ymm0    # ymm0 = xmm6[0],zero,xmm6[1],zero,xmm6[2],zero,xmm6[3],zero,xmm6[4],zero,xmm6[5],zero,xmm6[6],zero,xmm6[7],zero
+	vcvtdq2ps	%ymm0, %ymm6
+	vmovaps	%ymm6, %ymm9
+	cmpb	$0, 872(%rsp)           # 1-byte Folded Reload
+	jne	.LBB148_269
+# BB#268:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vxorps	%ymm9, %ymm9, %ymm9
+.LBB148_269:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	jne	.LBB148_270
+# BB#271:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vpxor	%ymm10, %ymm10, %ymm10
+	jmp	.LBB148_272
+	.align	16, 0x90
+.LBB148_270:                            #   in Loop: Header=BB148_163 Depth=3
+	vpinsrw	$4, 1072(%rsp), %xmm1, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$5, 1120(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$6, 1152(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpinsrw	$7, 1184(%rsp), %xmm0, %xmm0 # 4-byte Folded Reload
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm10
+.LBB148_272:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vpermps	%ymm10, %ymm11, %ymm0
+	vpermps	%ymm8, %ymm12, %ymm3
+	vblendps	$170, %ymm0, %ymm3, %ymm0 # ymm0 = ymm3[0],ymm0[1],ymm3[2],ymm0[3],ymm3[4],ymm0[5],ymm3[6],ymm0[7]
+	vmovaps	%ymm5, %ymm13
+	vpermps	%ymm10, %ymm13, %ymm3
+	vpermps	%ymm8, %ymm14, %ymm5
+	vblendps	$170, %ymm3, %ymm5, %ymm3 # ymm3 = ymm5[0],ymm3[1],ymm5[2],ymm3[3],ymm5[4],ymm3[5],ymm5[6],ymm3[7]
+	vpermps	%ymm9, %ymm11, %ymm5
+	vpermps	%ymm7, %ymm12, %ymm8
+	vblendps	$170, %ymm5, %ymm8, %ymm5 # ymm5 = ymm8[0],ymm5[1],ymm8[2],ymm5[3],ymm8[4],ymm5[5],ymm8[6],ymm5[7]
+	vpermps	%ymm9, %ymm13, %ymm8
+	vmovaps	%ymm13, %ymm9
+	vpermps	%ymm7, %ymm14, %ymm7
+	vmovaps	%ymm14, %ymm10
+	vblendps	$170, %ymm8, %ymm7, %ymm7 # ymm7 = ymm7[0],ymm8[1],ymm7[2],ymm8[3],ymm7[4],ymm8[5],ymm7[6],ymm8[7]
+	movq	1984(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm7, 32(%rax,%rdi)
+	vmovups	%ymm5, 64(%rax,%rdi)
+	vmovups	%ymm3, 96(%rax,%rdi)
+	vmovups	%ymm0, 128(%rax,%rdi)
+	movb	1472(%rsp), %al         # 1-byte Reload
+	movl	1448(%rsp), %ebx        # 4-byte Reload
+	andb	%bl, %al
+	jne	.LBB148_274
+# BB#273:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vxorps	%ymm2, %ymm2, %ymm2
+.LBB148_274:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	testb	%al, %al
+	vxorps	%ymm3, %ymm3, %ymm3
+	jne	.LBB148_276
+# BB#275:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vxorps	%ymm4, %ymm4, %ymm4
+.LBB148_276:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	movq	1216(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$4, (%rcx,%rax,2), %xmm1, %xmm0
+	movq	1064(%rsp), %rax        # 8-byte Reload
+	vpinsrw	$5, (%rcx,%rax,2), %xmm0, %xmm1
+	movq	1248(%rsp), %rax        # 8-byte Reload
+	movzwl	(%rcx,%rax,2), %eax
+	movzwl	(%rcx,%rdx,2), %edx
+	cmpb	$0, 892(%rsp)           # 1-byte Folded Reload
+	jne	.LBB148_278
+# BB#277:                               # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vxorps	%ymm6, %ymm6, %ymm6
+.LBB148_278:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	je	.LBB148_280
+# BB#279:                               #   in Loop: Header=BB148_163 Depth=3
+	vpinsrw	$6, %eax, %xmm1, %xmm0
+	vpinsrw	$7, %edx, %xmm0, %xmm0
+	vpmovzxwd	%xmm0, %ymm0    # ymm0 = xmm0[0],zero,xmm0[1],zero,xmm0[2],zero,xmm0[3],zero,xmm0[4],zero,xmm0[5],zero,xmm0[6],zero,xmm0[7],zero
+	vcvtdq2ps	%ymm0, %ymm3
+.LBB148_280:                            # %for deinterleaved$3.s0.v15.v1537
+                                        #   in Loop: Header=BB148_163 Depth=3
+	vpermps	%ymm4, %ymm12, %ymm0
+	vpermps	%ymm3, %ymm11, %ymm1
+	vblendps	$170, %ymm1, %ymm0, %ymm0 # ymm0 = ymm0[0],ymm1[1],ymm0[2],ymm1[3],ymm0[4],ymm1[5],ymm0[6],ymm1[7]
+	vpermps	%ymm4, %ymm10, %ymm1
+	vpermps	%ymm3, %ymm9, %ymm3
+	vblendps	$170, %ymm3, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm3[1],ymm1[2],ymm3[3],ymm1[4],ymm3[5],ymm1[6],ymm3[7]
+	vpermps	%ymm6, %ymm11, %ymm3
+	vpermps	%ymm2, %ymm12, %ymm4
+	vblendps	$170, %ymm3, %ymm4, %ymm3 # ymm3 = ymm4[0],ymm3[1],ymm4[2],ymm3[3],ymm4[4],ymm3[5],ymm4[6],ymm3[7]
+	vpermps	%ymm6, %ymm9, %ymm4
+	vpermps	%ymm2, %ymm10, %ymm2
+	vblendps	$170, %ymm4, %ymm2, %ymm2 # ymm2 = ymm2[0],ymm4[1],ymm2[2],ymm4[3],ymm2[4],ymm4[5],ymm2[6],ymm4[7]
+	movq	1960(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm2, (%rax,%rdi)
+	movq	1976(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm3, 96(%rax,%rdi)
+	vmovups	%ymm1, 128(%rax,%rdi)
+	movq	1968(%rsp), %rax        # 8-byte Reload
+	vmovups	%ymm0, (%rax,%rdi)
+	addl	$32, %esi
+	subq	$-128, %rdi
+	movl	1480(%rsp), %eax        # 4-byte Reload
+	addl	$-1, %eax
+	jne	.LBB148_163
+.LBB148_281:                            # %end for deinterleaved$3.s0.v15.v1538
+                                        #   in Loop: Header=BB148_161 Depth=2
+	movq	912(%rsp), %rax         # 8-byte Reload
+	addl	$1, %eax
+	movq	%rax, 912(%rsp)         # 8-byte Spill
+	movb	864(%rsp), %dl          # 1-byte Reload
+	addb	$1, %dl
+	cmpl	728(%rsp), %eax         # 4-byte Folded Reload
+	jne	.LBB148_161
+.LBB148_282:                            # %consume deinterleaved$340
+                                        #   in Loop: Header=BB148_119 Depth=1
+	movq	%rcx, 1736(%rsp)        # 8-byte Spill
+	cmpl	$0, 564(%rsp)           # 4-byte Folded Reload
+	jle	.LBB148_290
+# BB#283:                               # %produce demosaiced$344.preheader
+                                        #   in Loop: Header=BB148_119 Depth=1
+	movq	2528(%rsp), %rax        # 8-byte Reload
+	cltq
+	movq	432(%rsp), %rcx         # 8-byte Reload
+	leaq	(%rax,%rcx), %rax
+	shlq	$5, %rax
+	movq	288(%rsp), %rcx         # 8-byte Reload
+	leaq	(%rcx,%rax), %rdx
+	movq	304(%rsp), %rcx         # 8-byte Reload
+	leaq	(%rcx,%rax), %rsi
+	movq	312(%rsp), %rcx         # 8-byte Reload
+	leaq	(%rax,%rcx), %rcx
+	movq	448(%rsp), %rax         # 8-byte Reload
+	leaq	(%rax,%rax), %rdi
+	movq	400(%rsp), %rax         # 8-byte Reload
+	addl	%eax, %edi
+	movq	%rdi, 1056(%rsp)        # 8-byte Spill
+	movq	392(%rsp), %rax         # 8-byte Reload
+	vbroadcastss	(%rax), %ymm0
+	vmovaps	%ymm0, 1376(%rsp)       # 32-byte Spill
+	movq	384(%rsp), %rax         # 8-byte Reload
+	vbroadcastss	(%rax), %ymm0
+	vmovaps	%ymm0, 1344(%rsp)       # 32-byte Spill
+	movq	376(%rsp), %rax         # 8-byte Reload
+	vbroadcastss	(%rax), %ymm0
+	vmovaps	%ymm0, 1312(%rsp)       # 32-byte Spill
+	movq	368(%rsp), %rax         # 8-byte Reload
+	vbroadcastss	(%rax), %ymm0
+	vmovaps	%ymm0, 1280(%rsp)       # 32-byte Spill
+	movq	360(%rsp), %rax         # 8-byte Reload
+	vbroadcastss	(%rax), %ymm0
+	vmovaps	%ymm0, 1248(%rsp)       # 32-byte Spill
+	movq	352(%rsp), %rax         # 8-byte Reload
+	vbroadcastss	(%rax), %ymm0
+	vmovaps	%ymm0, 1216(%rsp)       # 32-byte Spill
+	movq	344(%rsp), %rax         # 8-byte Reload
+	vbroadcastss	(%rax), %ymm0
+	vmovaps	%ymm0, 1184(%rsp)       # 32-byte Spill
+	movq	336(%rsp), %rax         # 8-byte Reload
+	vbroadcastss	(%rax), %ymm0
+	vmovaps	%ymm0, 1152(%rsp)       # 32-byte Spill
+	movq	328(%rsp), %rax         # 8-byte Reload
+	vpbroadcastd	(%rax), %ymm0
+	vmovdqa	%ymm0, 1120(%rsp)       # 32-byte Spill
+	movq	416(%rsp), %rax         # 8-byte Reload
+	movq	%rax, 1112(%rsp)        # 8-byte Spill
+	movq	424(%rsp), %rax         # 8-byte Reload
+	movq	%rax, 1104(%rsp)        # 8-byte Spill
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	xorl	%edi, %edi
+	.align	16, 0x90
+.LBB148_284:                            # %produce demosaiced$344
+                                        #   Parent Loop BB148_119 Depth=1
+                                        # =>  This Loop Header: Depth=2
+                                        #       Child Loop BB148_285 Depth 3
+                                        #         Child Loop BB148_286 Depth 4
+                                        #       Child Loop BB148_305 Depth 3
+                                        #         Child Loop BB148_306 Depth 4
+                                        #       Child Loop BB148_321 Depth 3
+                                        #         Child Loop BB148_322 Depth 4
+                                        #       Child Loop BB148_340 Depth 3
+                                        #         Child Loop BB148_341 Depth 4
+	movq	%rdi, 1064(%rsp)        # 8-byte Spill
+	movl	%eax, 1072(%rsp)        # 4-byte Spill
+	movq	%rcx, 1080(%rsp)        # 8-byte Spill
+	movq	%rsi, 1088(%rsp)        # 8-byte Spill
+	movq	%rdx, 1096(%rsp)        # 8-byte Spill
+	cltq
+	leaq	(%rdx,%rax), %rdx
+	leaq	2592(%rsp,%rdx,4), %rdx
+	movq	%rdx, 1480(%rsp)        # 8-byte Spill
+	leaq	(%rsi,%rax), %rdx
+	leaq	2592(%rsp,%rdx,4), %rdx
+	movq	%rdx, 1472(%rsp)        # 8-byte Spill
+	leaq	(%rax,%rcx), %rax
+	leaq	2592(%rsp,%rax,4), %r14
+	shll	$5, %edi
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	addl	%eax, %edi
+	movq	%rdi, 1536(%rsp)        # 8-byte Spill
+	xorl	%eax, %eax
+	xorl	%edx, %edx
+	vmovaps	1696(%rsp), %xmm4       # 16-byte Reload
+	vmovaps	592(%rsp), %xmm6        # 16-byte Reload
+	vxorps	%xmm11, %xmm11, %xmm11
+	.align	16, 0x90
+.LBB148_285:                            # %for demosaiced$3.s0.v15.v1545
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_284 Depth=2
+                                        # =>    This Loop Header: Depth=3
+                                        #         Child Loop BB148_286 Depth 4
+	movq	%rdx, 1408(%rsp)        # 8-byte Spill
+	movq	%rax, 1448(%rsp)        # 8-byte Spill
+	movq	%r14, 1456(%rsp)        # 8-byte Spill
+	movq	1536(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rdx,8), %edx
+	movl	%eax, %r8d
+	andl	$1, %r8d
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	subl	%eax, %edx
+	movl	1464(%rsp), %edi        # 4-byte Reload
+	xorl	%esi, %esi
+	movq	1504(%rsp), %r9         # 8-byte Reload
+	.align	16, 0x90
+.LBB148_286:                            # %for demosaiced$3.s0.v1649
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_284 Depth=2
+                                        #       Parent Loop BB148_285 Depth=3
+                                        # =>      This Inner Loop Header: Depth=4
+	movl	%edi, %eax
+	andl	$3, %eax
+	movq	2552(%rsp), %rcx        # 8-byte Reload
+	imull	%ecx, %eax
+	addl	$1, %r9d
+	movl	%r9d, %r10d
+	andl	$3, %r10d
+	imull	%ecx, %r10d
+	movq	2528(%rsp), %rbx        # 8-byte Reload
+	leal	(%rbx,%rsi), %r12d
+	addl	%edx, %eax
+	addl	%edx, %r10d
+	movl	%r12d, %r11d
+	andl	$3, %r11d
+	imull	%ecx, %r11d
+	addl	%edx, %r11d
+	cltq
+	vmovups	(%r13,%rax,4), %xmm0
+	vmovaps	%xmm0, 2272(%rsp)       # 16-byte Spill
+	vmovups	16(%r13,%rax,4), %xmm1
+	vmovaps	%xmm1, 2240(%rsp)       # 16-byte Spill
+	vshufps	$221, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[1,3],xmm1[1,3]
+	vsubps	%xmm6, %xmm0, %xmm0
+	vmulps	%xmm0, %xmm4, %xmm0
+	vmovaps	%xmm0, 2432(%rsp)       # 16-byte Spill
+	movslq	%r10d, %rbx
+	vmovups	(%r13,%rbx,4), %xmm14
+	vmovups	16(%r13,%rbx,4), %xmm8
+	vshufps	$221, %xmm8, %xmm14, %xmm0 # xmm0 = xmm14[1,3],xmm8[1,3]
+	vsubps	%xmm6, %xmm0, %xmm0
+	vmulps	%xmm0, %xmm4, %xmm12
+	vmovups	8(%r13,%rax,4), %xmm0
+	vmovaps	%xmm0, 2400(%rsp)       # 16-byte Spill
+	vmovups	24(%r13,%rax,4), %xmm1
+	vmovaps	%xmm1, 2368(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[0,2],xmm1[0,2]
+	vsubps	%xmm6, %xmm0, %xmm0
+	vmulps	%xmm0, %xmm4, %xmm13
+	vmovups	8(%r13,%rbx,4), %xmm0
+	vmovaps	%xmm0, 2336(%rsp)       # 16-byte Spill
+	vmovups	24(%r13,%rbx,4), %xmm1
+	vmovaps	%xmm1, 2304(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm1, %xmm0, %xmm0 # xmm0 = xmm0[0,2],xmm1[0,2]
+	vsubps	%xmm6, %xmm0, %xmm0
+	vmulps	%xmm0, %xmm4, %xmm15
+	movslq	%r11d, %rax
+	vmovups	(%r13,%rax,4), %xmm7
+	vmovups	16(%r13,%rax,4), %xmm1
+	vshufps	$221, %xmm1, %xmm7, %xmm0 # xmm0 = xmm7[1,3],xmm1[1,3]
+	vsubps	%xmm6, %xmm0, %xmm0
+	vmulps	%xmm0, %xmm4, %xmm2
+	vmovups	8(%r13,%rax,4), %xmm10
+	vmovups	24(%r13,%rax,4), %xmm9
+	vshufps	$136, %xmm9, %xmm10, %xmm0 # xmm0 = xmm10[0,2],xmm9[0,2]
+	vsubps	%xmm6, %xmm0, %xmm0
+	vmovaps	%xmm6, %xmm5
+	vmovaps	%xmm4, %xmm6
+	vmulps	%xmm0, %xmm6, %xmm4
+	vbroadcastss	.LCPI148_13(%rip), %xmm0
+	vminps	%xmm0, %xmm4, %xmm4
+	vmaxps	%xmm11, %xmm4, %xmm3
+	vmovaps	%xmm6, %xmm4
+	vmovaps	%xmm5, %xmm6
+	vminps	%xmm0, %xmm2, %xmm2
+	vxorps	%xmm5, %xmm5, %xmm5
+	vmaxps	%xmm5, %xmm2, %xmm11
+	testl	%r8d, %r8d
+	vbroadcastss	.LCPI148_14(%rip), %xmm2
+	vmovaps	%xmm2, 2560(%rsp)       # 16-byte Spill
+	vmovaps	%xmm11, 2464(%rsp)      # 16-byte Spill
+	je	.LBB148_288
+# BB#287:                               # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	vshufps	$136, %xmm1, %xmm7, %xmm1 # xmm1 = xmm7[0,2],xmm1[0,2]
+	vsubps	%xmm6, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm4, %xmm1
+	vminps	%xmm0, %xmm1, %xmm1
+	vmaxps	%xmm5, %xmm1, %xmm1
+	vaddps	%xmm3, %xmm1, %xmm1
+	vmulps	2560(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
+	vmovaps	%xmm1, 2464(%rsp)       # 16-byte Spill
+.LBB148_288:                            # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	vmovaps	%xmm3, 2496(%rsp)       # 16-byte Spill
+	vminps	%xmm0, %xmm15, %xmm1
+	vmaxps	%xmm5, %xmm1, %xmm7
+	vminps	%xmm0, %xmm13, %xmm1
+	vmaxps	%xmm5, %xmm1, %xmm13
+	vbroadcastss	.LCPI148_15(%rip), %xmm15
+	vminps	%xmm0, %xmm12, %xmm1
+	vmaxps	%xmm5, %xmm1, %xmm12
+	vmovaps	2432(%rsp), %xmm1       # 16-byte Reload
+	vminps	%xmm0, %xmm1, %xmm1
+	vmaxps	%xmm5, %xmm1, %xmm1
+	je	.LBB148_289
+# BB#292:                               # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	vmovaps	%xmm1, 2432(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm8, %xmm14, %xmm1 # xmm1 = xmm14[0,2],xmm8[0,2]
+	vsubps	%xmm6, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm4, %xmm1
+	vminps	%xmm0, %xmm1, %xmm1
+	vmaxps	%xmm5, %xmm1, %xmm1
+	vaddps	%xmm7, %xmm1, %xmm1
+	vmovaps	2272(%rsp), %xmm2       # 16-byte Reload
+	vshufps	$136, 2240(%rsp), %xmm2, %xmm2 # 16-byte Folded Reload
+                                        # xmm2 = xmm2[0,2],mem[0,2]
+	vsubps	%xmm6, %xmm2, %xmm2
+	vmulps	%xmm2, %xmm4, %xmm2
+	vminps	%xmm0, %xmm2, %xmm2
+	vmaxps	%xmm5, %xmm2, %xmm2
+	vxorps	%xmm5, %xmm5, %xmm5
+	vaddps	%xmm13, %xmm2, %xmm2
+	vaddps	%xmm1, %xmm2, %xmm1
+	vmulps	%xmm15, %xmm1, %xmm3
+	jmp	.LBB148_293
+	.align	16, 0x90
+.LBB148_289:                            #   in Loop: Header=BB148_286 Depth=4
+	vxorps	%xmm5, %xmm5, %xmm5
+	vmovaps	%xmm1, 2432(%rsp)       # 16-byte Spill
+	vaddps	%xmm12, %xmm1, %xmm1
+	vmulps	2560(%rsp), %xmm1, %xmm3 # 16-byte Folded Reload
+.LBB148_293:                            # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	jne	.LBB148_295
+# BB#294:                               # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	vshufps	$221, %xmm9, %xmm10, %xmm1 # xmm1 = xmm10[1,3],xmm9[1,3]
+	vsubps	%xmm6, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm4, %xmm1
+	vminps	%xmm0, %xmm1, %xmm1
+	vmaxps	%xmm5, %xmm1, %xmm1
+	vaddps	%xmm1, %xmm11, %xmm1
+	vmulps	2560(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
+	vmovaps	%xmm1, 2496(%rsp)       # 16-byte Spill
+.LBB148_295:                            # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	jne	.LBB148_296
+# BB#297:                               # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	vmovaps	2336(%rsp), %xmm1       # 16-byte Reload
+	vshufps	$221, 2304(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
+                                        # xmm1 = xmm1[1,3],mem[1,3]
+	vsubps	%xmm6, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm4, %xmm1
+	vminps	%xmm0, %xmm1, %xmm1
+	vxorps	%xmm11, %xmm11, %xmm11
+	vmaxps	%xmm11, %xmm1, %xmm1
+	vaddps	%xmm1, %xmm12, %xmm1
+	vmovaps	2400(%rsp), %xmm2       # 16-byte Reload
+	vshufps	$221, 2368(%rsp), %xmm2, %xmm2 # 16-byte Folded Reload
+                                        # xmm2 = xmm2[1,3],mem[1,3]
+	vsubps	%xmm6, %xmm2, %xmm2
+	vmulps	%xmm2, %xmm4, %xmm2
+	vminps	%xmm0, %xmm2, %xmm2
+	vmaxps	%xmm11, %xmm2, %xmm2
+	vaddps	2432(%rsp), %xmm2, %xmm2 # 16-byte Folded Reload
+	vaddps	%xmm1, %xmm2, %xmm1
+	vmulps	%xmm15, %xmm1, %xmm1
+	jmp	.LBB148_298
+	.align	16, 0x90
+.LBB148_296:                            #   in Loop: Header=BB148_286 Depth=4
+	vaddps	%xmm7, %xmm13, %xmm1
+	vmulps	2560(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
+	vxorps	%xmm11, %xmm11, %xmm11
+.LBB148_298:                            # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	andl	$1, %r12d
+	je	.LBB148_300
+# BB#299:                               # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	vmovaps	2464(%rsp), %xmm2       # 16-byte Reload
+	vmovaps	%xmm2, %xmm3
+.LBB148_300:                            # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	testl	%r12d, %r12d
+	je	.LBB148_302
+# BB#301:                               # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	vmovaps	2496(%rsp), %xmm1       # 16-byte Reload
+.LBB148_302:                            # %for demosaiced$3.s0.v1649
+                                        #   in Loop: Header=BB148_286 Depth=4
+	vmovaps	.LCPI148_10(%rip), %ymm2 # ymm2 = <u,0,u,1,u,2,u,3>
+	vpermps	%ymm1, %ymm2, %ymm1
+	vmovaps	.LCPI148_11(%rip), %ymm2 # ymm2 = <0,u,1,u,2,u,3,u>
+	vpermps	%ymm3, %ymm2, %ymm2
+	vblendps	$170, %ymm1, %ymm2, %ymm1 # ymm1 = ymm2[0],ymm1[1],ymm2[2],ymm1[3],ymm2[4],ymm1[5],ymm2[6],ymm1[7]
+	vmovups	%ymm1, (%r14)
+	subq	$-128, %r14
+	addl	$1, %esi
+	addl	$1, %edi
+	cmpl	$2, %esi
+	jne	.LBB148_286
+# BB#303:                               # %end for demosaiced$3.s0.v1650
+                                        #   in Loop: Header=BB148_285 Depth=3
+	movq	1448(%rsp), %rax        # 8-byte Reload
+	addq	$1, %rax
+	movq	1408(%rsp), %rdx        # 8-byte Reload
+	addl	$1, %edx
+	movq	1456(%rsp), %r14        # 8-byte Reload
+	addq	$32, %r14
+	cmpq	$4, %rax
+	jne	.LBB148_285
+# BB#304:                               # %for demosaiced$3.s0.v15.v1552.preheader
+                                        #   in Loop: Header=BB148_284 Depth=2
+	vmovaps	%xmm6, 592(%rsp)        # 16-byte Spill
+	vmovaps	%xmm4, 1696(%rsp)       # 16-byte Spill
+	xorl	%r10d, %r10d
+	xorl	%r14d, %r14d
+	vmovaps	528(%rsp), %xmm8        # 16-byte Reload
+	vmovaps	512(%rsp), %xmm9        # 16-byte Reload
+	vmovaps	640(%rsp), %xmm14       # 16-byte Reload
+	movq	1472(%rsp), %rcx        # 8-byte Reload
+	.align	16, 0x90
+.LBB148_305:                            # %for demosaiced$3.s0.v15.v1552
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_284 Depth=2
+                                        # =>    This Loop Header: Depth=3
+                                        #         Child Loop BB148_306 Depth 4
+	movq	%rcx, 1472(%rsp)        # 8-byte Spill
+	movq	1536(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%r14,8), %r11d
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	subl	%eax, %r11d
+	addl	896(%rsp), %r11d        # 4-byte Folded Reload
+	movl	860(%rsp), %eax         # 4-byte Reload
+	movq	%rcx, %rbx
+	movq	1504(%rsp), %rcx        # 8-byte Reload
+	movl	%ecx, %r12d
+	.align	16, 0x90
+.LBB148_306:                            # %for demosaiced$3.s0.v1656
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_284 Depth=2
+                                        #       Parent Loop BB148_305 Depth=3
+                                        # =>      This Inner Loop Header: Depth=4
+	movl	%eax, %edx
+	leal	1(%rdx), %eax
+	movl	%eax, %ecx
+	andl	$3, %ecx
+	movq	2552(%rsp), %rsi        # 8-byte Reload
+	imull	%esi, %ecx
+	leal	(%rcx,%r11), %ecx
+	addl	$4, %edx
+	andl	$3, %edx
+	imull	%esi, %edx
+	addl	$1, %r12d
+	movl	%r12d, %edi
+	andl	$3, %edi
+	imull	%esi, %edi
+	leal	(%rdx,%r11), %edx
+	leal	(%rdi,%r11), %edi
+	movslq	%ecx, %rcx
+	vmovups	40(%r13,%rcx,4), %xmm2
+	vmovups	56(%r13,%rcx,4), %xmm3
+	vshufps	$136, %xmm3, %xmm2, %xmm1 # xmm1 = xmm2[0,2],xmm3[0,2]
+	vsubps	%xmm9, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm8, %xmm1
+	movslq	%edi, %rdi
+	vmovups	32(%r13,%rdi,4), %xmm4
+	vshufps	$221, 48(%r13,%rdi,4), %xmm4, %xmm4 # xmm4 = xmm4[1,3],mem[1,3]
+	vsubps	%xmm9, %xmm4, %xmm4
+	vmulps	%xmm4, %xmm8, %xmm4
+	vminps	%xmm0, %xmm4, %xmm4
+	vmaxps	%xmm11, %xmm4, %xmm4
+	movslq	%edx, %rdx
+	vmovups	32(%r13,%rdx,4), %xmm5
+	vshufps	$221, 48(%r13,%rdx,4), %xmm5, %xmm5 # xmm5 = xmm5[1,3],mem[1,3]
+	vsubps	%xmm9, %xmm5, %xmm5
+	vmulps	%xmm5, %xmm8, %xmm5
+	vminps	%xmm0, %xmm5, %xmm5
+	vmaxps	%xmm11, %xmm5, %xmm5
+	vaddps	%xmm5, %xmm4, %xmm4
+	vminps	%xmm0, %xmm1, %xmm1
+	vmaxps	%xmm11, %xmm1, %xmm1
+	vmovups	32(%r13,%rcx,4), %xmm5
+	vmovups	48(%r13,%rcx,4), %xmm6
+	vshufps	$136, %xmm6, %xmm5, %xmm7 # xmm7 = xmm5[0,2],xmm6[0,2]
+	vsubps	%xmm9, %xmm7, %xmm7
+	vmulps	%xmm7, %xmm8, %xmm7
+	vminps	%xmm0, %xmm7, %xmm7
+	vmaxps	%xmm11, %xmm7, %xmm7
+	vaddps	%xmm7, %xmm1, %xmm7
+	vaddps	%xmm7, %xmm4, %xmm7
+	vshufps	$221, %xmm6, %xmm5, %xmm4 # xmm4 = xmm5[1,3],xmm6[1,3]
+	vsubps	%xmm9, %xmm4, %xmm4
+	vmulps	%xmm4, %xmm8, %xmm5
+	vmovups	40(%r13,%rdi,4), %xmm4
+	vshufps	$136, 56(%r13,%rdi,4), %xmm4, %xmm4 # xmm4 = xmm4[0,2],mem[0,2]
+	vsubps	%xmm9, %xmm4, %xmm4
+	vmulps	%xmm4, %xmm8, %xmm4
+	vminps	%xmm0, %xmm4, %xmm4
+	vmaxps	%xmm11, %xmm4, %xmm4
+	vmovups	40(%r13,%rdx,4), %xmm6
+	vshufps	$136, 56(%r13,%rdx,4), %xmm6, %xmm6 # xmm6 = xmm6[0,2],mem[0,2]
+	vsubps	%xmm9, %xmm6, %xmm6
+	vmulps	%xmm6, %xmm8, %xmm6
+	vminps	%xmm0, %xmm6, %xmm6
+	vmaxps	%xmm11, %xmm6, %xmm6
+	vaddps	%xmm6, %xmm4, %xmm4
+	vshufps	$221, %xmm3, %xmm2, %xmm2 # xmm2 = xmm2[1,3],xmm3[1,3]
+	vsubps	%xmm9, %xmm2, %xmm2
+	vmulps	%xmm2, %xmm8, %xmm2
+	vminps	%xmm0, %xmm2, %xmm2
+	vmaxps	%xmm11, %xmm2, %xmm3
+	vminps	%xmm0, %xmm5, %xmm2
+	vmaxps	%xmm11, %xmm2, %xmm2
+	vaddps	%xmm2, %xmm3, %xmm6
+	vmulps	%xmm15, %xmm7, %xmm5
+	vmovaps	%xmm5, %xmm3
+	testl	%r8d, %r8d
+	je	.LBB148_308
+# BB#307:                               # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	vmovaps	%xmm2, %xmm3
+.LBB148_308:                            # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	vaddps	%xmm4, %xmm6, %xmm4
+	je	.LBB148_310
+# BB#309:                               # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	vmovaps	%xmm5, %xmm2
+.LBB148_310:                            # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	vmulps	%xmm15, %xmm4, %xmm5
+	vmovaps	%xmm5, %xmm4
+	jne	.LBB148_312
+# BB#311:                               # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	vmovaps	%xmm1, %xmm4
+.LBB148_312:                            # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	jne	.LBB148_314
+# BB#313:                               # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	vmovaps	%xmm5, %xmm1
+.LBB148_314:                            # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	movl	%eax, %edx
+	andl	$1, %edx
+	je	.LBB148_316
+# BB#315:                               # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	vmovaps	%xmm4, %xmm1
+.LBB148_316:                            # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	testl	%edx, %edx
+	je	.LBB148_318
+# BB#317:                               # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	vmovaps	%xmm3, %xmm2
+.LBB148_318:                            # %for demosaiced$3.s0.v1656
+                                        #   in Loop: Header=BB148_306 Depth=4
+	vmovaps	.LCPI148_10(%rip), %ymm3 # ymm3 = <u,0,u,1,u,2,u,3>
+	vpermps	%ymm1, %ymm3, %ymm1
+	vmovaps	.LCPI148_11(%rip), %ymm3 # ymm3 = <0,u,1,u,2,u,3,u>
+	vpermps	%ymm2, %ymm3, %ymm2
+	vblendps	$170, %ymm1, %ymm2, %ymm1 # ymm1 = ymm2[0],ymm1[1],ymm2[2],ymm1[3],ymm2[4],ymm1[5],ymm2[6],ymm1[7]
+	vmovups	%ymm1, (%rbx)
+	subq	$-128, %rbx
+	cmpl	%r12d, %r9d
+	jne	.LBB148_306
+# BB#319:                               # %end for demosaiced$3.s0.v1657
+                                        #   in Loop: Header=BB148_305 Depth=3
+	addq	$1, %r10
+	addl	$1, %r14d
+	movq	1472(%rsp), %rcx        # 8-byte Reload
+	addq	$32, %rcx
+	cmpq	$4, %r10
+	jne	.LBB148_305
+# BB#320:                               # %for demosaiced$3.s0.v15.v1559.preheader
+                                        #   in Loop: Header=BB148_284 Depth=2
+	vmovaps	%xmm15, 2272(%rsp)      # 16-byte Spill
+	movq	552(%rsp), %rax         # 8-byte Reload
+	leal	(%r9,%rax), %r10d
+	xorl	%eax, %eax
+	xorl	%edx, %edx
+	vmovaps	1488(%rsp), %xmm6       # 16-byte Reload
+	movq	1480(%rsp), %r12        # 8-byte Reload
+	.align	16, 0x90
+.LBB148_321:                            # %for demosaiced$3.s0.v15.v1559
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_284 Depth=2
+                                        # =>    This Loop Header: Depth=3
+                                        #         Child Loop BB148_322 Depth 4
+	movq	%rdx, 1488(%rsp)        # 8-byte Spill
+	movq	%rax, 2240(%rsp)        # 8-byte Spill
+	movq	%r12, 1480(%rsp)        # 8-byte Spill
+	movq	1536(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rdx,8), %r9d
+	movq	2168(%rsp), %rax        # 8-byte Reload
+	subl	%eax, %r9d
+	movq	904(%rsp), %rax         # 8-byte Reload
+	addl	%eax, %r9d
+	movl	856(%rsp), %ebx         # 4-byte Reload
+	xorl	%esi, %esi
+	movl	1464(%rsp), %r14d       # 4-byte Reload
+	.align	16, 0x90
+.LBB148_322:                            # %for demosaiced$3.s0.v1663
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_284 Depth=2
+                                        #       Parent Loop BB148_321 Depth=3
+                                        # =>      This Inner Loop Header: Depth=4
+	movq	2528(%rsp), %rax        # 8-byte Reload
+	leal	(%rax,%rsi), %edi
+	movl	%edi, %ecx
+	andl	$3, %ecx
+	movq	2552(%rsp), %rdx        # 8-byte Reload
+	imull	%edx, %ecx
+	leal	(%rcx,%r9), %ecx
+	movl	%r14d, %eax
+	andl	$3, %eax
+	imull	%edx, %eax
+	movl	%ebx, %r11d
+	andl	$3, %r11d
+	imull	%edx, %r11d
+	leal	(%rax,%r9), %eax
+	leal	(%r11,%r9), %edx
+	movslq	%ecx, %rcx
+	vmovups	72(%r13,%rcx,4), %xmm1
+	vmovaps	%xmm1, 2432(%rsp)       # 16-byte Spill
+	vmovups	88(%r13,%rcx,4), %xmm2
+	vmovaps	%xmm2, 2400(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm2, %xmm1, %xmm1 # xmm1 = xmm1[0,2],xmm2[0,2]
+	vsubps	%xmm6, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm14, %xmm1
+	vmovaps	%xmm1, 2496(%rsp)       # 16-byte Spill
+	vmovups	64(%r13,%rcx,4), %xmm10
+	vmovups	80(%r13,%rcx,4), %xmm1
+	vshufps	$221, %xmm1, %xmm10, %xmm2 # xmm2 = xmm10[1,3],xmm1[1,3]
+	vsubps	%xmm6, %xmm2, %xmm2
+	vmulps	%xmm2, %xmm14, %xmm2
+	vmovaps	%xmm2, 2464(%rsp)       # 16-byte Spill
+	cltq
+	vmovups	72(%r13,%rax,4), %xmm2
+	vmovaps	%xmm2, 2368(%rsp)       # 16-byte Spill
+	vmovups	88(%r13,%rax,4), %xmm3
+	vmovaps	%xmm3, 2336(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm3, %xmm2, %xmm2 # xmm2 = xmm2[0,2],xmm3[0,2]
+	vsubps	%xmm6, %xmm2, %xmm2
+	vmulps	%xmm2, %xmm14, %xmm2
+	movslq	%edx, %rcx
+	vmovups	72(%r13,%rcx,4), %xmm15
+	vmovups	88(%r13,%rcx,4), %xmm8
+	vshufps	$136, %xmm8, %xmm15, %xmm3 # xmm3 = xmm15[0,2],xmm8[0,2]
+	vsubps	%xmm6, %xmm3, %xmm3
+	vmulps	%xmm3, %xmm14, %xmm4
+	vmovups	64(%r13,%rax,4), %xmm3
+	vmovups	80(%r13,%rax,4), %xmm12
+	vshufps	$221, %xmm12, %xmm3, %xmm5 # xmm5 = xmm3[1,3],xmm12[1,3]
+	vsubps	%xmm6, %xmm5, %xmm5
+	vmulps	%xmm5, %xmm14, %xmm5
+	vmovups	64(%r13,%rcx,4), %xmm9
+	vmovups	80(%r13,%rcx,4), %xmm13
+	vshufps	$221, %xmm13, %xmm9, %xmm7 # xmm7 = xmm9[1,3],xmm13[1,3]
+	vsubps	%xmm6, %xmm7, %xmm7
+	vmulps	%xmm7, %xmm14, %xmm7
+	vminps	%xmm0, %xmm7, %xmm7
+	vxorps	%xmm11, %xmm11, %xmm11
+	vmaxps	%xmm11, %xmm7, %xmm7
+	vminps	%xmm0, %xmm5, %xmm5
+	vmaxps	%xmm11, %xmm5, %xmm5
+	vminps	%xmm0, %xmm4, %xmm4
+	vmaxps	%xmm11, %xmm4, %xmm4
+	vminps	%xmm0, %xmm2, %xmm2
+	vmaxps	%xmm11, %xmm2, %xmm2
+	testl	%r8d, %r8d
+	je	.LBB148_323
+# BB#324:                               # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	vaddps	%xmm7, %xmm5, %xmm3
+	vmovaps	%xmm7, 2304(%rsp)       # 16-byte Spill
+	vmulps	2560(%rsp), %xmm3, %xmm9 # 16-byte Folded Reload
+	jmp	.LBB148_325
+	.align	16, 0x90
+.LBB148_323:                            #   in Loop: Header=BB148_322 Depth=4
+	vmovaps	%xmm7, 2304(%rsp)       # 16-byte Spill
+	vshufps	$136, %xmm13, %xmm9, %xmm7 # xmm7 = xmm9[0,2],xmm13[0,2]
+	vsubps	%xmm6, %xmm7, %xmm7
+	vmulps	%xmm7, %xmm14, %xmm7
+	vminps	%xmm0, %xmm7, %xmm7
+	vmaxps	%xmm11, %xmm7, %xmm7
+	vaddps	%xmm7, %xmm4, %xmm7
+	vshufps	$136, %xmm12, %xmm3, %xmm3 # xmm3 = xmm3[0,2],xmm12[0,2]
+	vsubps	%xmm6, %xmm3, %xmm3
+	vmulps	%xmm3, %xmm14, %xmm3
+	vminps	%xmm0, %xmm3, %xmm3
+	vmaxps	%xmm11, %xmm3, %xmm3
+	vaddps	%xmm3, %xmm2, %xmm3
+	vaddps	%xmm7, %xmm3, %xmm3
+	vmulps	2272(%rsp), %xmm3, %xmm9 # 16-byte Folded Reload
+.LBB148_325:                            # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	vmovaps	2464(%rsp), %xmm3       # 16-byte Reload
+	vminps	%xmm0, %xmm3, %xmm3
+	vmaxps	%xmm11, %xmm3, %xmm3
+	vmovaps	2496(%rsp), %xmm7       # 16-byte Reload
+	vminps	%xmm0, %xmm7, %xmm7
+	vmaxps	%xmm11, %xmm7, %xmm13
+	vxorps	%xmm7, %xmm7, %xmm7
+	je	.LBB148_326
+# BB#327:                               # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	vmovaps	%xmm3, %xmm1
+	jmp	.LBB148_328
+	.align	16, 0x90
+.LBB148_326:                            #   in Loop: Header=BB148_322 Depth=4
+	vshufps	$136, %xmm1, %xmm10, %xmm1 # xmm1 = xmm10[0,2],xmm1[0,2]
+	vsubps	%xmm6, %xmm1, %xmm1
+	vmulps	%xmm1, %xmm14, %xmm1
+	vminps	%xmm0, %xmm1, %xmm1
+	vmaxps	%xmm7, %xmm1, %xmm1
+	vaddps	%xmm1, %xmm13, %xmm1
+	vmulps	2560(%rsp), %xmm1, %xmm1 # 16-byte Folded Reload
+.LBB148_328:                            # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	jne	.LBB148_329
+# BB#330:                               # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	vaddps	%xmm4, %xmm2, %xmm2
+	vmulps	2560(%rsp), %xmm2, %xmm2 # 16-byte Folded Reload
+	jmp	.LBB148_331
+	.align	16, 0x90
+.LBB148_329:                            #   in Loop: Header=BB148_322 Depth=4
+	vshufps	$221, %xmm8, %xmm15, %xmm2 # xmm2 = xmm15[1,3],xmm8[1,3]
+	vsubps	%xmm6, %xmm2, %xmm2
+	vmulps	%xmm2, %xmm14, %xmm2
+	vminps	%xmm0, %xmm2, %xmm2
+	vmaxps	%xmm7, %xmm2, %xmm2
+	vaddps	2304(%rsp), %xmm2, %xmm2 # 16-byte Folded Reload
+	vmovaps	2368(%rsp), %xmm4       # 16-byte Reload
+	vshufps	$221, 2336(%rsp), %xmm4, %xmm4 # 16-byte Folded Reload
+                                        # xmm4 = xmm4[1,3],mem[1,3]
+	vsubps	%xmm6, %xmm4, %xmm4
+	vmulps	%xmm4, %xmm14, %xmm4
+	vminps	%xmm0, %xmm4, %xmm4
+	vmaxps	%xmm7, %xmm4, %xmm4
+	vaddps	%xmm5, %xmm4, %xmm4
+	vaddps	%xmm2, %xmm4, %xmm2
+	vmulps	2272(%rsp), %xmm2, %xmm2 # 16-byte Folded Reload
+.LBB148_331:                            # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	je	.LBB148_333
+# BB#332:                               #   in Loop: Header=BB148_322 Depth=4
+	vmovaps	2432(%rsp), %xmm4       # 16-byte Reload
+	vshufps	$221, 2400(%rsp), %xmm4, %xmm4 # 16-byte Folded Reload
+                                        # xmm4 = xmm4[1,3],mem[1,3]
+	vsubps	%xmm6, %xmm4, %xmm4
+	vmulps	%xmm4, %xmm14, %xmm4
+	vminps	%xmm0, %xmm4, %xmm4
+	vmaxps	%xmm7, %xmm4, %xmm4
+	vaddps	%xmm3, %xmm4, %xmm3
+	vmulps	2560(%rsp), %xmm3, %xmm13 # 16-byte Folded Reload
+.LBB148_333:                            # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	andl	$1, %edi
+	je	.LBB148_335
+# BB#334:                               # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	vmovaps	%xmm2, %xmm13
+.LBB148_335:                            # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	testl	%edi, %edi
+	je	.LBB148_337
+# BB#336:                               # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	vmovaps	%xmm9, %xmm1
+.LBB148_337:                            # %for demosaiced$3.s0.v1663
+                                        #   in Loop: Header=BB148_322 Depth=4
+	vmovaps	.LCPI148_10(%rip), %ymm2 # ymm2 = <u,0,u,1,u,2,u,3>
+	vpermps	%ymm13, %ymm2, %ymm2
+	vmovaps	.LCPI148_11(%rip), %ymm3 # ymm3 = <0,u,1,u,2,u,3,u>
+	vpermps	%ymm1, %ymm3, %ymm1
+	vblendps	$170, %ymm2, %ymm1, %ymm1 # ymm1 = ymm1[0],ymm2[1],ymm1[2],ymm2[3],ymm1[4],ymm2[5],ymm1[6],ymm2[7]
+	vmovups	%ymm1, (%r12)
+	subq	$-128, %r12
+	addl	$1, %r14d
+	addl	$1, %esi
+	addl	$1, %ebx
+	cmpl	%esi, %r10d
+	jne	.LBB148_322
+# BB#338:                               # %end for demosaiced$3.s0.v1664
+                                        #   in Loop: Header=BB148_321 Depth=3
+	movq	2240(%rsp), %rax        # 8-byte Reload
+	addq	$1, %rax
+	movq	1488(%rsp), %rdx        # 8-byte Reload
+	addl	$1, %edx
+	movq	1480(%rsp), %r12        # 8-byte Reload
+	addq	$32, %r12
+	cmpq	$4, %rax
+	jne	.LBB148_321
+# BB#339:                               #   in Loop: Header=BB148_284 Depth=2
+	vmovaps	%xmm6, 1488(%rsp)       # 16-byte Spill
+	vmovaps	%xmm14, 640(%rsp)       # 16-byte Spill
+	movq	1112(%rsp), %r8         # 8-byte Reload
+	movq	1104(%rsp), %r9         # 8-byte Reload
+	xorl	%r10d, %r10d
+	movq	504(%rsp), %r11         # 8-byte Reload
+	movq	544(%rsp), %r14         # 8-byte Reload
+	movq	1056(%rsp), %r12        # 8-byte Reload
+	.align	16, 0x90
+.LBB148_340:                            # %for f2.s0.v16.v18.yii67
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_284 Depth=2
+                                        # =>    This Loop Header: Depth=3
+                                        #         Child Loop BB148_341 Depth 4
+	leal	(%r12,%r10), %eax
+	cltq
+	subq	1504(%rsp), %rax        # 8-byte Folded Reload
+	shlq	$7, %rax
+	vmovaps	2592(%rsp,%rax), %ymm8
+	vmovaps	2624(%rsp,%rax), %ymm15
+	vmovaps	%ymm15, 2304(%rsp)      # 32-byte Spill
+	vmovaps	2656(%rsp,%rax), %ymm6
+	vmovaps	%ymm6, 2368(%rsp)       # 32-byte Spill
+	vmovaps	2688(%rsp,%rax), %ymm1
+	vmovaps	%ymm1, 2336(%rsp)       # 32-byte Spill
+	vmovaps	2848(%rsp,%rax), %ymm12
+	vmovaps	2880(%rsp,%rax), %ymm10
+	vmovaps	2912(%rsp,%rax), %ymm11
+	vmovaps	2944(%rsp,%rax), %ymm7
+	vmovaps	3136(%rsp,%rax), %ymm4
+	vmovaps	3168(%rsp,%rax), %ymm5
+	vmovaps	3200(%rsp,%rax), %ymm3
+	vmovaps	1312(%rsp), %ymm0       # 32-byte Reload
+	vmulps	%ymm0, %ymm1, %ymm1
+	vmulps	%ymm0, %ymm6, %ymm2
+	vmulps	%ymm0, %ymm15, %ymm6
+	vmulps	%ymm0, %ymm8, %ymm9
+	vmovaps	1344(%rsp), %ymm0       # 32-byte Reload
+	vmovaps	%ymm0, %ymm13
+	vfmadd213ps	%ymm9, %ymm12, %ymm13
+	vmovaps	%ymm0, %ymm9
+	vfmadd213ps	%ymm6, %ymm10, %ymm9
+	vmovaps	%ymm0, %ymm6
+	vfmadd213ps	%ymm2, %ymm11, %ymm6
+	vmovaps	%ymm0, %ymm2
+	vfmadd213ps	%ymm1, %ymm7, %ymm2
+	vmovaps	1376(%rsp), %ymm0       # 32-byte Reload
+	vmovaps	%ymm0, %ymm1
+	vfmadd213ps	%ymm2, %ymm3, %ymm1
+	vmovaps	%ymm1, 2496(%rsp)       # 32-byte Spill
+	vmovaps	%ymm0, %ymm1
+	vfmadd213ps	%ymm6, %ymm5, %ymm1
+	vmovaps	%ymm1, 2464(%rsp)       # 32-byte Spill
+	vmovaps	%ymm0, %ymm1
+	vfmadd213ps	%ymm9, %ymm4, %ymm1
+	vmovaps	%ymm1, 2432(%rsp)       # 32-byte Spill
+	vmovaps	3104(%rsp,%rax), %ymm14
+	vfmadd213ps	%ymm13, %ymm14, %ymm0
+	vmovaps	%ymm0, 2400(%rsp)       # 32-byte Spill
+	vmovaps	1216(%rsp), %ymm9       # 32-byte Reload
+	vmulps	%ymm9, %ymm8, %ymm2
+	vmovaps	1248(%rsp), %ymm0       # 32-byte Reload
+	vmovaps	%ymm0, %ymm1
+	vfmadd213ps	%ymm2, %ymm12, %ymm1
+	vmulps	%ymm9, %ymm15, %ymm2
+	vmovaps	%ymm0, %ymm6
+	vfmadd213ps	%ymm2, %ymm10, %ymm6
+	vmulps	2368(%rsp), %ymm9, %ymm2 # 32-byte Folded Reload
+	vmovaps	%ymm0, %ymm15
+	vfmadd213ps	%ymm2, %ymm11, %ymm15
+	vmovaps	2336(%rsp), %ymm13      # 32-byte Reload
+	vmulps	%ymm9, %ymm13, %ymm2
+	vmovaps	%ymm0, %ymm9
+	vfmadd213ps	%ymm2, %ymm7, %ymm9
+	vmovaps	1280(%rsp), %ymm0       # 32-byte Reload
+	vmovaps	%ymm0, %ymm2
+	vfmadd213ps	%ymm9, %ymm3, %ymm2
+	vmovaps	%ymm2, 2560(%rsp)       # 32-byte Spill
+	vmovaps	%ymm0, %ymm9
+	vfmadd213ps	%ymm15, %ymm5, %ymm9
+	vmovaps	%ymm0, %ymm15
+	vfmadd213ps	%ymm6, %ymm4, %ymm15
+	vmovaps	%ymm0, %ymm2
+	vfmadd213ps	%ymm1, %ymm14, %ymm2
+	vmovaps	1120(%rsp), %ymm6       # 32-byte Reload
+	vmulps	%ymm6, %ymm8, %ymm1
+	vmovaps	1152(%rsp), %ymm0       # 32-byte Reload
+	vfmadd213ps	%ymm1, %ymm0, %ymm12
+	vmulps	2304(%rsp), %ymm6, %ymm1 # 32-byte Folded Reload
+	vfmadd213ps	%ymm1, %ymm0, %ymm10
+	vmulps	2368(%rsp), %ymm6, %ymm1 # 32-byte Folded Reload
+	vfmadd213ps	%ymm1, %ymm0, %ymm11
+	vmulps	%ymm6, %ymm13, %ymm1
+	vfmadd213ps	%ymm1, %ymm0, %ymm7
+	vmovaps	1184(%rsp), %ymm0       # 32-byte Reload
+	vfmadd213ps	%ymm7, %ymm0, %ymm3
+	vmovaps	%ymm3, %ymm13
+	vfmadd213ps	%ymm11, %ymm0, %ymm5
+	vfmadd213ps	%ymm10, %ymm0, %ymm4
+	vmovaps	%ymm4, %ymm3
+	vfmadd213ps	%ymm12, %ymm0, %ymm14
+	xorl	%ebx, %ebx
+	movl	$3, %edi
+	movq	%r8, %rax
+	movq	%r9, %rdx
+	.align	16, 0x90
+.LBB148_341:                            # %for f2.s0.v1770
+                                        #   Parent Loop BB148_119 Depth=1
+                                        #     Parent Loop BB148_284 Depth=2
+                                        #       Parent Loop BB148_340 Depth=3
+                                        # =>      This Inner Loop Header: Depth=4
+	vmovaps	%ymm2, %ymm4
+	cmpl	$1, %ebx
+	je	.LBB148_343
+# BB#342:                               # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	2400(%rsp), %ymm4       # 32-byte Reload
+.LBB148_343:                            # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	%ymm15, %ymm7
+	je	.LBB148_345
+# BB#344:                               # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	2432(%rsp), %ymm7       # 32-byte Reload
+.LBB148_345:                            # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	%ymm9, %ymm10
+	je	.LBB148_347
+# BB#346:                               # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	2464(%rsp), %ymm10      # 32-byte Reload
+.LBB148_347:                            # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	2560(%rsp), %ymm11      # 32-byte Reload
+	je	.LBB148_349
+# BB#348:                               # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	2496(%rsp), %ymm11      # 32-byte Reload
+.LBB148_349:                            # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	%ymm13, %ymm8
+	testl	%ebx, %ebx
+	je	.LBB148_351
+# BB#350:                               # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	%ymm11, %ymm8
+.LBB148_351:                            # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	%ymm5, %ymm11
+	je	.LBB148_353
+# BB#352:                               # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	%ymm10, %ymm11
+.LBB148_353:                            # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	%ymm3, %ymm10
+	je	.LBB148_355
+# BB#354:                               # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	%ymm7, %ymm10
+.LBB148_355:                            # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	%ymm14, %ymm7
+	je	.LBB148_357
+# BB#356:                               # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vmovaps	%ymm4, %ymm7
+.LBB148_357:                            # %for f2.s0.v1770
+                                        #   in Loop: Header=BB148_341 Depth=4
+	vbroadcastss	.LCPI148_16(%rip), %ymm1
+	vminps	%ymm1, %ymm7, %ymm4
+	vminps	%ymm1, %ymm10, %ymm6
+	vminps	%ymm1, %ymm11, %ymm7
+	vminps	%ymm1, %ymm8, %ymm1
+	vxorps	%ymm0, %ymm0, %ymm0
+	vmaxps	%ymm0, %ymm4, %ymm4
+	vmaxps	%ymm0, %ymm6, %ymm6
+	vmaxps	%ymm0, %ymm7, %ymm7
+	vmaxps	%ymm0, %ymm1, %ymm1
+	vcvttps2dq	%ymm4, %ymm4
+	vmovdqa	.LCPI148_3(%rip), %ymm0 # ymm0 = [0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128,0,1,4,5,8,9,12,13,128,128,128,128,128,128,128,128]
+	vpshufb	%ymm0, %ymm4, %ymm4
+	vpermq	$232, %ymm4, %ymm4      # ymm4 = ymm4[0,2,2,3]
+	vcvttps2dq	%ymm6, %ymm6
+	vpshufb	%ymm0, %ymm6, %ymm6
+	vpermq	$232, %ymm6, %ymm6      # ymm6 = ymm6[0,2,2,3]
+	vcvttps2dq	%ymm7, %ymm7
+	vpshufb	%ymm0, %ymm7, %ymm7
+	vpermq	$232, %ymm7, %ymm7      # ymm7 = ymm7[0,2,2,3]
+	vcvttps2dq	%ymm1, %ymm1
+	vpshufb	%ymm0, %ymm1, %ymm1
+	vpermq	$232, %ymm1, %ymm1      # ymm1 = ymm1[0,2,2,3]
+	vpmovzxwd	%xmm1, %ymm1    # ymm1 = xmm1[0],zero,xmm1[1],zero,xmm1[2],zero,xmm1[3],zero,xmm1[4],zero,xmm1[5],zero,xmm1[6],zero,xmm1[7],zero
+	vpmovzxwd	%xmm7, %ymm7    # ymm7 = xmm7[0],zero,xmm7[1],zero,xmm7[2],zero,xmm7[3],zero,xmm7[4],zero,xmm7[5],zero,xmm7[6],zero,xmm7[7],zero
+	vpmovzxwd	%xmm6, %ymm6    # ymm6 = xmm6[0],zero,xmm6[1],zero,xmm6[2],zero,xmm6[3],zero,xmm6[4],zero,xmm6[5],zero,xmm6[6],zero,xmm6[7],zero
+	vpmovzxwd	%xmm4, %ymm4    # ymm4 = xmm4[0],zero,xmm4[1],zero,xmm4[2],zero,xmm4[3],zero,xmm4[4],zero,xmm4[5],zero,xmm4[6],zero,xmm4[7],zero
+	vmovdqa	2176(%rsp), %ymm0       # 32-byte Reload
+	vpmulld	%ymm0, %ymm4, %ymm8
+	vpmulld	%ymm0, %ymm6, %ymm4
+	vpmulld	%ymm0, %ymm7, %ymm6
+	vpmulld	%ymm0, %ymm1, %ymm1
+	vmovd	%ebx, %xmm7
+	vpsubd	2208(%rsp), %ymm7, %ymm7 # 32-byte Folded Reload
+	vpbroadcastd	%xmm7, %ymm7
+	vpaddd	%ymm1, %ymm7, %ymm11
+	vpaddd	%ymm6, %ymm7, %ymm12
+	vpaddd	%ymm4, %ymm7, %ymm4
+	vpaddd	%ymm8, %ymm7, %ymm10
+	vmovq	%xmm11, %rcx
+	movslq	%ecx, %rsi
+	movzwl	(%r15,%rsi,2), %esi
+	vmovd	%esi, %xmm1
+	vpextrq	$1, %xmm11, %rsi
+	sarq	$32, %rcx
+	vpinsrw	$1, (%r15,%rcx,2), %xmm1, %xmm1
+	movslq	%esi, %rcx
+	sarq	$32, %rsi
+	vextracti128	$1, %ymm11, %xmm6
+	vpinsrw	$2, (%r15,%rcx,2), %xmm1, %xmm1
+	vmovq	%xmm6, %rcx
+	vpinsrw	$3, (%r15,%rsi,2), %xmm1, %xmm1
+	movslq	%ecx, %rsi
+	vpinsrw	$4, (%r15,%rsi,2), %xmm1, %xmm1
+	vpextrq	$1, %xmm6, %rsi
+	sarq	$32, %rcx
+	vpinsrw	$5, (%r15,%rcx,2), %xmm1, %xmm1
+	movslq	%esi, %rcx
+	vpinsrw	$6, (%r15,%rcx,2), %xmm1, %xmm1
+	vmovq	%xmm12, %rcx
+	sarq	$32, %rsi
+	vpinsrw	$7, (%r15,%rsi,2), %xmm1, %xmm7
+	movslq	%ecx, %rsi
+	movzwl	(%r15,%rsi,2), %esi
+	vmovd	%esi, %xmm1
+	vpextrq	$1, %xmm12, %rsi
+	sarq	$32, %rcx
+	vpinsrw	$1, (%r15,%rcx,2), %xmm1, %xmm1
+	movslq	%esi, %rcx
+	sarq	$32, %rsi
+	vextracti128	$1, %ymm12, %xmm6
+	vpinsrw	$2, (%r15,%rcx,2), %xmm1, %xmm1
+	vmovq	%xmm6, %rcx
+	vpinsrw	$3, (%r15,%rsi,2), %xmm1, %xmm1
+	movslq	%ecx, %rsi
+	vpinsrw	$4, (%r15,%rsi,2), %xmm1, %xmm1
+	vpextrq	$1, %xmm6, %rsi
+	sarq	$32, %rcx
+	vpinsrw	$5, (%r15,%rcx,2), %xmm1, %xmm1
+	movslq	%esi, %rcx
+	vpinsrw	$6, (%r15,%rcx,2), %xmm1, %xmm1
+	vmovq	%xmm4, %rcx
+	sarq	$32, %rsi
+	vpinsrw	$7, (%r15,%rsi,2), %xmm1, %xmm1
+	movslq	%ecx, %rsi
+	movzwl	(%r15,%rsi,2), %esi
+	vmovd	%esi, %xmm6
+	vpextrq	$1, %xmm4, %rsi
+	sarq	$32, %rcx
+	vpinsrw	$1, (%r15,%rcx,2), %xmm6, %xmm6
+	movslq	%esi, %rcx
+	sarq	$32, %rsi
+	vextracti128	$1, %ymm4, %xmm4
+	vpinsrw	$2, (%r15,%rcx,2), %xmm6, %xmm6
+	vmovq	%xmm4, %rcx
+	vpinsrw	$3, (%r15,%rsi,2), %xmm6, %xmm6
+	movslq	%ecx, %rsi
+	vpinsrw	$4, (%r15,%rsi,2), %xmm6, %xmm6
+	vpextrq	$1, %xmm4, %rsi
+	sarq	$32, %rcx
+	vpinsrw	$5, (%r15,%rcx,2), %xmm6, %xmm4
+	movslq	%esi, %rcx
+	vpinsrw	$6, (%r15,%rcx,2), %xmm4, %xmm4
+	vmovq	%xmm10, %rcx
+	sarq	$32, %rsi
+	vpinsrw	$7, (%r15,%rsi,2), %xmm4, %xmm4
+	movslq	%ecx, %rsi
+	movzwl	(%r15,%rsi,2), %esi
+	vmovd	%esi, %xmm6
+	vpextrq	$1, %xmm10, %rsi
+	sarq	$32, %rcx
+	vpinsrw	$1, (%r15,%rcx,2), %xmm6, %xmm6
+	movslq	%esi, %rcx
+	sarq	$32, %rsi
+	vextracti128	$1, %ymm10, %xmm0
+	vpinsrw	$2, (%r15,%rcx,2), %xmm6, %xmm6
+	vmovq	%xmm0, %rcx
+	vpinsrw	$3, (%r15,%rsi,2), %xmm6, %xmm6
+	movslq	%ecx, %rsi
+	vpinsrw	$4, (%r15,%rsi,2), %xmm6, %xmm6
+	vpextrq	$1, %xmm0, %rsi
+	sarq	$32, %rcx
+	vpinsrw	$5, (%r15,%rcx,2), %xmm6, %xmm0
+	movslq	%esi, %rcx
+	vpinsrw	$6, (%r15,%rcx,2), %xmm0, %xmm0
+	sarq	$32, %rsi
+	vpinsrw	$7, (%r15,%rsi,2), %xmm0, %xmm0
+	vinserti128	$1, %xmm7, %ymm1, %ymm1
+	vinserti128	$1, %xmm4, %ymm0, %ymm0
+	vmovdqu	%ymm0, (%rax)
+	vmovdqu	%ymm1, (%rdx)
+	addq	%r11, %rdx
+	addq	%r11, %rax
+	addl	$1, %ebx
+	addq	$-1, %rdi
+	jne	.LBB148_341
+# BB#358:                               # %end for f2.s0.v1771
+                                        #   in Loop: Header=BB148_340 Depth=3
+	addq	$1, %r10
+	addq	%r14, %r9
+	addq	%r14, %r8
+	cmpq	$2, %r10
+	jne	.LBB148_340
+# BB#359:                               # %end for f2.s0.v16.v18.yii68
+                                        #   in Loop: Header=BB148_284 Depth=2
+	movq	1064(%rsp), %rdi        # 8-byte Reload
+	addq	$1, %rdi
+	movq	1080(%rsp), %rcx        # 8-byte Reload
+	addq	$-32, %rcx
+	movl	1072(%rsp), %eax        # 4-byte Reload
+	addl	$32, %eax
+	movq	1088(%rsp), %rsi        # 8-byte Reload
+	addq	$-32, %rsi
+	movq	1096(%rsp), %rdx        # 8-byte Reload
+	addq	$-32, %rdx
+	addq	$64, 1104(%rsp)         # 8-byte Folded Spill
+	addq	$64, 1112(%rsp)         # 8-byte Folded Spill
+	cmpl	564(%rsp), %edi         # 4-byte Folded Reload
+	jne	.LBB148_284
+.LBB148_290:                            # %end for f2.s0.v15.v1542
+                                        #   in Loop: Header=BB148_119 Depth=1
+	movq	448(%rsp), %rdx         # 8-byte Reload
+	addq	$1, %rdx
+	movq	2528(%rsp), %rax        # 8-byte Reload
+	addl	$2, %eax
+	movq	%rax, 2528(%rsp)        # 8-byte Spill
+	movb	412(%rsp), %bl          # 1-byte Reload
+	addb	$2, %bl
+	addq	$-2, 432(%rsp)          # 8-byte Folded Spill
+	addl	$2, 1464(%rsp)          # 4-byte Folded Spill
+	addl	$2, 860(%rsp)           # 4-byte Folded Spill
+	movq	552(%rsp), %rax         # 8-byte Reload
+	addl	$-2, %eax
+	movq	%rax, 552(%rsp)         # 8-byte Spill
+	addl	$2, 856(%rsp)           # 4-byte Folded Spill
+	movq	296(%rsp), %rax         # 8-byte Reload
+	addq	%rax, 424(%rsp)         # 8-byte Folded Spill
+	addq	%rax, 416(%rsp)         # 8-byte Folded Spill
+	cmpq	$16, %rdx
+	movq	664(%rsp), %r9          # 8-byte Reload
+	jne	.LBB148_119
+# BB#291:                               # %call_destructor.exit
+	movq	280(%rsp), %rdi         # 8-byte Reload
+	movq	%r13, %rsi
+	vzeroupper
+	callq	halide_free@PLT
+	xorl	%eax, %eax
+.LBB148_5:                              # %assert failed1
+	leaq	-40(%rbp), %rsp
+	popq	%rbx
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	popq	%rbp
+	retq
+.LBB148_2:                              # %assert failed
+	leaq	.Lstr.159(%rip), %rsi
+	movl	$2147483647, %ecx       # imm = 0x7FFFFFFF
+	movq	%rax, %rdx
+	callq	halide_error_buffer_allocation_too_large@PLT
+	jmp	.LBB148_5
+.LBB148_4:                              # %assert failed1
+	movq	280(%rsp), %rdi         # 8-byte Reload
+	callq	halide_error_out_of_memory@PLT
+	jmp	.LBB148_5
+.LBB148_41:                             # %consume deinterleaved$3.for f2.s0.v16.v18.v18.preheader_crit_edge
+	movq	%r8, 1736(%rsp)         # 8-byte Spill
+	movq	544(%rsp), %rdi         # 8-byte Reload
+	movl	464(%rsp), %eax         # 4-byte Reload
+	imull	%edi, %eax
+	movl	432(%rsp), %ecx         # 4-byte Reload
+	movl	424(%rsp), %edx         # 4-byte Reload
+	imull	%edx, %ecx
+	addl	440(%rsp), %eax         # 4-byte Folded Reload
+	addl	416(%rsp), %ecx         # 4-byte Folded Reload
+	vmovd	%ecx, %xmm1
+	vmovaps	%ymm1, 2208(%rsp)       # 32-byte Spill
+	vmovd	%edx, %xmm1
+	cltq
+	leaq	(%rdi,%rdi), %rdx
+	subq	%rax, %rdx
+	movq	576(%rsp), %rsi         # 8-byte Reload
+	leaq	8(%rsi,%rdx,4), %rcx
+	movq	%rcx, 392(%rsp)         # 8-byte Spill
+	leaq	4(%rsi,%rdx,4), %rcx
+	movq	%rcx, 384(%rsp)         # 8-byte Spill
+	leaq	(%rsi,%rdx,4), %rcx
+	movq	%rcx, 376(%rsp)         # 8-byte Spill
+	subq	%rax, %rdi
+	leaq	8(%rsi,%rdi,4), %rcx
+	movq	%rcx, 368(%rsp)         # 8-byte Spill
+	leaq	4(%rsi,%rdi,4), %rcx
+	movq	%rcx, 360(%rsp)         # 8-byte Spill
+	leaq	(%rsi,%rdi,4), %rcx
+	movq	%rcx, 352(%rsp)         # 8-byte Spill
+	movl	$2, %edx
+	subq	%rax, %rdx
+	leaq	(%rsi,%rdx,4), %rcx
+	movq	%rcx, 344(%rsp)         # 8-byte Spill
+	movl	$1, %edx
+	subq	%rax, %rdx
+	leaq	(%rsi,%rdx,4), %rcx
+	movq	%rcx, 336(%rsp)         # 8-byte Spill
+	shlq	$2, %rax
+	subq	%rax, %rsi
+	movq	400(%rsp), %rax         # 8-byte Reload
+	cltq
+	movq	%rax, 440(%rsp)         # 8-byte Spill
+	subq	584(%rsp), %rax         # 8-byte Folded Reload
+	movq	%rax, 1064(%rsp)        # 8-byte Spill
+	movl	$31, %eax
+	movq	720(%rsp), %rcx         # 8-byte Reload
+	subl	%ecx, %eax
+	vmovss	528(%rsp), %xmm4        # 4-byte Reload
+                                        # xmm4 = mem[0],zero,zero,zero
+	vsubss	%xmm4, %xmm0, %xmm2
+	vmovss	456(%rsp), %xmm5        # 4-byte Reload
+                                        # xmm5 = mem[0],zero,zero,zero
+	vmulss	%xmm5, %xmm2, %xmm3
+	vmovss	448(%rsp), %xmm6        # 4-byte Reload
+                                        # xmm6 = mem[0],zero,zero,zero
+	vdivss	%xmm6, %xmm3, %xmm3
+	vaddss	%xmm3, %xmm4, %xmm3
+	vmovss	512(%rsp), %xmm4        # 4-byte Reload
+                                        # xmm4 = mem[0],zero,zero,zero
+	vsubss	%xmm5, %xmm4, %xmm4
+	movq	728(%rsp), %rcx         # 8-byte Reload
+	subl	%ecx, %eax
+	movl	%eax, 1072(%rsp)        # 4-byte Spill
+	movq	904(%rsp), %rax         # 8-byte Reload
+	leal	(,%rax,4), %ecx
+	movl	%ecx, 896(%rsp)         # 4-byte Spill
+	vmulss	%xmm4, %xmm2, %xmm2
+	vdivss	%xmm2, %xmm6, %xmm2
+	vbroadcastss	%xmm2, %xmm2
+	vmovaps	%xmm2, 528(%rsp)        # 16-byte Spill
+	vbroadcastss	%xmm3, %xmm2
+	vmovaps	%xmm2, 512(%rsp)        # 16-byte Spill
+	shll	$3, %eax
+	movq	%rax, 904(%rsp)         # 8-byte Spill
+	vmovss	476(%rsp), %xmm3        # 4-byte Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vsubss	%xmm3, %xmm0, %xmm0
+	vmovss	472(%rsp), %xmm5        # 4-byte Reload
+                                        # xmm5 = mem[0],zero,zero,zero
+	vmulss	%xmm5, %xmm0, %xmm2
+	vmovss	640(%rsp), %xmm4        # 4-byte Reload
+                                        # xmm4 = mem[0],zero,zero,zero
+	vdivss	%xmm4, %xmm2, %xmm2
+	vaddss	%xmm2, %xmm3, %xmm2
+	vmovss	480(%rsp), %xmm3        # 4-byte Reload
+                                        # xmm3 = mem[0],zero,zero,zero
+	vsubss	%xmm5, %xmm3, %xmm3
+	vmulss	%xmm3, %xmm0, %xmm0
+	vdivss	%xmm0, %xmm4, %xmm0
+	vbroadcastss	%xmm0, %xmm0
+	vmovaps	%xmm0, 640(%rsp)        # 16-byte Spill
+	vbroadcastss	%xmm2, %xmm0
+	vmovaps	%xmm0, 1488(%rsp)       # 16-byte Spill
+	vpbroadcastd	%xmm1, %ymm0
+	vmovdqa	%ymm0, 2176(%rsp)       # 32-byte Spill
+	movq	944(%rsp), %rax         # 8-byte Reload
+	addq	$1, %rax
+	movq	%rax, %r14
+	movq	%rsi, 328(%rsp)         # 8-byte Spill
+	movq	664(%rsp), %r9          # 8-byte Reload
+	movl	788(%rsp), %eax         # 4-byte Reload
+	movq	936(%rsp), %r10         # 8-byte Reload
+	jmp	.LBB148_118
+.Lfunc_end148:
+	.size	par_for___f3_f2.s0.v16.v19, .Lfunc_end148-par_for___f3_f2.s0.v16.v19
 
 	.section	.text.f3,"ax",@progbits
 	.globl	f3
@@ -18455,34 +18135,32 @@ f3:                                     # @f3
 # BB#0:                                 # %entry
 	subq	$104, %rsp
 	testq	%rdi, %rdi
-	je	.LBB148_1
+	je	.LBB149_1
 # BB#3:                                 # %assert succeeded
 	testq	%rcx, %rcx
-	je	.LBB148_4
+	je	.LBB149_4
 # BB#5:                                 # %assert succeeded11
 	testq	%r8, %r8
-	je	.LBB148_6
+	je	.LBB149_6
 # BB#7:                                 # %assert succeeded30
 	testq	%r9, %r9
-	je	.LBB148_8
+	je	.LBB149_8
 # BB#9:                                 # %assert succeeded49
 	movq	184(%rsp), %rax
 	testq	%rax, %rax
-	je	.LBB148_10
+	je	.LBB149_10
 # BB#11:                                # %assert succeeded68
-	movq	208(%rsp), %rdx
+	movq	200(%rsp), %rdx
 	testq	%rdx, %rdx
-	je	.LBB148_12
+	je	.LBB149_12
 # BB#13:                                # %assert succeeded87
-	movl	200(%rsp), %esi
-	movb	192(%rsp), %r10b
+	movb	192(%rsp), %sil
 	vmovss	136(%rsp), %xmm8        # xmm8 = mem[0],zero,zero,zero
 	vmovss	128(%rsp), %xmm9        # xmm9 = mem[0],zero,zero,zero
 	vmovss	120(%rsp), %xmm10       # xmm10 = mem[0],zero,zero,zero
 	vmovss	112(%rsp), %xmm11       # xmm11 = mem[0],zero,zero,zero
-	movq	%rdx, 96(%rsp)
-	movl	%esi, 88(%rsp)
-	movzbl	%r10b, %edx
+	movq	%rdx, 88(%rsp)
+	movzbl	%sil, %edx
 	movl	%edx, 80(%rsp)
 	movq	%rax, 72(%rsp)
 	vmovss	%xmm8, 24(%rsp)
@@ -18492,29 +18170,29 @@ f3:                                     # @f3
 	callq	__f3@PLT
 	addq	$104, %rsp
 	retq
-.LBB148_1:                              # %assert failed
+.LBB149_1:                              # %assert failed
 	leaq	.Lstr(%rip), %rsi
-	jmp	.LBB148_2
-.LBB148_4:                              # %assert failed10
+	jmp	.LBB149_2
+.LBB149_4:                              # %assert failed10
+	leaq	.Lstr.137(%rip), %rsi
+	jmp	.LBB149_2
+.LBB149_6:                              # %assert failed29
 	leaq	.Lstr.138(%rip), %rsi
-	jmp	.LBB148_2
-.LBB148_6:                              # %assert failed29
+	jmp	.LBB149_2
+.LBB149_8:                              # %assert failed48
 	leaq	.Lstr.139(%rip), %rsi
-	jmp	.LBB148_2
-.LBB148_8:                              # %assert failed48
+	jmp	.LBB149_2
+.LBB149_10:                             # %assert failed67
 	leaq	.Lstr.140(%rip), %rsi
-	jmp	.LBB148_2
-.LBB148_10:                             # %assert failed67
+	jmp	.LBB149_2
+.LBB149_12:                             # %assert failed86
 	leaq	.Lstr.141(%rip), %rsi
-	jmp	.LBB148_2
-.LBB148_12:                             # %assert failed86
-	leaq	.Lstr.142(%rip), %rsi
-.LBB148_2:                              # %assert failed
+.LBB149_2:                              # %assert failed
 	xorl	%edi, %edi
 	addq	$104, %rsp
 	jmp	halide_error_buffer_argument_is_null@PLT # TAILCALL
-.Lfunc_end148:
-	.size	f3, .Lfunc_end148-f3
+.Lfunc_end149:
+	.size	f3, .Lfunc_end149-f3
 
 	.section	.text.f3_argv,"ax",@progbits
 	.globl	f3_argv
@@ -18552,16 +18230,13 @@ f3_argv:                                # @f3_argv
 	movq	128(%rax), %rdx
 	vmovss	(%rdx), %xmm11          # xmm11 = mem[0],zero,zero,zero
 	movq	176(%rax), %r9
-	movq	184(%rax), %r10
+	movq	184(%rax), %rdx
 	movq	192(%rax), %rsi
-	movq	200(%rax), %rdx
-	movl	(%rdx), %edx
-	movq	208(%rax), %rax
+	movq	200(%rax), %rax
 	movzbl	(%rsi), %esi
-	movq	%rax, 96(%rsp)
-	movl	%edx, 88(%rsp)
+	movq	%rax, 88(%rsp)
 	movl	%esi, 80(%rsp)
-	movq	%r10, 72(%rsp)
+	movq	%rdx, 72(%rsp)
 	vmovss	%xmm11, 24(%rsp)
 	vmovss	%xmm10, 16(%rsp)
 	vmovss	%xmm9, 8(%rsp)
@@ -18569,8 +18244,8 @@ f3_argv:                                # @f3_argv
 	callq	f3@PLT
 	addq	$104, %rsp
 	retq
-.Lfunc_end149:
-	.size	f3_argv, .Lfunc_end149-f3_argv
+.Lfunc_end150:
+	.size	f3_argv, .Lfunc_end150-f3_argv
 
 	.section	.text.f3_metadata,"ax",@progbits
 	.globl	f3_metadata
@@ -18580,8 +18255,8 @@ f3_metadata:                            # @f3_metadata
 # BB#0:                                 # %entry
 	leaq	.Lf3_metadata_storage(%rip), %rax
 	retq
-.Lfunc_end150:
-	.size	f3_metadata, .Lfunc_end150-f3_metadata
+.Lfunc_end151:
+	.size	f3_metadata, .Lfunc_end151-f3_metadata
 
 	.type	_ZN6Halide7Runtime8Internal13custom_mallocE,@object # @_ZN6Halide7Runtime8Internal13custom_mallocE
 	.section	.data.rel,"aw",@progbits
@@ -19096,15 +18771,10 @@ _ZN6Halide7Runtime8Internal17device_copy_mutexE:
 	.asciz	"halide_device_and_host_malloc doesn't support switching interfaces\n"
 	.size	.L.str.42, 68
 
-	.type	.L.str.43,@object       # @.str.43
-.L.str.43:
-	.asciz	"allocating host and device memory failed\n"
-	.size	.L.str.43, 42
-
-	.type	.L.str.45.65,@object    # @.str.45.65
-.L.str.45.65:
-	.asciz	"/home/fb/Halide/src/runtime/device_interface.cpp:322 Assert failed: buf->dev == 0\n"
-	.size	.L.str.45.65, 83
+	.type	.L.str.44,@object       # @.str.44
+.L.str.44:
+	.asciz	"/home/fb/Halide/src/runtime/device_interface.cpp:321 Assert failed: buf->dev == 0\n"
+	.size	.L.str.44, 83
 
 	.type	.L.str.68,@object       # @.str.68
 .L.str.68:
@@ -19326,25 +18996,25 @@ _ZN6Halide7Runtime8Internal17device_copy_mutexE:
 	.asciz	" is not aligned to a "
 	.size	.L.str.42.98, 22
 
-	.type	.L.str.43.99,@object    # @.str.43.99
-.L.str.43.99:
+	.type	.L.str.43,@object       # @.str.43
+.L.str.43:
 	.asciz	" bytes boundary."
-	.size	.L.str.43.99, 17
+	.size	.L.str.43, 17
 
-	.type	.L.str.44,@object       # @.str.44
-.L.str.44:
+	.type	.L.str.44.99,@object    # @.str.44.99
+.L.str.44.99:
 	.asciz	"The folded storage dimension "
-	.size	.L.str.44, 30
+	.size	.L.str.44.99, 30
 
 	.type	.L.str.45.100,@object   # @.str.45.100
 .L.str.45.100:
 	.asciz	" of "
 	.size	.L.str.45.100, 5
 
-	.type	.L.str.46.101,@object   # @.str.46.101
-.L.str.46.101:
+	.type	.L.str.46,@object       # @.str.46
+.L.str.46:
 	.asciz	" was accessed out of order by loop "
-	.size	.L.str.46.101, 36
+	.size	.L.str.46, 36
 
 	.type	.L.str.47,@object       # @.str.47
 .L.str.47:
@@ -19391,151 +19061,151 @@ _ZZ25halide_profiler_get_stateE1s:
 	.zero	7
 	.size	_ZZ25halide_profiler_get_stateE1s, 104
 
-	.type	.L.str.103,@object      # @.str.103
+	.type	.L.str.102,@object      # @.str.102
 	.section	.rodata.str1.1,"aMS",@progbits,1
-.L.str.103:
+.L.str.102:
 	.asciz	"/home/fb/Halide/src/runtime/profiler.cpp:204 Assert failed: p_stats != NULL\n"
-	.size	.L.str.103, 77
+	.size	.L.str.102, 77
 
-	.type	.L.str.1.104,@object    # @.str.1.104
-.L.str.1.104:
+	.type	.L.str.1.103,@object    # @.str.1.103
+.L.str.1.103:
 	.asciz	"/home/fb/Halide/src/runtime/profiler.cpp:231 Assert failed: p_stats != NULL\n"
-	.size	.L.str.1.104, 77
+	.size	.L.str.1.103, 77
 
-	.type	.L.str.2.105,@object    # @.str.2.105
-.L.str.2.105:
+	.type	.L.str.2.104,@object    # @.str.2.104
+.L.str.2.104:
 	.asciz	"/home/fb/Halide/src/runtime/profiler.cpp:232 Assert failed: func_id >= 0\n"
-	.size	.L.str.2.105, 74
+	.size	.L.str.2.104, 74
 
-	.type	.L.str.3.106,@object    # @.str.3.106
-.L.str.3.106:
+	.type	.L.str.3.105,@object    # @.str.3.105
+.L.str.3.105:
 	.asciz	"/home/fb/Halide/src/runtime/profiler.cpp:233 Assert failed: func_id < p_stats->num_funcs\n"
-	.size	.L.str.3.106, 90
+	.size	.L.str.3.105, 90
 
-	.type	.L.str.4.107,@object    # @.str.4.107
-.L.str.4.107:
+	.type	.L.str.4.106,@object    # @.str.4.106
+.L.str.4.106:
 	.asciz	"/home/fb/Halide/src/runtime/profiler.cpp:267 Assert failed: p_stats != NULL\n"
-	.size	.L.str.4.107, 77
+	.size	.L.str.4.106, 77
 
-	.type	.L.str.5.108,@object    # @.str.5.108
-.L.str.5.108:
+	.type	.L.str.5.107,@object    # @.str.5.107
+.L.str.5.107:
 	.asciz	"/home/fb/Halide/src/runtime/profiler.cpp:268 Assert failed: func_id >= 0\n"
-	.size	.L.str.5.108, 74
+	.size	.L.str.5.107, 74
 
-	.type	.L.str.6.109,@object    # @.str.6.109
-.L.str.6.109:
+	.type	.L.str.6.108,@object    # @.str.6.108
+.L.str.6.108:
 	.asciz	"/home/fb/Halide/src/runtime/profiler.cpp:269 Assert failed: func_id < p_stats->num_funcs\n"
-	.size	.L.str.6.109, 90
+	.size	.L.str.6.108, 90
 
-	.type	.L.str.7.110,@object    # @.str.7.110
-.L.str.7.110:
+	.type	.L.str.7.109,@object    # @.str.7.109
+.L.str.7.109:
 	.asciz	"\n"
-	.size	.L.str.7.110, 2
+	.size	.L.str.7.109, 2
 
-	.type	.L.str.8.111,@object    # @.str.8.111
-.L.str.8.111:
+	.type	.L.str.8.110,@object    # @.str.8.110
+.L.str.8.110:
 	.asciz	" total time: "
-	.size	.L.str.8.111, 14
+	.size	.L.str.8.110, 14
 
-	.type	.L.str.9.112,@object    # @.str.9.112
-.L.str.9.112:
+	.type	.L.str.9.111,@object    # @.str.9.111
+.L.str.9.111:
 	.asciz	" ms"
-	.size	.L.str.9.112, 4
+	.size	.L.str.9.111, 4
 
-	.type	.L.str.10.113,@object   # @.str.10.113
-.L.str.10.113:
+	.type	.L.str.10.112,@object   # @.str.10.112
+.L.str.10.112:
 	.asciz	"  samples: "
-	.size	.L.str.10.113, 12
+	.size	.L.str.10.112, 12
 
-	.type	.L.str.11.114,@object   # @.str.11.114
-.L.str.11.114:
+	.type	.L.str.11.113,@object   # @.str.11.113
+.L.str.11.113:
 	.asciz	"  runs: "
-	.size	.L.str.11.114, 9
+	.size	.L.str.11.113, 9
 
-	.type	.L.str.12.115,@object   # @.str.12.115
-.L.str.12.115:
+	.type	.L.str.12.114,@object   # @.str.12.114
+.L.str.12.114:
 	.asciz	"  time/run: "
-	.size	.L.str.12.115, 13
+	.size	.L.str.12.114, 13
 
-	.type	.L.str.13.116,@object   # @.str.13.116
-.L.str.13.116:
+	.type	.L.str.13.115,@object   # @.str.13.115
+.L.str.13.115:
 	.asciz	" ms\n"
-	.size	.L.str.13.116, 5
+	.size	.L.str.13.115, 5
 
-	.type	.L.str.14.117,@object   # @.str.14.117
-.L.str.14.117:
+	.type	.L.str.14.116,@object   # @.str.14.116
+.L.str.14.116:
 	.asciz	" average threads used: "
-	.size	.L.str.14.117, 24
+	.size	.L.str.14.116, 24
 
-	.type	.L.str.15.118,@object   # @.str.15.118
-.L.str.15.118:
+	.type	.L.str.15.117,@object   # @.str.15.117
+.L.str.15.117:
 	.asciz	" heap allocations: "
-	.size	.L.str.15.118, 20
+	.size	.L.str.15.117, 20
 
-	.type	.L.str.16.119,@object   # @.str.16.119
-.L.str.16.119:
+	.type	.L.str.16.118,@object   # @.str.16.118
+.L.str.16.118:
 	.asciz	"  peak heap usage: "
-	.size	.L.str.16.119, 20
+	.size	.L.str.16.118, 20
 
-	.type	.L.str.17.120,@object   # @.str.17.120
-.L.str.17.120:
+	.type	.L.str.17.119,@object   # @.str.17.119
+.L.str.17.119:
 	.asciz	" bytes\n"
-	.size	.L.str.17.120, 8
+	.size	.L.str.17.119, 8
 
-	.type	.L.str.18.121,@object   # @.str.18.121
-.L.str.18.121:
+	.type	.L.str.18.120,@object   # @.str.18.120
+.L.str.18.120:
 	.asciz	"  "
-	.size	.L.str.18.121, 3
+	.size	.L.str.18.120, 3
 
-	.type	.L.str.19.122,@object   # @.str.19.122
-.L.str.19.122:
+	.type	.L.str.19.121,@object   # @.str.19.121
+.L.str.19.121:
 	.asciz	": "
-	.size	.L.str.19.122, 3
+	.size	.L.str.19.121, 3
 
-	.type	.L.str.20.123,@object   # @.str.20.123
-.L.str.20.123:
+	.type	.L.str.20.122,@object   # @.str.20.122
+.L.str.20.122:
 	.asciz	" "
-	.size	.L.str.20.123, 2
+	.size	.L.str.20.122, 2
 
-	.type	.L.str.21.124,@object   # @.str.21.124
-.L.str.21.124:
+	.type	.L.str.21.123,@object   # @.str.21.123
+.L.str.21.123:
 	.asciz	"ms"
-	.size	.L.str.21.124, 3
+	.size	.L.str.21.123, 3
 
-	.type	.L.str.22.125,@object   # @.str.22.125
-.L.str.22.125:
+	.type	.L.str.22.124,@object   # @.str.22.124
+.L.str.22.124:
 	.asciz	"("
-	.size	.L.str.22.125, 2
+	.size	.L.str.22.124, 2
 
-	.type	.L.str.23.126,@object   # @.str.23.126
-.L.str.23.126:
+	.type	.L.str.23.125,@object   # @.str.23.125
+.L.str.23.125:
 	.asciz	"%)"
-	.size	.L.str.23.126, 3
+	.size	.L.str.23.125, 3
 
-	.type	.L.str.24.127,@object   # @.str.24.127
-.L.str.24.127:
+	.type	.L.str.24.126,@object   # @.str.24.126
+.L.str.24.126:
 	.asciz	"threads: "
-	.size	.L.str.24.127, 10
+	.size	.L.str.24.126, 10
 
-	.type	.L.str.25.128,@object   # @.str.25.128
-.L.str.25.128:
+	.type	.L.str.25.127,@object   # @.str.25.127
+.L.str.25.127:
 	.asciz	" peak: "
-	.size	.L.str.25.128, 8
+	.size	.L.str.25.127, 8
 
-	.type	.L.str.26.129,@object   # @.str.26.129
-.L.str.26.129:
+	.type	.L.str.26.128,@object   # @.str.26.128
+.L.str.26.128:
 	.asciz	" num: "
-	.size	.L.str.26.129, 7
+	.size	.L.str.26.128, 7
 
-	.type	.L.str.27.130,@object   # @.str.27.130
-.L.str.27.130:
+	.type	.L.str.27.129,@object   # @.str.27.129
+.L.str.27.129:
 	.asciz	" avg: "
-	.size	.L.str.27.130, 7
+	.size	.L.str.27.129, 7
 
-	.type	.L.str.28.131,@object   # @.str.28.131
-.L.str.28.131:
+	.type	.L.str.28.130,@object   # @.str.28.130
+.L.str.28.130:
 	.asciz	" stack: "
-	.size	.L.str.28.131, 9
+	.size	.L.str.28.130, 9
 
 	.type	_ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE,@object # @_ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE
 	.section	.data.rel,"aw",@progbits
@@ -19558,149 +19228,149 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.asciz	"p0"
 	.size	.Lstr, 3
 
+	.type	.Lstr.137,@object       # @str.137
+	.align	32
+.Lstr.137:
+	.asciz	"vignetteH"
+	.size	.Lstr.137, 10
+
 	.type	.Lstr.138,@object       # @str.138
 	.align	32
 .Lstr.138:
-	.asciz	"vignetteH"
+	.asciz	"vignetteV"
 	.size	.Lstr.138, 10
 
 	.type	.Lstr.139,@object       # @str.139
 	.align	32
 .Lstr.139:
-	.asciz	"vignetteV"
-	.size	.Lstr.139, 10
+	.asciz	"ccm"
+	.size	.Lstr.139, 4
 
 	.type	.Lstr.140,@object       # @str.140
 	.align	32
 .Lstr.140:
-	.asciz	"ccm"
-	.size	.Lstr.140, 4
+	.asciz	"toneTable"
+	.size	.Lstr.140, 10
 
 	.type	.Lstr.141,@object       # @str.141
 	.align	32
 .Lstr.141:
-	.asciz	"toneTable"
-	.size	.Lstr.141, 10
+	.asciz	"f3"
+	.size	.Lstr.141, 3
 
 	.type	.Lstr.142,@object       # @str.142
 	.align	32
 .Lstr.142:
-	.asciz	"f3"
-	.size	.Lstr.142, 3
+	.asciz	"Input buffer ccm"
+	.size	.Lstr.142, 17
 
 	.type	.Lstr.143,@object       # @str.143
 	.align	32
 .Lstr.143:
-	.asciz	"Input buffer ccm"
-	.size	.Lstr.143, 17
+	.asciz	"float32"
+	.size	.Lstr.143, 8
 
 	.type	.Lstr.144,@object       # @str.144
 	.align	32
 .Lstr.144:
-	.asciz	"float32"
-	.size	.Lstr.144, 8
+	.asciz	"Output buffer f3"
+	.size	.Lstr.144, 17
 
 	.type	.Lstr.145,@object       # @str.145
 	.align	32
 .Lstr.145:
-	.asciz	"Output buffer f3"
-	.size	.Lstr.145, 17
+	.asciz	"uint16"
+	.size	.Lstr.145, 7
 
 	.type	.Lstr.146,@object       # @str.146
 	.align	32
 .Lstr.146:
-	.asciz	"uint16"
-	.size	.Lstr.146, 7
+	.asciz	"Input buffer p0"
+	.size	.Lstr.146, 16
 
 	.type	.Lstr.147,@object       # @str.147
 	.align	32
 .Lstr.147:
-	.asciz	"Input buffer p0"
-	.size	.Lstr.147, 16
+	.asciz	"Input buffer toneTable"
+	.size	.Lstr.147, 23
 
 	.type	.Lstr.148,@object       # @str.148
 	.align	32
 .Lstr.148:
-	.asciz	"Input buffer toneTable"
-	.size	.Lstr.148, 23
+	.asciz	"ccm.stride.0"
+	.size	.Lstr.148, 13
 
 	.type	.Lstr.149,@object       # @str.149
 	.align	32
 .Lstr.149:
-	.asciz	"ccm.stride.0"
-	.size	.Lstr.149, 13
+	.asciz	"1"
+	.size	.Lstr.149, 2
 
 	.type	.Lstr.150,@object       # @str.150
 	.align	32
 .Lstr.150:
-	.asciz	"1"
-	.size	.Lstr.150, 2
+	.asciz	"f3.stride.0"
+	.size	.Lstr.150, 12
 
 	.type	.Lstr.151,@object       # @str.151
 	.align	32
 .Lstr.151:
-	.asciz	"f3.stride.0"
-	.size	.Lstr.151, 12
+	.asciz	"3"
+	.size	.Lstr.151, 2
 
 	.type	.Lstr.152,@object       # @str.152
 	.align	32
 .Lstr.152:
-	.asciz	"3"
-	.size	.Lstr.152, 2
+	.asciz	"f3.stride.2"
+	.size	.Lstr.152, 12
 
 	.type	.Lstr.153,@object       # @str.153
 	.align	32
 .Lstr.153:
-	.asciz	"f3.stride.2"
-	.size	.Lstr.153, 12
+	.asciz	"f3.min.2"
+	.size	.Lstr.153, 9
 
 	.type	.Lstr.154,@object       # @str.154
 	.align	32
 .Lstr.154:
-	.asciz	"f3.min.2"
-	.size	.Lstr.154, 9
+	.asciz	"0"
+	.size	.Lstr.154, 2
 
 	.type	.Lstr.155,@object       # @str.155
 	.align	32
 .Lstr.155:
-	.asciz	"0"
-	.size	.Lstr.155, 2
+	.asciz	"f3.extent.2"
+	.size	.Lstr.155, 12
 
 	.type	.Lstr.156,@object       # @str.156
 	.align	32
 .Lstr.156:
-	.asciz	"f3.extent.2"
+	.asciz	"p0.stride.0"
 	.size	.Lstr.156, 12
 
 	.type	.Lstr.157,@object       # @str.157
 	.align	32
 .Lstr.157:
-	.asciz	"p0.stride.0"
-	.size	.Lstr.157, 12
+	.asciz	"toneTable.stride.0"
+	.size	.Lstr.157, 19
 
 	.type	.Lstr.158,@object       # @str.158
 	.align	32
 .Lstr.158:
-	.asciz	"toneTable.stride.0"
-	.size	.Lstr.158, 19
+	.asciz	"f2"
+	.size	.Lstr.158, 3
 
 	.type	.Lstr.159,@object       # @str.159
 	.align	32
 .Lstr.159:
-	.asciz	"f2"
-	.size	.Lstr.159, 3
+	.asciz	"deinterleaved$3"
+	.size	.Lstr.159, 16
 
 	.type	.Lstr.160,@object       # @str.160
 	.align	32
 .Lstr.160:
-	.asciz	"deinterleaved$3"
-	.size	.Lstr.160, 16
-
-	.type	.Lstr.161,@object       # @str.161
-	.align	32
-.Lstr.161:
 	.asciz	"p1"
-	.size	.Lstr.161, 3
+	.size	.Lstr.160, 3
 
 	.type	.L__unnamed_1,@object   # @0
 	.align	4
@@ -19708,11 +19378,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # 0x0
 	.size	.L__unnamed_1, 4
 
-	.type	.Lstr.162,@object       # @str.162
+	.type	.Lstr.161,@object       # @str.161
 	.align	32
-.Lstr.162:
+.Lstr.161:
 	.asciz	"p2"
-	.size	.Lstr.162, 3
+	.size	.Lstr.161, 3
 
 	.type	.L__unnamed_2,@object   # @1
 	.align	4
@@ -19720,11 +19390,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # 0x0
 	.size	.L__unnamed_2, 4
 
-	.type	.Lstr.163,@object       # @str.163
+	.type	.Lstr.162,@object       # @str.162
 	.align	32
-.Lstr.163:
+.Lstr.162:
 	.asciz	"blackLevelR"
-	.size	.Lstr.163, 12
+	.size	.Lstr.162, 12
 
 	.type	.L__unnamed_3,@object   # @2
 	.align	4
@@ -19732,11 +19402,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_3, 4
 
-	.type	.Lstr.164,@object       # @str.164
+	.type	.Lstr.163,@object       # @str.163
 	.align	32
-.Lstr.164:
+.Lstr.163:
 	.asciz	"blackLevelG"
-	.size	.Lstr.164, 12
+	.size	.Lstr.163, 12
 
 	.type	.L__unnamed_4,@object   # @3
 	.align	4
@@ -19744,11 +19414,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_4, 4
 
-	.type	.Lstr.165,@object       # @str.165
+	.type	.Lstr.164,@object       # @str.164
 	.align	32
-.Lstr.165:
+.Lstr.164:
 	.asciz	"blackLevelB"
-	.size	.Lstr.165, 12
+	.size	.Lstr.164, 12
 
 	.type	.L__unnamed_5,@object   # @4
 	.align	4
@@ -19756,11 +19426,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_5, 4
 
-	.type	.Lstr.166,@object       # @str.166
+	.type	.Lstr.165,@object       # @str.165
 	.align	32
-.Lstr.166:
+.Lstr.165:
 	.asciz	"whiteBalanceGainR"
-	.size	.Lstr.166, 18
+	.size	.Lstr.165, 18
 
 	.type	.L__unnamed_6,@object   # @5
 	.align	4
@@ -19768,11 +19438,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_6, 4
 
-	.type	.Lstr.167,@object       # @str.167
+	.type	.Lstr.166,@object       # @str.166
 	.align	32
-.Lstr.167:
+.Lstr.166:
 	.asciz	"whiteBalanceGainG"
-	.size	.Lstr.167, 18
+	.size	.Lstr.166, 18
 
 	.type	.L__unnamed_7,@object   # @6
 	.align	4
@@ -19780,11 +19450,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_7, 4
 
-	.type	.Lstr.168,@object       # @str.168
+	.type	.Lstr.167,@object       # @str.167
 	.align	32
-.Lstr.168:
+.Lstr.167:
 	.asciz	"whiteBalanceGainB"
-	.size	.Lstr.168, 18
+	.size	.Lstr.167, 18
 
 	.type	.L__unnamed_8,@object   # @7
 	.align	4
@@ -19792,11 +19462,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_8, 4
 
-	.type	.Lstr.169,@object       # @str.169
+	.type	.Lstr.168,@object       # @str.168
 	.align	32
-.Lstr.169:
+.Lstr.168:
 	.asciz	"clampMinR"
-	.size	.Lstr.169, 10
+	.size	.Lstr.168, 10
 
 	.type	.L__unnamed_9,@object   # @8
 	.align	4
@@ -19804,11 +19474,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_9, 4
 
-	.type	.Lstr.170,@object       # @str.170
+	.type	.Lstr.169,@object       # @str.169
 	.align	32
-.Lstr.170:
+.Lstr.169:
 	.asciz	"clampMinG"
-	.size	.Lstr.170, 10
+	.size	.Lstr.169, 10
 
 	.type	.L__unnamed_10,@object  # @9
 	.align	4
@@ -19816,11 +19486,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_10, 4
 
-	.type	.Lstr.171,@object       # @str.171
+	.type	.Lstr.170,@object       # @str.170
 	.align	32
-.Lstr.171:
+.Lstr.170:
 	.asciz	"clampMinB"
-	.size	.Lstr.171, 10
+	.size	.Lstr.170, 10
 
 	.type	.L__unnamed_11,@object  # @10
 	.align	4
@@ -19828,11 +19498,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_11, 4
 
-	.type	.Lstr.172,@object       # @str.172
+	.type	.Lstr.171,@object       # @str.171
 	.align	32
-.Lstr.172:
+.Lstr.171:
 	.asciz	"clampMaxR"
-	.size	.Lstr.172, 10
+	.size	.Lstr.171, 10
 
 	.type	.L__unnamed_12,@object  # @11
 	.align	4
@@ -19840,11 +19510,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_12, 4
 
-	.type	.Lstr.173,@object       # @str.173
+	.type	.Lstr.172,@object       # @str.172
 	.align	32
-.Lstr.173:
+.Lstr.172:
 	.asciz	"clampMaxG"
-	.size	.Lstr.173, 10
+	.size	.Lstr.172, 10
 
 	.type	.L__unnamed_13,@object  # @12
 	.align	4
@@ -19852,11 +19522,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_13, 4
 
-	.type	.Lstr.174,@object       # @str.174
+	.type	.Lstr.173,@object       # @str.173
 	.align	32
-.Lstr.174:
+.Lstr.173:
 	.asciz	"clampMaxB"
-	.size	.Lstr.174, 10
+	.size	.Lstr.173, 10
 
 	.type	.L__unnamed_14,@object  # @13
 	.align	4
@@ -19864,11 +19534,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_14, 4
 
-	.type	.Lstr.175,@object       # @str.175
+	.type	.Lstr.174,@object       # @str.174
 	.align	32
-.Lstr.175:
+.Lstr.174:
 	.asciz	"sharpenningR"
-	.size	.Lstr.175, 13
+	.size	.Lstr.174, 13
 
 	.type	.L__unnamed_15,@object  # @14
 	.align	4
@@ -19876,11 +19546,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_15, 4
 
-	.type	.Lstr.176,@object       # @str.176
+	.type	.Lstr.175,@object       # @str.175
 	.align	32
-.Lstr.176:
+.Lstr.175:
 	.asciz	"sharpenningG"
-	.size	.Lstr.176, 13
+	.size	.Lstr.175, 13
 
 	.type	.L__unnamed_16,@object  # @15
 	.align	4
@@ -19888,11 +19558,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_16, 4
 
-	.type	.Lstr.177,@object       # @str.177
+	.type	.Lstr.176,@object       # @str.176
 	.align	32
-.Lstr.177:
+.Lstr.176:
 	.asciz	"sharpenninngB"
-	.size	.Lstr.177, 14
+	.size	.Lstr.176, 14
 
 	.type	.L__unnamed_17,@object  # @16
 	.align	4
@@ -19900,11 +19570,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_17, 4
 
-	.type	.Lstr.178,@object       # @str.178
+	.type	.Lstr.177,@object       # @str.177
 	.align	32
-.Lstr.178:
+.Lstr.177:
 	.asciz	"sharpeningSupport"
-	.size	.Lstr.178, 18
+	.size	.Lstr.177, 18
 
 	.type	.L__unnamed_18,@object  # @17
 	.align	4
@@ -19912,11 +19582,11 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_18, 4
 
-	.type	.Lstr.179,@object       # @str.179
+	.type	.Lstr.178,@object       # @str.178
 	.align	32
-.Lstr.179:
+.Lstr.178:
 	.asciz	"noiseCore"
-	.size	.Lstr.179, 10
+	.size	.Lstr.178, 10
 
 	.type	.L__unnamed_19,@object  # @18
 	.align	4
@@ -19924,33 +19594,21 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.long	0                       # float 0
 	.size	.L__unnamed_19, 4
 
-	.type	.Lstr.180,@object       # @str.180
+	.type	.Lstr.179,@object       # @str.179
 	.align	32
-.Lstr.180:
+.Lstr.179:
 	.asciz	"p3"
-	.size	.Lstr.180, 3
+	.size	.Lstr.179, 3
 
 	.type	.L__unnamed_20,@object  # @19
 .L__unnamed_20:
 	.byte	0                       # 0x0
 	.size	.L__unnamed_20, 1
 
-	.type	.Lstr.181,@object       # @str.181
-	.align	32
-.Lstr.181:
-	.asciz	"bayerPattern"
-	.size	.Lstr.181, 13
-
 	.type	.L__unnamed_21,@object  # @20
-	.align	4
-.L__unnamed_21:
-	.long	0                       # 0x0
-	.size	.L__unnamed_21, 4
-
-	.type	.L__unnamed_22,@object  # @21
 	.section	.data.rel.ro.local,"aw",@progbits
 	.align	16
-.L__unnamed_22:
+.L__unnamed_21:
 	.quad	.Lstr
 	.long	1                       # 0x1
 	.long	2                       # 0x2
@@ -19961,7 +19619,7 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.quad	0
 	.quad	0
 	.quad	0
-	.quad	.Lstr.161
+	.quad	.Lstr.160
 	.long	0                       # 0x0
 	.long	0                       # 0x0
 	.byte	0                       # 0x0
@@ -19971,7 +19629,7 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.quad	.L__unnamed_1
 	.quad	0
 	.quad	0
-	.quad	.Lstr.162
+	.quad	.Lstr.161
 	.long	0                       # 0x0
 	.long	0                       # 0x0
 	.byte	0                       # 0x0
@@ -19979,6 +19637,16 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.short	1                       # 0x1
 	.zero	4
 	.quad	.L__unnamed_2
+	.quad	0
+	.quad	0
+	.quad	.Lstr.137
+	.long	1                       # 0x1
+	.long	2                       # 0x2
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	0
 	.quad	0
 	.quad	0
 	.quad	.Lstr.138
@@ -19991,6 +19659,176 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.quad	0
 	.quad	0
 	.quad	0
+	.quad	.Lstr.162
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_3
+	.quad	0
+	.quad	0
+	.quad	.Lstr.163
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_4
+	.quad	0
+	.quad	0
+	.quad	.Lstr.164
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_5
+	.quad	0
+	.quad	0
+	.quad	.Lstr.165
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_6
+	.quad	0
+	.quad	0
+	.quad	.Lstr.166
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_7
+	.quad	0
+	.quad	0
+	.quad	.Lstr.167
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_8
+	.quad	0
+	.quad	0
+	.quad	.Lstr.168
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_9
+	.quad	0
+	.quad	0
+	.quad	.Lstr.169
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_10
+	.quad	0
+	.quad	0
+	.quad	.Lstr.170
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_11
+	.quad	0
+	.quad	0
+	.quad	.Lstr.171
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_12
+	.quad	0
+	.quad	0
+	.quad	.Lstr.172
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_13
+	.quad	0
+	.quad	0
+	.quad	.Lstr.173
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_14
+	.quad	0
+	.quad	0
+	.quad	.Lstr.174
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_15
+	.quad	0
+	.quad	0
+	.quad	.Lstr.175
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_16
+	.quad	0
+	.quad	0
+	.quad	.Lstr.176
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_17
+	.quad	0
+	.quad	0
+	.quad	.Lstr.177
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_18
+	.quad	0
+	.quad	0
+	.quad	.Lstr.178
+	.long	0                       # 0x0
+	.long	0                       # 0x0
+	.byte	2                       # 0x2
+	.byte	32                      # 0x20
+	.short	1                       # 0x1
+	.zero	4
+	.quad	.L__unnamed_19
+	.quad	0
+	.quad	0
 	.quad	.Lstr.139
 	.long	1                       # 0x1
 	.long	2                       # 0x2
@@ -20001,187 +19839,7 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.quad	0
 	.quad	0
 	.quad	0
-	.quad	.Lstr.163
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_3
-	.quad	0
-	.quad	0
-	.quad	.Lstr.164
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_4
-	.quad	0
-	.quad	0
-	.quad	.Lstr.165
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_5
-	.quad	0
-	.quad	0
-	.quad	.Lstr.166
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_6
-	.quad	0
-	.quad	0
-	.quad	.Lstr.167
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_7
-	.quad	0
-	.quad	0
-	.quad	.Lstr.168
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_8
-	.quad	0
-	.quad	0
-	.quad	.Lstr.169
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_9
-	.quad	0
-	.quad	0
-	.quad	.Lstr.170
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_10
-	.quad	0
-	.quad	0
-	.quad	.Lstr.171
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_11
-	.quad	0
-	.quad	0
-	.quad	.Lstr.172
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_12
-	.quad	0
-	.quad	0
-	.quad	.Lstr.173
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_13
-	.quad	0
-	.quad	0
-	.quad	.Lstr.174
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_14
-	.quad	0
-	.quad	0
-	.quad	.Lstr.175
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_15
-	.quad	0
-	.quad	0
-	.quad	.Lstr.176
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_16
-	.quad	0
-	.quad	0
-	.quad	.Lstr.177
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_17
-	.quad	0
-	.quad	0
-	.quad	.Lstr.178
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_18
-	.quad	0
-	.quad	0
-	.quad	.Lstr.179
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_19
-	.quad	0
-	.quad	0
 	.quad	.Lstr.140
-	.long	1                       # 0x1
-	.long	2                       # 0x2
-	.byte	2                       # 0x2
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	0
-	.quad	0
-	.quad	0
-	.quad	.Lstr.141
 	.long	1                       # 0x1
 	.long	2                       # 0x2
 	.byte	1                       # 0x1
@@ -20191,7 +19849,7 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.quad	0
 	.quad	0
 	.quad	0
-	.quad	.Lstr.180
+	.quad	.Lstr.179
 	.long	0                       # 0x0
 	.long	0                       # 0x0
 	.byte	1                       # 0x1
@@ -20201,17 +19859,7 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.quad	.L__unnamed_20
 	.quad	0
 	.quad	0
-	.quad	.Lstr.181
-	.long	0                       # 0x0
-	.long	0                       # 0x0
-	.byte	0                       # 0x0
-	.byte	32                      # 0x20
-	.short	1                       # 0x1
-	.zero	4
-	.quad	.L__unnamed_21
-	.quad	0
-	.quad	0
-	.quad	.Lstr.142
+	.quad	.Lstr.141
 	.long	2                       # 0x2
 	.long	3                       # 0x3
 	.byte	1                       # 0x1
@@ -20221,51 +19869,51 @@ _ZN6Halide7Runtime8Internal30custom_can_use_target_featuresE:
 	.quad	0
 	.quad	0
 	.quad	0
-	.size	.L__unnamed_22, 1296
+	.size	.L__unnamed_21, 1248
 
-	.type	.Lstr.182,@object       # @str.182
+	.type	.Lstr.180,@object       # @str.180
 	.section	.rodata,"a",@progbits
 	.align	32
-.Lstr.182:
+.Lstr.180:
 	.asciz	"x86-64-linux-avx-avx2-f16c-fma-sse41"
-	.size	.Lstr.182, 37
+	.size	.Lstr.180, 37
 
 	.type	.Lf3_metadata_storage,@object # @f3_metadata_storage
 	.section	.data.rel.ro.local,"aw",@progbits
 	.align	16
 .Lf3_metadata_storage:
 	.long	0                       # 0x0
-	.long	27                      # 0x1b
-	.quad	.L__unnamed_22
-	.quad	.Lstr.182
-	.quad	.Lstr.142
+	.long	26                      # 0x1a
+	.quad	.L__unnamed_21
+	.quad	.Lstr.180
+	.quad	.Lstr.141
 	.size	.Lf3_metadata_storage, 32
 
 
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
-	.ident	"clang version 3.7.1 (branches/release_37 297356)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
+	.ident	"clang version 3.7.1 (branches/release_37 294077)"
 	.section	".note.GNU-stack","",@progbits

@@ -31,7 +31,7 @@ struct halide_filter_metadata_t;
 extern "C" {
 #endif
 
-int CameraIspGenFast16(buffer_t *_p0_buffer, int32_t _p1, int32_t _p2, buffer_t *_vignetteH_buffer, buffer_t *_vignetteV_buffer, float _blackLevelR, float _blackLevelG, float _blackLevelB, float _whiteBalanceGainR, float _whiteBalanceGainG, float _whiteBalanceGainB, float _clampMinR, float _clampMinG, float _clampMinB, float _clampMaxR, float _clampMaxG, float _clampMaxB, float _sharpenningR, float _sharpenningG, float _sharpenninngB, float _sharpeningSupport, float _noiseCore, buffer_t *_ccm_buffer, buffer_t *_toneTable_buffer, bool _p3, int32_t _bayerPattern, buffer_t *_f3_buffer) HALIDE_FUNCTION_ATTRS;
+int CameraIspGenFast16(buffer_t *_p0_buffer, int32_t _p1, int32_t _p2, buffer_t *_vignetteH_buffer, buffer_t *_vignetteV_buffer, float _blackLevelR, float _blackLevelG, float _blackLevelB, float _whiteBalanceGainR, float _whiteBalanceGainG, float _whiteBalanceGainB, float _clampMinR, float _clampMinG, float _clampMinB, float _clampMaxR, float _clampMaxG, float _clampMaxB, float _sharpenningR, float _sharpenningG, float _sharpenninngB, float _sharpeningSupport, float _noiseCore, buffer_t *_ccm_buffer, buffer_t *_toneTable_buffer, bool _p3, buffer_t *_f3_buffer) HALIDE_FUNCTION_ATTRS;
 int CameraIspGenFast16_argv(void **args) HALIDE_FUNCTION_ATTRS;
 // Result is never null and points to constant static data
 const struct halide_filter_metadata_t *CameraIspGenFast16_metadata() HALIDE_FUNCTION_ATTRS;

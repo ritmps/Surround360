@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
   string dataDir = FLAGS_data_path.substr(0, FLAGS_data_path.find_last_of('/'));
   const string outputDir =
     FLAGS_output_dir.empty() ? dataDir + "/output" : FLAGS_output_dir;
-  system(string("mkdir -p \"" + outputDir + "\"").c_str());
+  system(string("mkdir -p " + outputDir).c_str());
 
   LOG(INFO) << "Loading data...";
 
@@ -382,7 +382,7 @@ int main(int argc, char** argv) {
 
     cameraIspTest.setup();
     cameraIspTest.loadImage(rawTest);
-    cameraIspTest.getImage(rawTestIspOut);
+    cameraIsp.getImage(rawTestIspOut);
     const string rawTestIspOutFilename = outputDir + "/test_out_rgb.png";
     imwriteExceptionOnFail(rawTestIspOutFilename, rawTestIspOut);
   }

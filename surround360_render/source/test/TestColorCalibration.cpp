@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
   }
 
   if (FLAGS_output_data_dir != "") {
-    system(string("mkdir -p \"" + FLAGS_output_data_dir + "\"").c_str());
+    system(string("mkdir -p " + FLAGS_output_data_dir).c_str());
   }
 
   int stepDebugImages = 0;
@@ -225,14 +225,8 @@ int main(int argc, char** argv) {
     CameraIsp cameraIspTest(getJson(ispConfigPathOut), kOutputBpp);
   #endif
 
-  cameraIspTest.setBitsPerPixel(kOutputBpp);
-  cameraIspTest.loadImage(raw16);
   cameraIspTest.setup();
-
-  #ifdef USE_HALIDE
-    cameraIspTest.initPipe();
-  #endif
-
+  cameraIspTest.loadImage(raw16);
   cameraIspTest.getImage(rgbOut);
 
   if (FLAGS_save_debug_images) {

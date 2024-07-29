@@ -148,8 +148,8 @@ namespace surround360 {
     std::string stateString() {
       std::stringstream ss;
       m.lock();
-      ss << "[head=" << head
-         << " tail=" << tail
+      ss << "[head=" << tail
+         << " tail=" << head
          << " count=" << count
          << " fini=" << fini
          << "]";

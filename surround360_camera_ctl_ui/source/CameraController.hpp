@@ -42,14 +42,12 @@ public:
   bool configureCameras(
     const float shutter,
     const float framerate,
-    const int frameInterval,
     const float gain,
     const int bitsPerPixel);
 
   bool updateCameraParams(
     const float shutter,
     const float fps,
-    const int frameInterval,
     const float gain,
     const int bpp);
 
@@ -59,9 +57,6 @@ public:
   void setPaths(const vector<string>& paths);
   void startRecording(const bool oneshot = false);
   void stopRecording();
-  std::pair<float, float> getPropertyMinMax(
-    PointGreyCamera::CameraProperty property);
-  void updateCameraParameters();
 
   ~CameraController();
 
@@ -83,12 +78,13 @@ private:
   void startOtherCameras();
   void stopMainCamera();
   void stopOtherCameras();
+  void updateCameraParameters();
 
 private:
   std::vector<PointGreyCameraPtr> m_camera;
-  std::vector<std::thread>        m_prodThread;
-  std::vector<std::thread>        m_consThread;
-  std::vector<ConsumerBuffer>     m_consumerBuf;
+  std::vector<std::thread>       m_prodThread;
+  std::vector<std::thread>       m_consThread;
+  std::vector<ConsumerBuffer>    m_consumerBuf;
 
   int m_masterCameraSerial;
   int m_masterCameraIndex;
@@ -97,7 +93,6 @@ private:
   std::size_t m_consumerCount;
   float  m_shutter;
   float  m_framerate;
-  int    m_frameInterval;
   float  m_gain;
   float  m_bitsPerPixel;
   float  m_exposure;

@@ -20,8 +20,6 @@
 #include <thread>
 #include <vector>
 
-#include "CvUtil.h"
-#include "StringUtil.h"
 #include "VrCamException.h"
 
 namespace surround360 {
@@ -68,15 +66,14 @@ static double getCurrTimeSec() {
 // paths if fullPath is true)
 static vector<string> getFilesInDir(
     const string& srcDir,
-    const bool fullPath,
-    int numFilesToReturn = -1) {
+    const bool fullPath) {
 
   DIR* dir = opendir(srcDir.c_str());
   if (!dir) { return vector<string>(); }
 
   vector<string> out_file_names;
   dirent* dent;
-  while (true) {
+  while(true) {
     dent = readdir(dir);
     if (!dent) break;
     // skip hidden files and/or links to parent dir
@@ -86,22 +83,8 @@ static vector<string> getFilesInDir(
     } else {
       out_file_names.push_back(string(dent->d_name));
     }
-    if (--numFilesToReturn == 0) {
-      break;
-    }
   }
   return out_file_names;
-}
-
-static string getImageFileExtension(const string& imageDir) {
-  // figure out the file extension used by the images. This is complicated but
-  // it's all so we can iterate over the images in the right order.
-  // assumption: no weird mixtures of file extension
-  vector<string> imageFilenames = getFilesInDir(imageDir, false, 1);
-  assert(imageFilenames.size() > 0);
-  vector<string> firstFilenameParts = stringSplit(imageFilenames[0], '.');
-  assert(firstFilenameParts.size() == 2);
-  return firstFilenameParts[1];
 }
 
 // Thread functor wrapper.
@@ -116,10 +99,6 @@ struct Threadable {
   }
 };
 
-// wrapper for imreadExceptionOnFail( for use in std::threads
-static void imreadInStdThread(string path, int flags, Mat* dest) {
-  *dest = imreadExceptionOnFail(path, flags);
-}
 
 } // namespace util
 } // namespace surround360

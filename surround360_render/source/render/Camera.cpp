@@ -1,17 +1,6 @@
-/**
-* Copyright (c) 2016-present, Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD-style license found in the
-* LICENSE_render file in the root directory of this subproject. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
-
 #include "Camera.h"
 
 namespace surround360 {
-
-const Camera::Real Camera::kNearInfinity = 1e6;
 
 void Camera::setRotation(
     const Vector3& forward,
@@ -41,10 +30,8 @@ Camera::Camera(const Type type, const Vector2& res, const Vector2& focal):
   setDefaultFov();
 }
 
-Camera::Camera(const dynamic& json) {
-  CHECK_GE(json["version"].asDouble(), 1.0);
-
-  id = json["id"].getString();
+Camera::Camera(const folly::dynamic& json) {
+  CHECK_GE(json["version"], 1);
 
   type = deserializeType(json["type"]);
 
@@ -77,15 +64,15 @@ Camera::Camera(const dynamic& json) {
 
   focal = deserializeVector<2>(json["focal"]);
 
+  id = json["id"].getString();
+
   if (json.count("group")) {
     group = json["group"].getString();
   }
 }
 
-#ifndef SUPPRESS_RIG_IO
-
-dynamic Camera::serialize() const {
-  dynamic result = dynamic::object
+folly::dynamic Camera::serialize() const {
+  folly::dynamic result = folly::dynamic::object
     ("version", 1)
     ("type", serializeType(type))
     ("origin", serializeVector(position))
@@ -108,8 +95,6 @@ dynamic Camera::serialize() const {
 
   return result;
 }
-
-#endif // SUPPRESS_RIG_IO
 
 void Camera::setRotation(const Vector3& angleAxis) {
   // convert angle * axis to rotation matrix
@@ -225,26 +210,11 @@ Camera::Vector3 midpoint(
   return (pa + pb) / 2;
 }
 
-#ifdef WIN32
-
-Camera::Rig Camera::loadRig(const std::string& filename) {
-  boost::property_tree::ptree tree;
-  boost::property_tree::json_parser::read_json(std::ifstream(filename), tree);
-
-  Camera::Rig rig;
-  for (const auto& camera : tree.get_child("cameras")) {
-    rig.emplace_back(camera.second);
-  }
-  return rig;
-}
-
-#else // WIN32
-
 std::vector<Camera> Camera::loadRig(const std::string& filename) {
   std::string json;
   folly::readFile(filename.c_str(), json);
   CHECK(!json.empty()) << "could not read JSON file: " << filename;
-  dynamic dynamic = folly::parseJson(json);
+  folly::dynamic dynamic = folly::parseJson(json);
 
   std::vector<Camera> cameras;
   for (const auto& camera : dynamic["cameras"]) {
@@ -253,63 +223,39 @@ std::vector<Camera> Camera::loadRig(const std::string& filename) {
   return cameras;
 }
 
-#endif // WIN32
-
-#ifndef SUPPRESS_RIG_IO
-
 void Camera::saveRig(
     const std::string& filename,
     const std::vector<Camera>& cameras) {
-  dynamic dynamic = dynamic::object(
-    "cameras", dynamic::array());
+  folly::dynamic dynamic = folly::dynamic::object(
+    "cameras", folly::dynamic::array());
   for (const auto& camera : cameras) {
     dynamic["cameras"].push_back(camera.serialize());
   }
   folly::writeFile(folly::toPrettyJson(dynamic), filename.c_str());
 }
 
-// takes a camera and a scale factor. returns a camera model equivalent to
-// changing the resolution of the original camera
-Camera Camera::createRescaledCamera(
-    const Camera& cam,
-    const float scale) {
-
-  Camera scaledCam(cam);
-  scaledCam.resolution = Camera::Vector2(
-    int(cam.resolution.x() * scale),
-    int(cam.resolution.y() * scale));
-
-  const float scaleX = scaledCam.resolution.x() / cam.resolution.x();
-  const float scaleY = scaledCam.resolution.y() / cam.resolution.y();
-  scaledCam.principal.x() *= scaleX;
-  scaledCam.principal.y() *= scaleY;
-  scaledCam.focal.x() *= scaleX;
-  scaledCam.focal.y() *= scaleY;
-  return scaledCam;
-}
-
 void Camera::unitTest() {
-  dynamic serialized = dynamic::object
+  folly::dynamic serialized = folly::dynamic::object
       ("version", 1)
       ("type", "FTHETA")
-      ("origin", dynamic::array(
+      ("origin", folly::dynamic::array(
         -10.51814,
         13.00734,
         -4.22656))
-      ("forward", dynamic::array(
+      ("forward", folly::dynamic::array(
         -0.6096207796429852,
         0.7538922995778138,
         -0.24496715221587234))
-      ("up", dynamic::array(
+      ("up", folly::dynamic::array(
         0.7686134846014325,
         0.6376793279268061,
         0.050974366338976666))
-      ("right", dynamic::array(
+      ("right", folly::dynamic::array(
         0.19502945167097138,
         -0.15702371237098722,
         -0.9681462011153862))
-      ("resolution", dynamic::array(2448, 2048))
-      ("focal", dynamic::array(1240, -1240))
+      ("resolution", folly::dynamic::array(2448, 2048))
+      ("focal", folly::dynamic::array(1240, -1240))
       ("id", "cam9");
 
   Camera camera(serialized);
@@ -408,7 +354,5 @@ void Camera::unitTest() {
     CHECK(midpoint(a, b, false).isApprox(i)) << midpoint(a, b, false);
   }
 }
-
-#endif // SUPPRESS_RIG_IO
 
 } // namespace surround360

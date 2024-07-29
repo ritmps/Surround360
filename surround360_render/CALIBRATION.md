@@ -20,7 +20,7 @@ The steps below describe the color calibration process for a set of cameras from
 
 * Under the known illuminant, place the MacBeth chart and the SpyderCUBE in front of a camera and take a picture using our camera control software. An example image can found in /surround360_render/res/example_data/color_calibration_input.png. Repeat for each camera.
 
-* Save the images inside a directory called "charts". For this example, we are assuming they are under ~/Desktop/color_calibration/charts/<serial_number>.tiff. Go to /surround360_render and run the following command:
+* Save the images inside a directory called "charts". For this example, we are assuming they are under ~/Desktop/color_calibration/charts/cam[0-16].tiff. Go to /surround360_render and run the following command:
 <pre>
 python scripts/color_calibrate_all.py \
 --data_dir ~/Desktop/color_calibration \
@@ -31,7 +31,31 @@ python scripts/color_calibrate_all.py \
 
 * Check the file scripts/color_calibrate_all.py for more options. Use the attributes min_area_chart_perc and max_area_chart_perc to set a range for the expected size of the color chart; this is useful when pictures are taken at different distances. Use the attribute black_level_adjust to set the black level of each camera to the median of all the cameras; this is useful when we expect the black level to be the same in all the cameras (note that this is not true for all the sensors.)
 
-To run the pipeline with these new ISP config files we just need to copy the generated ISP config files to the output directory, e.g. ~/Desktop/render/config/isp/<serial_number>.json, and then run run_all.py as usual. Note that the ISP config files are named after each corresponding camera serial number.
+To run the pipeline with these new ISP config files we just modify /surround360_render/res/config/isp/cam_to_isp_config.json so that it looks like:
+
+<pre>
+{
+    "cam0": "~/Desktop/color_calibration/isp/isp0.json",
+    "cam1": "~/Desktop/color_calibration/isp/isp1.json",
+    "cam10": "~/Desktop/color_calibration/isp/isp10.json",
+    "cam11": "~/Desktop/color_calibration/isp/isp11.json",
+    "cam12": "~/Desktop/color_calibration/isp/isp12.json",
+    "cam13": "~/Desktop/color_calibration/isp/isp13.json",
+    "cam14": "~/Desktop/color_calibration/isp/isp14.json",
+    "cam15": "~/Desktop/color_calibration/isp/isp15.json",
+    "cam16": "~/Desktop/color_calibration/isp/isp16.json",
+    "cam2": "~/Desktop/color_calibration/isp/isp2.json",
+    "cam3": "~/Desktop/color_calibration/isp/isp3.json",
+    "cam4": "~/Desktop/color_calibration/isp/isp4.json",
+    "cam5": "~/Desktop/color_calibration/isp/isp5.json",
+    "cam6": "~/Desktop/color_calibration/isp/isp6.json",
+    "cam7": "~/Desktop/color_calibration/isp/isp7.json",
+    "cam8": "~/Desktop/color_calibration/isp/isp8.json",
+    "cam9": "~/Desktop/color_calibration/isp/isp9.json"
+}
+</pre>
+
+and then run run_all.py as usual.
 
 ## Optical Vignetting Calibration
 
@@ -43,7 +67,7 @@ The steps below describe the calibration process for a set of cameras.
 
 * Under a uniform and constant illuminant, place the grayscale chart in front of a camera and take as many pictures as desired (recommended more than 20) using our camera control software so as to cover the entire image region with samples of the chart in all positions. An example image can found in /surround360_render/res/example_data/vignetting_calibration_sample.tiff. Repeat for each camera.
 
-* Save the set of RAW images for each camera inside a directory called "charts". For this example, we acquired 100 images per camera, for 17 cameras, and we placed them under ~/Desktop/vignetting_calibration/<serial_number>/charts/[000000-000099].tiff. Note the file structure, where each camera has its own directory. We also assume that color calibration has been run on these cameras, and we already have a directory ~/Desktop/vignetting_calibration/isp with each camera's ISP json config file. Go to /surround360_render and run the following command:
+* Save the set of images for each camera inside a directory called "charts". For this example, we acquired 100 images per camera, for 17 cameras, and we placed them under ~/Desktop/vignetting_calibration/cam[0-16]/charts/[0-99].tiff. Note the file structure, where each camera has its own directory. We also assume that color calibration has been run on these cameras, and we already have a directory ~/Desktop/vignetting_calibration/isp with each camera's ISP json config file. Go to /surround360_render and run the following command:
 <pre>
 python scripts/vignetting_calibrate.py \
 --data_dir ~/Desktop/vignetting_calibration \
@@ -65,15 +89,15 @@ The steps below describe the geometric calibration process for a camera rig.
 
 * Capture a single frame using the Surround360 capturing software in a scene with plenty of features, that is, containing objects with sharp edges and corners of different sizes. A good example is the interior of an office.
 
-* Unpack the frames and run the ISP step to get RGB images. Put them in a separate directory. For this example we assume they are in ~/Desktop/geometric_calibration/rgb/cam[0-16]/000000.png
+* Unpack the frames and run the ISP step to get RGB images. Put them in a separate directory. For this example we asumme they are in ~/Desktop/geometric_calibration/000000/isp_out/cam[0-16].png
 
-* Go to surround360_render and run the following command:
+* Go to /surround360_render and run the following command:
 <pre>
 python scripts/geometric_calibration.py \
 --data_dir  ~/Desktop/geometric_calibration \
---rig_json $PWD/res/config/camera_rig.json \
---output_json ~/Desktop/geometric_calibration/camera_rig.json \
+--rig_json ./res/config/17cmosis_rig.json \
+--output_json ~/Desktop/geometric_calibration/17cmosis_calibrated_rig.json \
 --save_debug_images
 <pre>
 
-* This generates a new JSON file, camera_rig.json, to be used when rendering by just copying it to the output directory, e.g. ~/Desktop/render/config/camera_rig.json. It also generates debug images under ~/Desktop/geometric_calibration showing the accuracy of the calibration process.
+* This generates a new JSON file, 17cmosis_calibrated_rig.json, to be used in the Rig Geometry File field (rig_json_file flag) when rendering. It also generates debug images under ~/Desktop/geometric_calibration showing the accuracy of the calibration process. NOTE: use the new_rig_format flag to render using this new JSOn file.

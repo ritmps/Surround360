@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include <iomanip>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -24,8 +22,6 @@ vector<string> stringSplit(const string& s, const char delim);
 
 // concatenates all strings in the input vector into a single string, separated by delim's
 string stringJoin(const string& delim, const vector<string>& stringsToJoin);
-
-string intToStringZeroPad(const int x, const int padlen = 6);
 
 } // namespace util
 } // namespace surround360

@@ -1,22 +1,9 @@
-#!/usr/bin/env python2
-# Copyright (c) 2016-present, Facebook, Inc.
-# All rights reserved.
-#
-# This source code is licensed under the BSD-style license found in the
-# LICENSE_render file in the root directory of this subproject. An additional grant
-# of patent rights can be found in the PATENTS file in the same directory.
-
 import argparse
-
-try:
-  import cv2
-except ImportError:
-  print("cv2 not found, 16 bit images will not work")
-
 import datetime
 import json
 import numpy as np
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -34,22 +21,22 @@ TITLE = "Surround 360 - Geometric Calibration"
 
 COLMAP_EXTRACT_TEMPLATE = """
 {COLMAP_DIR}/feature_extractor
---General.image_path "{IMAGE_PATH}"
---General.database_path "{COLMAP_DB_PATH}"
+--General.image_path {IMAGE_PATH}
+--General.database_path {COLMAP_DB_PATH}
 """
 
 COLMAP_MATCH_TEMPLATE = """
 {COLMAP_DIR}/exhaustive_matcher
---General.database_path "{COLMAP_DB_PATH}"
+--General.database_path {COLMAP_DB_PATH}
 """
 
 GEOMETRIC_CALIBRATION_COMMAND_TEMPLATE = """
 {SURROUND360_RENDER_DIR}/bin/GeometricCalibration
---json "{RIG_JSON}"
---output_json "{OUTPUT_JSON}"
---matches "{MATCHES_JSON}"
+--json {RIG_JSON}
+--output_json {OUTPUT_JSON}
+--matches {MATCHES_JSON}
 --pass_count {PASS_COUNT}
---log_dir "{LOG_DIR}"
+--log_dir {LOG_DIR}
 --logbuflevel -1
 --stderrthreshold 0
 {FLAGS_EXTRA}
@@ -93,23 +80,24 @@ def features_db_to_json(features_database, matches_json):
   cursorImage.close()
 
   data["all_matches"] = []
-  cursor.execute("SELECT pair_id, data FROM matches WHERE data IS NOT NULL;")
+  cursor.execute("SELECT pair_id, data FROM matches;")
   for row in cursor:
     image_pair = {}
     pair_id = row[0]
+    inlier_matches = np.fromstring(row[1], dtype=np.uint32).reshape(-1, 2)
+    image_id1, image_id2 = pair_id_to_image_ids(pair_id)
+    image_name1 = images[image_id1]
+    image_name2 = images[image_id2]
 
-    if row[1] is not None:
-      inlier_matches = np.fromstring(row[1], dtype=np.uint32).reshape(-1, 2)
-      image_id1, image_id2 = pair_id_to_image_ids(pair_id)
-      image_pair["image1"] = images[image_id1]
-      image_pair["image2"] = images[image_id2]
+    image_pair["image1"] = image_name1
+    image_pair["image2"] = image_name2
 
-      matches = []
-      for i in range(inlier_matches.shape[0]):
-        match = {"idx1": str(inlier_matches[i][0]), "idx2": str(inlier_matches[i][1])}
-        matches.append(match)
-      image_pair["matches"] = matches
-      data["all_matches"].append(image_pair)
+    matches = []
+    for i in range(inlier_matches.shape[0]):
+      match = {"idx1":str(inlier_matches[i][0]), "idx2":str(inlier_matches[i][1])}
+      matches.append(match)
+    image_pair["matches"] = matches
+    data["all_matches"].append(image_pair)
 
   with open(matches_json, 'w') as outfile:
     json.dump(data, outfile, sort_keys=True, indent=4)
@@ -145,14 +133,6 @@ def pair_id_to_image_ids(pair_id):
   image_id1 = (pair_id - image_id2) / k8mersenne
   return image_id1, image_id2
 
-def list_only_files_recursive(src_dir):
-  files = []
-  for r, d, f in os.walk(src_dir):
-    for fn in f:
-      if fn[0] != ".":
-        files.append(os.path.join(r, fn))
-  return files
-
 if __name__ == "__main__":
   args = parse_args()
   data_dir            = args["data_dir"]
@@ -169,29 +149,20 @@ if __name__ == "__main__":
 
   start_time = timer()
 
-  if 'cv2' in sys.modules:
-    print "Converting images to 8-bit..."
-    for filename in list_only_files_recursive(data_dir):
-      image = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
-      if image is not None and image.dtype == np.uint16:
-        print filename + "..."
-        image = (255.0 / (2**16 - 1) * image).astype(np.uint8)
-        cv2.imwrite(filename, image)
-
   print "Extracting features via COLMAP..."
   colmap_db_path = data_dir + "/colmap.db"
   feature_extraction_params = {
-    "COLMAP_DIR": colmap_dir,
-    "IMAGE_PATH": data_dir,
-    "COLMAP_DB_PATH": colmap_db_path,
+    "COLMAP_DIR": re.escape(colmap_dir),
+    "IMAGE_PATH": re.escape(data_dir),
+    "COLMAP_DB_PATH": re.escape(colmap_db_path),
   }
   feature_extraction_command = COLMAP_EXTRACT_TEMPLATE.replace("\n", " ").format(**feature_extraction_params)
   run_step("feature extraction", feature_extraction_command, file_runtimes)
 
   print "Matching features via COLMAP..."
   feature_matching_params = {
-    "COLMAP_DIR": colmap_dir,
-    "COLMAP_DB_PATH": colmap_db_path,
+    "COLMAP_DIR": re.escape(colmap_dir),
+    "COLMAP_DB_PATH": re.escape(colmap_db_path),
   }
   feature_matching_command = COLMAP_MATCH_TEMPLATE.replace("\n", " ").format(**feature_matching_params)
   run_step("feature matching", feature_matching_command, file_runtimes)
@@ -200,8 +171,8 @@ if __name__ == "__main__":
   matches_json = data_dir + "/matches.json"
   features_db_to_json(colmap_db_path, matches_json)
 
-  log_dir = data_dir + "/logs"
-  os.system("mkdir -p \"" + log_dir + "\"")
+  log_dir = re.escape(data_dir + "/logs")
+  os.system("mkdir -p " + log_dir)
 
   os.chdir(data_dir)
 
@@ -211,9 +182,9 @@ if __name__ == "__main__":
     flags_extra += " --debug_matches_overlap 0.2 --save_debug_images"
   calibration_params = {
     "SURROUND360_RENDER_DIR": surround360_render_dir,
-    "RIG_JSON": rig_json,
-    "OUTPUT_JSON": output_json,
-    "MATCHES_JSON": matches_json,
+    "RIG_JSON": re.escape(rig_json),
+    "OUTPUT_JSON": re.escape(output_json),
+    "MATCHES_JSON": re.escape(matches_json),
     "PASS_COUNT": pass_count,
     "LOG_DIR": log_dir,
     "FLAGS_EXTRA": flags_extra,

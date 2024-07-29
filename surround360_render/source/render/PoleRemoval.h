@@ -11,18 +11,19 @@
 
 #include <vector>
 
+#include "CameraMetadata.h"
 #include "CvUtil.h"
 
 namespace surround360 {
 
 using namespace cv;
 using namespace std;
+using namespace surround360::calibration;
 
 // loads the two bottom camera images. generates an alpha channel corresponding to pole
 // masks. does optical flow to merge the two images. results are saved to bottomImage.
 void combineBottomImagesWithPoleRemoval(
   const string& imagesDir,
-  const string& frameNumber,
   const string& poleMaskDir,
   const string& prevFrameDataDir,
   const string& outputDataDir,
@@ -30,7 +31,8 @@ void combineBottomImagesWithPoleRemoval(
   const bool saveFlowDataForNextFrame,
   const string& flowAlgName,
   const int alphaFeatherSize,
-  const string& bottomCamId,
+  const bool enableAutoColorAdjust,
+  const string& bottomCamId, 
   const string& bottomCam2Id,
   const float bottomCamUsablePixelsRadius,
   const float bottomCam2UsablePixelsRadius,

@@ -22,10 +22,15 @@ PreviewButton::PreviewButton()
   set_label("Start Preview");
 }
 
-bool PreviewButton::isPreviewing() {
-  return m_previewing;
-}
+void PreviewButton::on_clicked() {
+  CameraController& controller = CameraController::get();
 
-void PreviewButton::setPreviewing(bool isPreviewing) {
-  m_previewing = isPreviewing;
+  if (!m_previewing) {
+    auto& cfg = CameraConfig::get();
+
+    controller.configureCameras(cfg.shutter, cfg.fps, cfg.gain, cfg.bits);
+    controller.startProducer(1);
+    controller.startConsumers(2); 
+    m_previewing = true;
+  }
 }

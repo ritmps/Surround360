@@ -73,11 +73,25 @@ Mat flattenLayersDeghostPreferBase(
   const Mat& bottomLayer,
   const Mat& topLayer);
 
+// similar to flattenLayersDeghostPreferBase, but also applies a correction to
+// brightness in the top layer to minimize the difference in brightness.
+Mat flattenLayersDeghostPreferBaseAdjustBrightness(
+  const Mat& bottomLayer,
+  const Mat& topLayer);
+
+// adds val to the 3 color channels of image, and clamps to avoid overflow
+Mat addBrightnessAndClamp(const Mat& image, const float val);
+
 // build a linear regression model that maps colors in imageToAdjust to
 // corresponding colors in targetImage. the model is of the form R^4->R^3.
 vector<vector<float>> buildColorAdjustmentModel(
   const Mat& targetImage,
   const Mat& imageToAdjust);
+
+// apply a linear color adjustment model and clamp any overflow
+Mat applyColorAdjustmentModel(
+  const Mat& image,
+  const vector<vector<float>>& model);
 
 // bottomLayer can be either 3 or 4 channel, and topLayer must be 4-channel
 template <typename BasePixelType>
@@ -103,16 +117,6 @@ static Mat flattenLayers(
   }
   return mergedImage;
 }
-
-// Applies radial alpha mask to input image
-void radialAlphaFade(Mat& img);
-
-// Applies top-down alpha mask to input image
-void topDownAlphaFade(Mat& img);
-
-// Applies a softmax function to the input color layers
-Mat flattenLayersAlphaSoftmax(
-  const vector<Mat>& layers, const float softmaxCoef);
 
 } // namespace util
 } // namespace surround360
