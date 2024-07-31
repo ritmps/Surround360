@@ -223,6 +223,11 @@ If python-wxgtk2.8 not available (e.g. Ubuntu 16.04):
 ```
 
 * (to use accelerated ISP) Install LLVM
+
+*FP* installed regular package via `apt`
+*FP* installed CUDA 8 -after- installing regular NVidia driver via `ubuntu-drivers autoinstall`
+*FP* deactivated Nouveau + had to go in multi-user via remote machine
+
 ```
   cd ~
   svn co https://llvm.org/svn/llvm-project/llvm/branches/release_37 llvm3.7
@@ -241,7 +246,8 @@ If python-wxgtk2.8 not available (e.g. Ubuntu 16.04):
   cd ~
   git clone https://github.com/halide/Halide.git
   cd Halide
-  git checkout 970f749
+  git checkout 970f749 
+  *FP* 689b33a
   mkdir cmake_build
   cd cmake_build
   cmake -DLLVM_DIR=$HOME/llvm3.7/build/share/llvm/cmake -DCMAKE_BUILD_TYPE=Release -DLLVM_VERSION=37 -DWARNINGS_AS_ERRORS=OFF ..
