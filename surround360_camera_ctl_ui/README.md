@@ -76,13 +76,18 @@ sudo apt-get install freeglut3 freeglut3-dev
 ```
 
 ## Compiling the Surround 360 Camera Control Software
+-- fp 
+There are several files like `CameraIspGen8.h` that appear to have been generated via halide. They are missing in the github, obviously. 
+For now, I've grabbed the generated stuff from the built machine, and slapped it in manually.
 
 After installing all of the dependencies as described above, run:
 ```
 cd <install path>/surround360/surround360_camera_ctl_ui
-cmake -DCMAKE_BUILD_TYPE=Release -DHALIDE_DIR=$HOME/Halide/cmake_build
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DHALIDE_DIR=~/GitHub/Halide/build .. 
 make
 ```
+
 
 To use the user interface, run:
 ```

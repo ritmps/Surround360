@@ -222,7 +222,14 @@ If python-wxgtk2.8 not available (e.g. Ubuntu 16.04):
   sudo apt-get install libtinfo-dev libjpeg-dev
 ```
 
+-- fp --
+```
+sudo apt-get install libedit-dev
+```
+
 * (to use accelerated ISP) Install LLVM
+-- fp -- installed via `apt` instead
+
 ```
   cd ~
   svn co https://llvm.org/svn/llvm-project/llvm/branches/release_37 llvm3.7
@@ -241,10 +248,20 @@ If python-wxgtk2.8 not available (e.g. Ubuntu 16.04):
   cd ~
   git clone https://github.com/halide/Halide.git
   cd Halide
+  -- fp 
+  ln -s /usr/local/cuda/nvvm/libdevice src/runtime/nvidia_libdevice_bitcode
+  --
   git checkout 970f749
-  mkdir cmake_build
-  cd cmake_build
+  -- fp --
+  git checkout 689b33a9
+  -- 
+  mkdir build
+  cd build
   cmake -DLLVM_DIR=$HOME/llvm3.7/build/share/llvm/cmake -DCMAKE_BUILD_TYPE=Release -DLLVM_VERSION=37 -DWARNINGS_AS_ERRORS=OFF ..
+  -- fp --
+  cmake -DLLVM_DIR=/usr/share/llvm-3.7/cmake -DCMAKE_BUILD_TYPE=Release -DLLVM_VERSION=37 -DWARNINGS_AS_ERRORS=OFF ..
+  --
+  make
 ```
 
 ## Compiling the Surround 360 Rendering Software
@@ -259,7 +276,8 @@ If python-wxgtk2.8 not available (e.g. Ubuntu 16.04):
   (to use accelerated ISP):
 ```
   cd <install_path>/surround360/surround360_render
-  cmake -DCMAKE_BUILD_TYPE=Release -DHALIDE_DIR=$HOME/Halide/cmake_build
+  mkdir build && cd build
+  cmake -DCMAKE_BUILD_TYPE=Release -DHALIDE_DIR=~/GitHub/Halide/build .. 
   make
 ```
 
