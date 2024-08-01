@@ -1,5 +1,5 @@
 cuda10/libcudnn*
 surround360_camera_ctl_ui/flycapture/flycapture2-*
+flycapture/installers/*
 **/build/
 **/build.save/
-
