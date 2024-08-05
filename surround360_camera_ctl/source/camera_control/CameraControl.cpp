@@ -107,7 +107,8 @@ typedef SerialIndexVector::iterator SerialIndexIterator;
 
 // The output disk prefix name. There is one per consumer thread
 // (CONSUMER_COUNT).
-static const string kFramesDisk = "/media/snoraid";
+// static const string kFramesDisk = "/media/snoraid";
+static const string kFramesDisk = "/media/mocap";
 
 // Compute a time difference in seconds
 static long double timeDiff(timespec start, timespec end) {
@@ -164,7 +165,7 @@ static const string getOptString(PointGreyCamera::CameraProperty propType) {
   case PointGreyCamera::CameraProperty::GAIN: return "gain";
   case PointGreyCamera::CameraProperty::WHITE_BALANCE: return "whitebalance";
   default:
-    throw "Invalid option passed.";
+    throw std::runtime_error("Invalid option passed.");
   }
 }
 
@@ -176,7 +177,7 @@ static const string getDefaultOptValue(PointGreyCamera::CameraProperty propType)
   case PointGreyCamera::CameraProperty::GAIN: return "0.0";
   case PointGreyCamera::CameraProperty::WHITE_BALANCE: return "450 796";
   default:
-    throw "Invalid option passed.";
+    throw std::runtime_error("Invalid option passed.");
   }
 }
 
@@ -498,7 +499,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
   // prepare stream and filtering pipeline
   avformat_alloc_output_context2(&formatCtx, nullptr, "ffm", kStreamUrl);
   if (formatCtx == nullptr) {
-    throw "could not allocate output format context";
+    throw std::runtime_error("could not allocate output format context");
   }
   assert(formatCtx != nullptr);
 
@@ -508,20 +509,20 @@ static void preview(ConsumerBuffer* previewBuffer) {
 
   codec = avcodec_find_encoder(fmt->video_codec);
   if (codec == nullptr) {
-    throw "could not find video encoder codec";
+    throw std::runtime_error("could not find video encoder codec");
   }
   assert(codec != nullptr);
 
   stream = avformat_new_stream(formatCtx, codec);
   if (stream == nullptr) {
-    throw "could not allocate new stream";
+    throw std::runtime_error("could not allocate new stream");
   }
   assert(stream != nullptr);
 
   stream->id = formatCtx->nb_streams - 1;
   codecCtx = avcodec_alloc_context3(codec);
   if (codecCtx == nullptr) {
-    throw "could not allocate codec context";
+    throw std::runtime_error("could not allocate codec context");
   }
   assert(codecCtx != nullptr);
 
@@ -547,7 +548,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
 
   ret = avcodec_open2(codecCtx, codec, nullptr);
   if (ret < 0) {
-    throw "could not open video codec";
+    throw std::runtime_error("could not open video codec");
   }
   assert(ret == 0);
 
@@ -556,7 +557,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
   ret = avcodec_copy_context(stream->codec, codecCtx);
 
   if (ret < 0) {
-    throw "could not copy stream parameters";
+    throw std::runtime_error("could not copy stream parameters");
   }
   assert(ret == 0);
 
@@ -565,34 +566,34 @@ static void preview(ConsumerBuffer* previewBuffer) {
   if (!(fmt->flags & AVFMT_NOFILE)) {
     ret = avio_open(&formatCtx->pb, kStreamUrl, AVIO_FLAG_WRITE);
     if (ret < 0) {
-      throw "could not open format for streaming";
+      throw std::runtime_error("could not open format for streaming");
     }
     assert(ret == 0);
   }
 
   ret = avformat_write_header(formatCtx, nullptr);
   if (ret < 0) {
-    throw "could not write header";
+    throw std::runtime_error("could not write header");
   }
   assert(ret == 0);
 
   sink = avfilter_get_by_name("buffersink");
   if (sink == nullptr) {
-    throw "could not allocate buffersink filter";
+    throw std::runtime_error("could not allocate buffersink filter");
   }
   assert(sink != nullptr);
 
   for (int i = 0; i < kNumPreviewCams; ++i) {
     source[i] = avfilter_get_by_name("buffer");
     if (source[i] == nullptr) {
-      throw "could not allocate buffer source filter";
+      throw std::runtime_error("could not allocate buffer source filter");
     }
     assert(source[i] != nullptr);
   }
 
   filterGraph = avfilter_graph_alloc();
   if (filterGraph == nullptr) {
-    throw "could not allocate filter graph";
+    throw std::runtime_error("could not allocate filter graph");
   }
   assert(filterGraph != nullptr);
 
@@ -613,13 +614,13 @@ static void preview(ConsumerBuffer* previewBuffer) {
     snprintf(name, sizeof(name), "%d:v", i);
     char *tmp = av_strdup(name);
     if (tmp == nullptr) {
-      throw "could not allocate memory";
+      throw std::runtime_error("could not allocate memory");
     }
     assert(tmp != nullptr);
     ret = avfilter_graph_create_filter(
       &srcCtx[i], source[i], tmp, args, nullptr, filterGraph);
     if (ret < 0) {
-      throw "could not create graph filter";
+      throw std::runtime_error("could not create graph filter");
     }
     assert(ret >= 0);
   }
@@ -627,7 +628,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
   ret = avfilter_graph_create_filter(
     &sinkCtx, sink, "out", nullptr, nullptr, filterGraph);
   if (ret < 0) {
-    throw "could not create graph filter";
+    throw std::runtime_error("could not create graph filter");
   }
   assert(ret == 0);
 
@@ -638,7 +639,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
     AV_PIX_FMT_NONE,
     AV_OPT_SEARCH_CHILDREN);
   if (ret < 0) {
-    throw "failed to set sink options";
+    throw std::runtime_error("failed to set sink options");
   }
   assert(ret == 0);
 
@@ -648,7 +649,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
 
     outputs[i] = avfilter_inout_alloc();
     if (outputs[i] == nullptr) {
-      throw "could not allocate output inout node";
+      throw std::runtime_error("could not allocate output inout node");
     }
     assert(outputs[i] != nullptr);
 
@@ -665,7 +666,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
 
   inputs = avfilter_inout_alloc();
   if (inputs == nullptr) {
-    throw "could not allocate input inout node";
+    throw std::runtime_error("could not allocate input inout node");
   }
   assert(inputs != nullptr);
 
@@ -677,13 +678,13 @@ static void preview(ConsumerBuffer* previewBuffer) {
   ret = avfilter_graph_parse_ptr(
     filterGraph, filterGraphDesc, &inputs, &output, nullptr);
   if (ret < 0) {
-    throw "failed to parse graph filter";
+    throw std::runtime_error("failed to parse graph filter");
   }
   assert(ret >= 0);
 
   ret = avfilter_graph_config(filterGraph, nullptr);
   if (ret < 0) {
-    throw "failed to create filter complex";
+    throw std::runtime_error("failed to create filter complex");
   }
   assert(ret == 0);
 
@@ -699,7 +700,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
     nullptr,
     nullptr);
   if (scaleCtx == nullptr) {
-    throw "failed to create scaling context";
+    throw std::runtime_error("failed to create scaling context");
   }
   assert(scaleCtx != nullptr);
 
@@ -707,7 +708,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
   for (i = 0; i < kNumPreviewCams; ++i) {
     frame[i] = av_frame_alloc();
     if (frame[i] == nullptr) {
-      throw "could not allocate frame";
+      throw std::runtime_error("could not allocate frame");
     }
     assert(frame[i] != nullptr);
 
@@ -716,7 +717,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
     frame[i]->height = kSubFrameResHeight;
     ret = av_frame_get_buffer(frame[i], 32);
     if (ret < 0) {
-      throw "could not allocate frame";
+      throw std::runtime_error("could not allocate frame");
     }
     assert(ret >= 0);
   }
@@ -748,7 +749,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
         frame[i]->linesize);
 
       if (ret < 0) {
-        throw "failed when scaling frame";
+        throw std::runtime_error("failed when scaling frame");
       }
       assert(ret >= 0);
       // frame is now down-scaled and converted from bayer to yuv420p
@@ -758,7 +759,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
       ret = av_buffersrc_add_frame_flags(
         srcCtx[i], frame[i], AV_BUFFERSRC_FLAG_KEEP_REF);
       if (ret < 0) {
-        throw "could not push scaled frame into a buffer source";
+        throw std::runtime_error("could not push scaled frame into a buffer source");
       }
       assert(ret == 0);
     }
@@ -773,13 +774,13 @@ static void preview(ConsumerBuffer* previewBuffer) {
         break;
       }
       if (ret < 0) {
-        throw "error when retrieving filtered frames";
+        throw std::runtime_error("error when retrieving filtered frames");
       }
 
       av_init_packet(&pkt);
       ret = avcodec_encode_video2(codecCtx, &pkt, filtFrame, &gotPacket);
       if (ret < 0) {
-        throw "could not encode final frame";
+        throw std::runtime_error("could not encode final frame");
       }
       assert(ret >= 0);
 
@@ -788,7 +789,7 @@ static void preview(ConsumerBuffer* previewBuffer) {
         pkt.stream_index = stream->index;
         ret = av_interleaved_write_frame(formatCtx, &pkt);
         if (ret < 0) {
-          throw "failed to write frame to the format output";
+          throw std::runtime_error("failed to write frame to the format output");
         }
         assert(ret >= 0);
       }
@@ -943,7 +944,7 @@ static void validateWhiteBalance(const string& valuestr) {
     }
   }
   if (idx != 2) {
-    throw "whitebalance needs a pair of integer values.";
+    throw std::runtime_error("whitebalance needs a pair of integer values.");
   }
 }
 
@@ -1012,7 +1013,7 @@ static int getControlQueue() {
   key_t queueKey = ftok(kQueuePath, kKeyId);
   int queueId = msgget(queueKey, 0666 | IPC_CREAT);
   if (queueId == -1) {
-    throw "can't create control message queue";
+    throw std::runtime_error("can't create control message queue");
   }
   return queueId;
 }
@@ -1111,7 +1112,7 @@ int main(int argc, char *argv[]) {
     ret = mkdir(captureDir.c_str(), kPermissions);
     if (ret == -1) {
       const string kErrString(strerror(errno));
-      throw "Can't create destination directory: " + kErrString;
+      throw std::runtime_error("Can't create destination directory: " + kErrString);
     }
   } else {
     // destination directory exists. Don't overwrite. Append timestamp to the name
@@ -1119,8 +1120,8 @@ int main(int argc, char *argv[]) {
     ret = mkdir(captureDir.c_str(), kPermissions);
     if (ret == -1) {
       const string kErrString(strerror(errno));
-      throw "Can't create destination directory "
-        + captureDir + ": " + kErrString;
+      throw std::runtime_error("Can't create destination directory:"  + captureDir + ": " + kErrString);
+       
     }
   }
 
