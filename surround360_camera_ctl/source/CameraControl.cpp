@@ -73,7 +73,7 @@ using namespace surround360;
 using namespace std;
 using namespace fc;
 
-static const int kNumPreviewCams = 4;
+// static const int kNumPreviewCams = 4;
 static const int kAlignment = 4096;
 static const int kMaxDigits = 4;
 
@@ -133,7 +133,7 @@ static void sigIntHandler(int signal) {
   stopRecording = true;
 }
 
-static unsigned int previewCameras[kNumPreviewCams] = { 0, 4, 8, 12 };
+// static unsigned int previewCameras[kNumPreviewCams] = { 0, 4, 8, 12 };
 
 // Watch out when using this function! It exits on error by default
 
@@ -183,6 +183,7 @@ static const string getDefaultOptValue(PointGreyCamera::CameraProperty propType)
     throw std::runtime_error("Invalid option passed.");
   }
 }
+
 //
 // FP - I think this is in the PointGrey class
 //
@@ -250,18 +251,18 @@ static void stopCapturing(
   }
 }
 
-static int isPreviewCam(int k) {
-  for (int m = 0; m < kNumPreviewCams; ++m) {
-    if (previewCameras[m] == k) {
-      return m;
-    }
-  }
-  return -1;
-}
+// static int isPreviewCam(int k) {
+//   for (int m = 0; m < kNumPreviewCams; ++m) {
+//     if (previewCameras[m] == k) {
+//       return m;
+//     }
+//   }
+//   return -1;
+// }
 
-static int setPreviewCam(int k, int m) {
-  previewCameras[k] = m;
-}
+// static int setPreviewCam(int k, int m) {
+//   previewCameras[k] = m;
+// }
 
 void cameraProducer(
   ConsumerBuffer *consumerBuffer,
@@ -434,9 +435,9 @@ void cameraProducer(
     consumerBuffer[cid].done();
   }
 
-  for (int cid = 0; cid < kNumPreviewCams; ++cid) {
-    previewBuffer[cid].done();
-  }
+  // for (int cid = 0; cid < kNumPreviewCams; ++cid) {
+  //   previewBuffer[cid].done();
+  // }
 
   close(fd);
 
@@ -467,342 +468,342 @@ static const char* filterGraphDesc(
   "[bgAB][C] overlay=shortest=1:y=256 [bgABC];"
   "[bgABC][D] overlay=shortest=1:x=256:y=256");
 
-static void preview(ConsumerBuffer* previewBuffer) {
-  AVFormatContext* formatCtx = nullptr;
-  AVOutputFormat* fmt = nullptr;
-  AVCodec* codec = nullptr;
-  AVCodecContext* codecCtx = nullptr;
-  AVFrame* frame[kNumPreviewCams];
-  AVFrame* filtFrame = av_frame_alloc();
-  AVStream* stream = nullptr;
-  SwsContext* scaleCtx = nullptr;
-  const AVFilter* source[kNumPreviewCams] = { 0 };
-  const AVFilter* sink = nullptr;
-  AVFilterInOut* outputs[kNumPreviewCams];
-  AVFilterInOut* output = nullptr;
-  AVFilterInOut* inputs = nullptr;
-  AVFilterContext* sinkCtx = nullptr;
-  AVFilterContext* srcCtx[kNumPreviewCams];
-  AVFilterGraph* filterGraph = nullptr;
-  int ret, i;
-  const int kPreviewResWidth = 512;
-  const int kPreviewResHeight = 512;
-  const int kSubFrameResWidth = 256;
-  const int kSubFrameResHeight = 256;
-  const int kBitrate = 10000;
-  int64_t next_pts = 0;
-  char args[400];
-  const char *kStreamUrl = "http://127.0.0.1:8090/preview.ffm";
-  AVRational timeBase = (AVRational){ 1, static_cast<int>(FLAGS_fps) };
-  cpu_set_t threadCpuAffinity;
-  enum AVPixelFormat pix_fmts[] = { AV_PIX_FMT_YUV420P, AV_PIX_FMT_NONE };
+// static void preview(ConsumerBuffer* previewBuffer) {
+//   AVFormatContext* formatCtx = nullptr;
+//   AVOutputFormat* fmt = nullptr;
+//   AVCodec* codec = nullptr;
+//   AVCodecContext* codecCtx = nullptr;
+//   AVFrame* frame[kNumPreviewCams];
+//   AVFrame* filtFrame = av_frame_alloc();
+//   AVStream* stream = nullptr;
+//   SwsContext* scaleCtx = nullptr;
+//   const AVFilter* source[kNumPreviewCams] = { 0 };
+//   const AVFilter* sink = nullptr;
+//   AVFilterInOut* outputs[kNumPreviewCams];
+//   AVFilterInOut* output = nullptr;
+//   AVFilterInOut* inputs = nullptr;
+//   AVFilterContext* sinkCtx = nullptr;
+//   AVFilterContext* srcCtx[kNumPreviewCams];
+//   AVFilterGraph* filterGraph = nullptr;
+//   int ret, i;
+//   const int kPreviewResWidth = 512;
+//   const int kPreviewResHeight = 512;
+//   const int kSubFrameResWidth = 256;
+//   const int kSubFrameResHeight = 256;
+//   const int kBitrate = 10000;
+//   int64_t next_pts = 0;
+//   char args[400];
+//   const char *kStreamUrl = "http://127.0.0.1:8090/preview.ffm";
+//   AVRational timeBase = (AVRational){ 1, static_cast<int>(FLAGS_fps) };
+//   cpu_set_t threadCpuAffinity;
+//   enum AVPixelFormat pix_fmts[] = { AV_PIX_FMT_YUV420P, AV_PIX_FMT_NONE };
 
-  av_register_all();
-  avfilter_register_all();
-  avformat_network_init();
+//   av_register_all();
+//   avfilter_register_all();
+//   avformat_network_init();
 
-  // prepare stream and filtering pipeline
-  avformat_alloc_output_context2(&formatCtx, nullptr, "ffm", kStreamUrl);
-  if (formatCtx == nullptr) {
-    throw std::runtime_error("could not allocate output format context");
-  }
-  assert(formatCtx != nullptr);
+//   // prepare stream and filtering pipeline
+//   avformat_alloc_output_context2(&formatCtx, nullptr, "ffm", kStreamUrl);
+//   if (formatCtx == nullptr) {
+//     throw std::runtime_error("could not allocate output format context");
+//   }
+//   assert(formatCtx != nullptr);
 
-  fmt = formatCtx->oformat;
-  fmt->video_codec = AV_CODEC_ID_VP8;
-  assert(fmt != nullptr);
+//   fmt = formatCtx->oformat;
+//   fmt->video_codec = AV_CODEC_ID_VP8;
+//   assert(fmt != nullptr);
 
-  codec = avcodec_find_encoder(fmt->video_codec);
-  if (codec == nullptr) {
-    throw std::runtime_error("could not find video encoder codec");
-  }
-  assert(codec != nullptr);
+//   codec = avcodec_find_encoder(fmt->video_codec);
+//   if (codec == nullptr) {
+//     throw std::runtime_error("could not find video encoder codec");
+//   }
+//   assert(codec != nullptr);
 
-  stream = avformat_new_stream(formatCtx, codec);
-  if (stream == nullptr) {
-    throw std::runtime_error("could not allocate new stream");
-  }
-  assert(stream != nullptr);
+//   stream = avformat_new_stream(formatCtx, codec);
+//   if (stream == nullptr) {
+//     throw std::runtime_error("could not allocate new stream");
+//   }
+//   assert(stream != nullptr);
 
-  stream->id = formatCtx->nb_streams - 1;
-  codecCtx = avcodec_alloc_context3(codec);
-  if (codecCtx == nullptr) {
-    throw std::runtime_error("could not allocate codec context");
-  }
-  assert(codecCtx != nullptr);
+//   stream->id = formatCtx->nb_streams - 1;
+//   codecCtx = avcodec_alloc_context3(codec);
+//   if (codecCtx == nullptr) {
+//     throw std::runtime_error("could not allocate codec context");
+//   }
+//   assert(codecCtx != nullptr);
 
-  codecCtx->codec_id = fmt->video_codec;
-  codecCtx->bit_rate = kBitrate;
-  codecCtx->width = kPreviewResWidth;
-  codecCtx->height = kPreviewResHeight;
-  stream->time_base = timeBase;
-  codecCtx->time_base = stream->time_base;
-  codecCtx->gop_size = 12;
-  codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
-  codecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
-  codecCtx->qmin = 10;
-  codecCtx->qmax = 42;
-  codecCtx->framerate = (AVRational){ 1, static_cast<int>(FLAGS_fps) };
-  codecCtx->level = 2;
-  codecCtx->profile = 1;
-  codecCtx->thread_count = 4;
-  codecCtx->thread_type = FF_THREAD_FRAME;
+//   codecCtx->codec_id = fmt->video_codec;
+//   codecCtx->bit_rate = kBitrate;
+//   codecCtx->width = kPreviewResWidth;
+//   codecCtx->height = kPreviewResHeight;
+//   stream->time_base = timeBase;
+//   codecCtx->time_base = stream->time_base;
+//   codecCtx->gop_size = 12;
+//   codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
+//   codecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
+//   codecCtx->qmin = 10;
+//   codecCtx->qmax = 42;
+//   codecCtx->framerate = (AVRational){ 1, static_cast<int>(FLAGS_fps) };
+//   codecCtx->level = 2;
+//   codecCtx->profile = 1;
+//   codecCtx->thread_count = 4;
+//   codecCtx->thread_type = FF_THREAD_FRAME;
 
-  if (fmt->flags & AVFMT_GLOBALHEADER)
-    codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+//   if (fmt->flags & AVFMT_GLOBALHEADER)
+//     codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
-  ret = avcodec_open2(codecCtx, codec, nullptr);
-  if (ret < 0) {
-    throw std::runtime_error("could not open video codec");
-  }
-  assert(ret == 0);
+//   ret = avcodec_open2(codecCtx, codec, nullptr);
+//   if (ret < 0) {
+//     throw std::runtime_error("could not open video codec");
+//   }
+//   assert(ret == 0);
 
-  avcodec_parameters_from_context(stream->codecpar, codecCtx);
+//   avcodec_parameters_from_context(stream->codecpar, codecCtx);
 
-  ret = avcodec_copy_context(stream->codec, codecCtx);
+//   ret = avcodec_copy_context(stream->codec, codecCtx);
 
-  if (ret < 0) {
-    throw std::runtime_error("could not copy stream parameters");
-  }
-  assert(ret == 0);
+//   if (ret < 0) {
+//     throw std::runtime_error("could not copy stream parameters");
+//   }
+//   assert(ret == 0);
 
-  av_dump_format(formatCtx, 0, kStreamUrl, 1);
+//   av_dump_format(formatCtx, 0, kStreamUrl, 1);
 
-  if (!(fmt->flags & AVFMT_NOFILE)) {
-    ret = avio_open(&formatCtx->pb, kStreamUrl, AVIO_FLAG_WRITE);
-    if (ret < 0) {
-      throw std::runtime_error("could not open format for streaming");
-    }
-    assert(ret == 0);
-  }
+//   if (!(fmt->flags & AVFMT_NOFILE)) {
+//     ret = avio_open(&formatCtx->pb, kStreamUrl, AVIO_FLAG_WRITE);
+//     if (ret < 0) {
+//       throw std::runtime_error("could not open format for streaming");
+//     }
+//     assert(ret == 0);
+//   }
 
-  ret = avformat_write_header(formatCtx, nullptr);
-  if (ret < 0) {
-    throw std::runtime_error("could not write header");
-  }
-  assert(ret == 0);
+//   ret = avformat_write_header(formatCtx, nullptr);
+//   if (ret < 0) {
+//     throw std::runtime_error("could not write header");
+//   }
+//   assert(ret == 0);
 
-  sink = avfilter_get_by_name("buffersink");
-  if (sink == nullptr) {
-    throw std::runtime_error("could not allocate buffersink filter");
-  }
-  assert(sink != nullptr);
+//   sink = avfilter_get_by_name("buffersink");
+//   if (sink == nullptr) {
+//     throw std::runtime_error("could not allocate buffersink filter");
+//   }
+//   assert(sink != nullptr);
 
-  for (int i = 0; i < kNumPreviewCams; ++i) {
-    source[i] = avfilter_get_by_name("buffer");
-    if (source[i] == nullptr) {
-      throw std::runtime_error("could not allocate buffer source filter");
-    }
-    assert(source[i] != nullptr);
-  }
+//   for (int i = 0; i < kNumPreviewCams; ++i) {
+//     source[i] = avfilter_get_by_name("buffer");
+//     if (source[i] == nullptr) {
+//       throw std::runtime_error("could not allocate buffer source filter");
+//     }
+//     assert(source[i] != nullptr);
+//   }
 
-  filterGraph = avfilter_graph_alloc();
-  if (filterGraph == nullptr) {
-    throw std::runtime_error("could not allocate filter graph");
-  }
-  assert(filterGraph != nullptr);
+//   filterGraph = avfilter_graph_alloc();
+//   if (filterGraph == nullptr) {
+//     throw std::runtime_error("could not allocate filter graph");
+//   }
+//   assert(filterGraph != nullptr);
 
-  snprintf(
-    args,
-    sizeof(args),
-    "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-    kSubFrameResWidth,
-    kSubFrameResHeight,
-    AV_PIX_FMT_YUV420P,
-    timeBase.num,
-    timeBase.den,
-    codecCtx->sample_aspect_ratio.num,
-    codecCtx->sample_aspect_ratio.den);
+//   snprintf(
+//     args,
+//     sizeof(args),
+//     "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+//     kSubFrameResWidth,
+//     kSubFrameResHeight,
+//     AV_PIX_FMT_YUV420P,
+//     timeBase.num,
+//     timeBase.den,
+//     codecCtx->sample_aspect_ratio.num,
+//     codecCtx->sample_aspect_ratio.den);
 
-  for (int i = 0; i < kNumPreviewCams; ++i) {
-    char name[kMaxDigits];
-    snprintf(name, sizeof(name), "%d:v", i);
-    char *tmp = av_strdup(name);
-    if (tmp == nullptr) {
-      throw std::runtime_error("could not allocate memory");
-    }
-    assert(tmp != nullptr);
-    ret = avfilter_graph_create_filter(
-      &srcCtx[i], source[i], tmp, args, nullptr, filterGraph);
-    if (ret < 0) {
-      throw std::runtime_error("could not create graph filter");
-    }
-    assert(ret >= 0);
-  }
+//   for (int i = 0; i < kNumPreviewCams; ++i) {
+//     char name[kMaxDigits];
+//     snprintf(name, sizeof(name), "%d:v", i);
+//     char *tmp = av_strdup(name);
+//     if (tmp == nullptr) {
+//       throw std::runtime_error("could not allocate memory");
+//     }
+//     assert(tmp != nullptr);
+//     ret = avfilter_graph_create_filter(
+//       &srcCtx[i], source[i], tmp, args, nullptr, filterGraph);
+//     if (ret < 0) {
+//       throw std::runtime_error("could not create graph filter");
+//     }
+//     assert(ret >= 0);
+//   }
 
-  ret = avfilter_graph_create_filter(
-    &sinkCtx, sink, "out", nullptr, nullptr, filterGraph);
-  if (ret < 0) {
-    throw std::runtime_error("could not create graph filter");
-  }
-  assert(ret == 0);
+//   ret = avfilter_graph_create_filter(
+//     &sinkCtx, sink, "out", nullptr, nullptr, filterGraph);
+//   if (ret < 0) {
+//     throw std::runtime_error("could not create graph filter");
+//   }
+//   assert(ret == 0);
 
-  ret = av_opt_set_int_list(
-    sinkCtx,
-    "pix_fmts",
-    pix_fmts,
-    AV_PIX_FMT_NONE,
-    AV_OPT_SEARCH_CHILDREN);
-  if (ret < 0) {
-    throw std::runtime_error("failed to set sink options");
-  }
-  assert(ret == 0);
+//   ret = av_opt_set_int_list(
+//     sinkCtx,
+//     "pix_fmts",
+//     pix_fmts,
+//     AV_PIX_FMT_NONE,
+//     AV_OPT_SEARCH_CHILDREN);
+//   if (ret < 0) {
+//     throw std::runtime_error("failed to set sink options");
+//   }
+//   assert(ret == 0);
 
-  for (int i = 0; i < kNumPreviewCams; ++i) {
-    char name[kMaxDigits];
-    snprintf(name, sizeof(name), "%d:v", i);
+//   for (int i = 0; i < kNumPreviewCams; ++i) {
+//     char name[kMaxDigits];
+//     snprintf(name, sizeof(name), "%d:v", i);
 
-    outputs[i] = avfilter_inout_alloc();
-    if (outputs[i] == nullptr) {
-      throw std::runtime_error("could not allocate output inout node");
-    }
-    assert(outputs[i] != nullptr);
+//     outputs[i] = avfilter_inout_alloc();
+//     if (outputs[i] == nullptr) {
+//       throw std::runtime_error("could not allocate output inout node");
+//     }
+//     assert(outputs[i] != nullptr);
 
-    outputs[i]->name = av_strdup(name);
-    outputs[i]->filter_ctx = srcCtx[i];
-    outputs[i]->pad_idx = 0;
-    outputs[i]->next = nullptr;
-  }
+//     outputs[i]->name = av_strdup(name);
+//     outputs[i]->filter_ctx = srcCtx[i];
+//     outputs[i]->pad_idx = 0;
+//     outputs[i]->next = nullptr;
+//   }
 
-  for (int i = 0; i < kNumPreviewCams - 1; ++i) {
-    outputs[i]->next = outputs[i + 1];
-  }
-  output = outputs[0];
+//   for (int i = 0; i < kNumPreviewCams - 1; ++i) {
+//     outputs[i]->next = outputs[i + 1];
+//   }
+//   output = outputs[0];
 
-  inputs = avfilter_inout_alloc();
-  if (inputs == nullptr) {
-    throw std::runtime_error("could not allocate input inout node");
-  }
-  assert(inputs != nullptr);
+//   inputs = avfilter_inout_alloc();
+//   if (inputs == nullptr) {
+//     throw std::runtime_error("could not allocate input inout node");
+//   }
+//   assert(inputs != nullptr);
 
-  inputs->name = av_strdup("out");
-  inputs->filter_ctx = sinkCtx;
-  inputs->pad_idx = 0;
-  inputs->next = NULL;
+//   inputs->name = av_strdup("out");
+//   inputs->filter_ctx = sinkCtx;
+//   inputs->pad_idx = 0;
+//   inputs->next = NULL;
 
-  ret = avfilter_graph_parse_ptr(
-    filterGraph, filterGraphDesc, &inputs, &output, nullptr);
-  if (ret < 0) {
-    throw std::runtime_error("failed to parse graph filter");
-  }
-  assert(ret >= 0);
+//   ret = avfilter_graph_parse_ptr(
+//     filterGraph, filterGraphDesc, &inputs, &output, nullptr);
+//   if (ret < 0) {
+//     throw std::runtime_error("failed to parse graph filter");
+//   }
+//   assert(ret >= 0);
 
-  ret = avfilter_graph_config(filterGraph, nullptr);
-  if (ret < 0) {
-    throw std::runtime_error("failed to create filter complex");
-  }
-  assert(ret == 0);
+//   ret = avfilter_graph_config(filterGraph, nullptr);
+//   if (ret < 0) {
+//     throw std::runtime_error("failed to create filter complex");
+//   }
+//   assert(ret == 0);
 
-  scaleCtx = sws_getContext(
-    FRAME_W,
-    FRAME_H,
-    AV_PIX_FMT_BAYER_GBRG8,
-    kSubFrameResWidth,
-    kSubFrameResHeight,
-    AV_PIX_FMT_YUV420P,
-    SWS_FAST_BILINEAR,
-    nullptr,
-    nullptr,
-    nullptr);
-  if (scaleCtx == nullptr) {
-    throw std::runtime_error("failed to create scaling context");
-  }
-  assert(scaleCtx != nullptr);
+//   scaleCtx = sws_getContext(
+//     FRAME_W,
+//     FRAME_H,
+//     AV_PIX_FMT_BAYER_GBRG8,
+//     kSubFrameResWidth,
+//     kSubFrameResHeight,
+//     AV_PIX_FMT_YUV420P,
+//     SWS_FAST_BILINEAR,
+//     nullptr,
+//     nullptr,
+//     nullptr);
+//   if (scaleCtx == nullptr) {
+//     throw std::runtime_error("failed to create scaling context");
+//   }
+//   assert(scaleCtx != nullptr);
 
-  // allocate frames
-  for (i = 0; i < kNumPreviewCams; ++i) {
-    frame[i] = av_frame_alloc();
-    if (frame[i] == nullptr) {
-      throw std::runtime_error("could not allocate frame");
-    }
-    assert(frame[i] != nullptr);
+//   // allocate frames
+//   for (i = 0; i < kNumPreviewCams; ++i) {
+//     frame[i] = av_frame_alloc();
+//     if (frame[i] == nullptr) {
+//       throw std::runtime_error("could not allocate frame");
+//     }
+//     assert(frame[i] != nullptr);
 
-    frame[i]->format = AV_PIX_FMT_YUV420P;
-    frame[i]->width = kSubFrameResWidth;
-    frame[i]->height = kSubFrameResHeight;
-    ret = av_frame_get_buffer(frame[i], 32);
-    if (ret < 0) {
-      throw std::runtime_error("could not allocate frame");
-    }
-    assert(ret >= 0);
-  }
+//     frame[i]->format = AV_PIX_FMT_YUV420P;
+//     frame[i]->width = kSubFrameResWidth;
+//     frame[i]->height = kSubFrameResHeight;
+//     ret = av_frame_get_buffer(frame[i], 32);
+//     if (ret < 0) {
+//       throw std::runtime_error("could not allocate frame");
+//     }
+//     assert(ret >= 0);
+//   }
 
-  FramePacket* nextFrame = nullptr;
+//   FramePacket* nextFrame = nullptr;
 
-  while (keepRunning) {
-    for (i = 0; i < kNumPreviewCams; ++i) {
-      int stride[4] = { FRAME_W, 0, 0, 0 };
+//   while (keepRunning) {
+//     for (i = 0; i < kNumPreviewCams; ++i) {
+//       int stride[4] = { FRAME_W, 0, 0, 0 };
 
-      nextFrame = previewBuffer[i].getTail();
-      if (nextFrame == nullptr) {
-        keepRunning = false;
-        break;
-      }
+//       nextFrame = previewBuffer[i].getTail();
+//       if (nextFrame == nullptr) {
+//         keepRunning = false;
+//         break;
+//       }
 
-      const unsigned char* const planes[4] = {
-        nextFrame->imageBytes, nullptr, nullptr, nullptr
-      };
+//       const unsigned char* const planes[4] = {
+//         nextFrame->imageBytes, nullptr, nullptr, nullptr
+//       };
 
-      frame[i]->pts = next_pts;
-      ret = sws_scale(
-        scaleCtx,
-        planes,
-        stride,
-        0,
-        FRAME_H,
-        frame[i]->data,
-        frame[i]->linesize);
+//       frame[i]->pts = next_pts;
+//       ret = sws_scale(
+//         scaleCtx,
+//         planes,
+//         stride,
+//         0,
+//         FRAME_H,
+//         frame[i]->data,
+//         frame[i]->linesize);
 
-      if (ret < 0) {
-        throw std::runtime_error("failed when scaling frame");
-      }
-      assert(ret >= 0);
-      // frame is now down-scaled and converted from bayer to yuv420p
-      // we can advance the buffer
-      previewBuffer[i].advanceTail();
+//       if (ret < 0) {
+//         throw std::runtime_error("failed when scaling frame");
+//       }
+//       assert(ret >= 0);
+//       // frame is now down-scaled and converted from bayer to yuv420p
+//       // we can advance the buffer
+//       previewBuffer[i].advanceTail();
 
-      ret = av_buffersrc_add_frame_flags(
-        srcCtx[i], frame[i], AV_BUFFERSRC_FLAG_KEEP_REF);
-      if (ret < 0) {
-        throw std::runtime_error("could not push scaled frame into a buffer source");
-      }
-      assert(ret == 0);
-    }
-    ++next_pts;
+//       ret = av_buffersrc_add_frame_flags(
+//         srcCtx[i], frame[i], AV_BUFFERSRC_FLAG_KEEP_REF);
+//       if (ret < 0) {
+//         throw std::runtime_error("could not push scaled frame into a buffer source");
+//       }
+//       assert(ret == 0);
+//     }
+//     ++next_pts;
 
-    while (keepRunning) {
-      AVPacket pkt = { 0 };
-      int gotPacket = 0;
+//     while (keepRunning) {
+//       AVPacket pkt = { 0 };
+//       int gotPacket = 0;
 
-      ret = av_buffersink_get_frame(sinkCtx, filtFrame);
-      if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-        break;
-      }
-      if (ret < 0) {
-        throw std::runtime_error("error when retrieving filtered frames");
-      }
+//       ret = av_buffersink_get_frame(sinkCtx, filtFrame);
+//       if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+//         break;
+//       }
+//       if (ret < 0) {
+//         throw std::runtime_error("error when retrieving filtered frames");
+//       }
 
-      av_init_packet(&pkt);
-      ret = avcodec_encode_video2(codecCtx, &pkt, filtFrame, &gotPacket);
-      if (ret < 0) {
-        throw std::runtime_error("could not encode final frame");
-      }
-      assert(ret >= 0);
+//       av_init_packet(&pkt);
+//       ret = avcodec_encode_video2(codecCtx, &pkt, filtFrame, &gotPacket);
+//       if (ret < 0) {
+//         throw std::runtime_error("could not encode final frame");
+//       }
+//       assert(ret >= 0);
 
-      if (gotPacket) {
-        av_packet_rescale_ts(&pkt, codecCtx->time_base, stream->time_base);
-        pkt.stream_index = stream->index;
-        ret = av_interleaved_write_frame(formatCtx, &pkt);
-        if (ret < 0) {
-          throw std::runtime_error("failed to write frame to the format output");
-        }
-        assert(ret >= 0);
-      }
+//       if (gotPacket) {
+//         av_packet_rescale_ts(&pkt, codecCtx->time_base, stream->time_base);
+//         pkt.stream_index = stream->index;
+//         ret = av_interleaved_write_frame(formatCtx, &pkt);
+//         if (ret < 0) {
+//           throw std::runtime_error("failed to write frame to the format output");
+//         }
+//         assert(ret >= 0);
+//       }
 
-      av_frame_unref(filtFrame);
-    }
-  }
-}
+//       av_frame_unref(filtFrame);
+//     }
+//   }
+// }
 
 void frameConsumer(
   ConsumerBuffer consumerBuffer[],
@@ -1029,6 +1030,10 @@ static void restoreTerminalSettings() {
   tcsetattr(STDIN_FILENO, 0, &origTermSettings);
 }
 
+
+//
+// Main
+
 int main(int argc, char *argv[]) {
   PointGreyCameraPtr *ppCameras;
   Error error;
@@ -1162,7 +1167,7 @@ int main(int argc, char *argv[]) {
     consumerBuffer[k].setBuffers(frameBytes[k], FRAME_SIZE);
   }
 
-  ConsumerBuffer* previewBuffer = new ConsumerBuffer[kNumPreviewCams];
+  // ConsumerBuffer* previewBuffer = new ConsumerBuffer[kNumPreviewCams];
 
   D("Starting process...");
   BusManager busMgr;
@@ -1456,10 +1461,10 @@ int main(int argc, char *argv[]) {
           int m = -1;
           sscanf(msg.cmd, "cam %d %d", &k, &m);
           cout << "command was: " << msg.cmd << endl;
-          if (k >= 0 && k < kNumPreviewCams) {
-            // set preview slot K to show camera M
-            setPreviewCam(k, sortedSerials->at(m).first);
-          }
+          // if (k >= 0 && k < kNumPreviewCams) {
+          //   // set preview slot K to show camera M
+          //   setPreviewCam(k, sortedSerials->at(m).first);
+          // }
         } else if (strncmp(msg.cmd, "shutter", min(strlen("shutter"), sizeof(msg.cmd))) == 0) {
           double shutter = 0.0;
           sscanf(msg.cmd, "shutter %lf", &shutter);
