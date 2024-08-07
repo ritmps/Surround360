@@ -6,7 +6,7 @@
     {
       "label": "build",
       "type": "shell",
-      "command": "cd ${workspaceFolder}/surround360_camera_ctl && cmake --build build",
+      "command": "cd ${workspaceFolder}/surround360_camera_ctl/build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make",
       "group": {
         "kind": "build",
         "isDefault": true

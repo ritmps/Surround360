@@ -17,7 +17,7 @@ IF(NOT ${CMAKE_BUILD_TYPE} MATCHES Debug)
   set(CMAKE_VERBOSE_MAKEFILE ON)
 ENDIF()
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pthread -Wno-write-strings")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -pthread -Wno-write-strings -Wno-unused-variable -Wno-unused-parameter -Wno-unused-function")
 
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -32,9 +32,9 @@ ADD_CUSTOM_TARGET(_source SOURCES ${SRC})
 
 ADD_EXECUTABLE(
   CameraControl
-  source/camera_control/PointGrey.cpp
-  source/camera_control/Config.cpp
-  source/camera_control/CameraControl.cpp
+  source/CameraControl.cpp
+  source/PointGrey.cpp
+  source/Config.cpp
 )
 
 TARGET_COMPILE_FEATURES(CameraControl PRIVATE cxx_range_for)
@@ -54,7 +54,7 @@ TARGET_LINK_LIBRARIES(
 ### Producer consumer test ###
 ADD_EXECUTABLE(
   pc_test
-  source/camera_control/pc_test.cpp
+  source/pc_test.cpp
 )
 
 TARGET_LINK_LIBRARIES(

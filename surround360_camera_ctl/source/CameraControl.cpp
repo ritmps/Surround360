@@ -101,9 +101,12 @@ DEFINE_bool(stop,           false,                    "Stop capturing.");
 DEFINE_string(whitebalance, "450 796",                "Set red, blue white balance values.");
 DEFINE_bool(cli,            false,                    "Enable CLI mode");
 
-typedef pair<unsigned int, unsigned int> SerialIndexPair;
-typedef vector<SerialIndexPair> SerialIndexVector;
-typedef SerialIndexVector::iterator SerialIndexIterator;
+//
+// FP - I think these are in the PointGrey class
+//
+// typedef pair<unsigned int, unsigned int> SerialIndexPair;
+// typedef vector<SerialIndexPair> SerialIndexVector;
+// typedef SerialIndexVector::iterator SerialIndexIterator;
 
 // The output disk prefix name. There is one per consumer thread
 // (CONSUMER_COUNT).
@@ -180,52 +183,54 @@ static const string getDefaultOptValue(PointGreyCamera::CameraProperty propType)
     throw std::runtime_error("Invalid option passed.");
   }
 }
+//
+// FP - I think this is in the PointGrey class
+//
+// static string getPropRange(
+//   PointGreyCameraPtr& pCam,
+//   PointGreyCamera::CameraProperty prop) {
 
-static string getPropRange(
-  PointGreyCameraPtr& pCam,
-  PointGreyCamera::CameraProperty prop) {
+//   // Get property
+//   string propstr = pCam->getProperty(prop);
+//   ostringstream oss;
 
-  // Get property
-  string propstr = pCam->getProperty(prop);
-  ostringstream oss;
+//   oss << "*PROP*;"
+//       << getOptString(prop) << ";"
+//       << propstr << ";"
+//       << getDefaultOptValue(prop) << ";"
+//       << "-" << getOptString(prop)
+//       << endl;
 
-  oss << "*PROP*;"
-      << getOptString(prop) << ";"
-      << propstr << ";"
-      << getDefaultOptValue(prop) << ";"
-      << "-" << getOptString(prop)
-      << endl;
+//   return oss.str();
+// }
 
-  return oss.str();
-}
+// static string getPropsRange(PointGreyCameraPtr& pCam) {
+//   string output;
+//   output += getPropRange(pCam, PointGreyCamera::CameraProperty::SHUTTER);
+//   output += getPropRange(pCam, PointGreyCamera::CameraProperty::GAIN);
+//   return output;
+// }
 
-static string getPropsRange(PointGreyCameraPtr& pCam) {
-  string output;
-  output += getPropRange(pCam, PointGreyCamera::CameraProperty::SHUTTER);
-  output += getPropRange(pCam, PointGreyCamera::CameraProperty::GAIN);
-  return output;
-}
+// static void printAndSaveCameraProperties(PointGreyCameraPtr& pCam) {
+//   string camProps = getPropsRange(pCam);
 
-static void printAndSaveCameraProperties(PointGreyCameraPtr& pCam) {
-  string camProps = getPropsRange(pCam);
+//   ofstream myfile;
+//   myfile.open("camProps_raw");
 
-  ofstream myfile;
-  myfile.open("camProps_raw");
+//   if (myfile.is_open()) {
+//     myfile << camProps;
+//     myfile.close();
+//   } else {
+//     D("ERROR: Unable to open file for writing. Please check permissions");
+//     exit(EXIT_FAILURE);
+//   }
 
-  if (myfile.is_open()) {
-    myfile << camProps;
-    myfile.close();
-  } else {
-    D("ERROR: Unable to open file for writing. Please check permissions");
-    exit(EXIT_FAILURE);
-  }
-
-  D(camProps);
-}
+//   D(camProps);
+// }
 
 static void disconnect(
   PointGreyCameraPtr cameras[],
-  int nCameras) {
+  unsigned int nCameras) {
   D("Disconnecting cameras...");
 
   for (unsigned int i = 0; i < nCameras; i++) {
@@ -236,7 +241,7 @@ static void disconnect(
 
 static void stopCapturing(
   PointGreyCameraPtr cameras[],
-  int nCameras) {
+  unsigned int nCameras) {
   D("Stop capturing...");
 
   for (unsigned int i = 0; i < nCameras; i++) {
@@ -923,7 +928,7 @@ static void getCameraSerialNumbers(SerialIndexVector *v) {
 
   ncameras = PointGreyCamera::findCameras();
 
-  for (int k = 0; k < ncameras; ++k) {
+  for (unsigned int k = 0; k < ncameras; ++k) {
     PointGreyCameraPtr c = PointGreyCamera::getCamera(k);
     v->push_back(make_pair(k, c->getSerialNumber()));
   }
