@@ -18,12 +18,22 @@ namespace surround360 {
     virtual ~Camera() {}
     virtual int attach() = 0;
     virtual int detach() = 0;
-    virtual int init(bool isMaster) = 0;
+  virtual int init(
+    const bool master,
+    const double exposure,
+    const double brightness,
+    const double gamma,
+    const double fps,
+    const double shutter,
+    const double gain,
+    const unsigned int nbits) = 0;
     virtual int startCapture() = 0;
     virtual int stopCapture() = 0;
-    virtual void* getFrame() = 0;
+  virtual void* getFrame(void* opaque) = 0;
     virtual unsigned int getDroppedFramesCounter() const = 0;
     virtual int powerCamera(bool onOff) = 0;
+  virtual unsigned int frameWidth() = 0;
+  virtual unsigned int frameHeight() = 0;
 
   protected:
     Camera() {}

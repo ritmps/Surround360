@@ -60,14 +60,6 @@ namespace surround360 {
       memset(items, 0, LENGTH * sizeof(T));
     }
 
-    void setBuffers(void *ptr, size_t size)
-    {
-      uint64_t vaddr = reinterpret_cast<uint64_t>(ptr);
-      for (int k = 0; k < LENGTH; k++) {
-        items[k].imageBytes = reinterpret_cast<uint8_t *>(vaddr + k * size);
-      }
-    }
-
     /// Signal the consuemr that producer is done producing.
     ///
     /// Used by the producer to notify the consumer that when the queue
@@ -77,6 +69,21 @@ namespace surround360 {
       fini = true;
       lk.unlock();
       dataAvailable.notify_one();
+    }
+
+    void reset() {
+      fini = false;
+      head = 0;
+      tail = 0;
+      count = 0;
+    }
+
+    bool isDone() {
+      return fini;
+    }
+
+    bool isEmpty() {
+      return count == 0;
     }
 
     /// Access the head of the message queue.
@@ -141,8 +148,8 @@ namespace surround360 {
     std::string stateString() {
       std::stringstream ss;
       m.lock();
-      ss << "[head=" << tail
-         << " tail=" << head
+      ss << "[head=" << head
+         << " tail=" << tail
          << " count=" << count
          << " fini=" << fini
          << "]";

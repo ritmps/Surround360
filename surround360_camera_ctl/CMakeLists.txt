@@ -33,6 +33,7 @@ ADD_CUSTOM_TARGET(_source SOURCES ${SRC})
 ADD_EXECUTABLE(
   CameraControl
   source/camera_control/PointGrey.cpp
+  source/camera_control/Config.cpp
   source/camera_control/CameraControl.cpp
 )
 

@@ -19,28 +19,37 @@
 namespace surround360 {
   namespace fc = FlyCapture2;
 
+  typedef std::tuple<unsigned int, unsigned int, unsigned int> SerialIndexTuple;
+  typedef std::vector<SerialIndexTuple> SerialIndexVector;
+  typedef SerialIndexVector::iterator SerialIndexIterator;
+
   class PointGreyCamera;
-  typedef std::shared_ptr<PointGreyCamera> PointGreyCameraPtr;
+  using PointGreyCameraPtr = std::shared_ptr<PointGreyCamera>;
 
   class PointGreyCamera : protected Camera {
   public:
-    static const unsigned int FRAME_WIDTH = 2048;
-    static const unsigned int FRAME_HEIGHT = 2048;
-    static const unsigned int FRAME_SIZE = FRAME_WIDTH * FRAME_HEIGHT;
-
     static std::shared_ptr<PointGreyCamera> getCamera(const unsigned int index);
     static unsigned int findCameras();
 
     int attach();
     int detach();
-    int init(bool isMaster = false);
+    int init(
+      const bool master,
+      const double exposure,
+      const double brightness,
+      const double gamma,
+      const double fps,
+      const double shutter,
+      const double gain,
+      const unsigned int nbits);
     int stopCapture();
     int startCapture();
     int setMaster();
 
-    void* getFrame();
+    void* getFrame(void* opaque);
     unsigned int getDroppedFramesCounter() const;
     int getSerialNumber() const;
+    int getInterfaceSpeed() const;
     int reset();
     int powerCamera(bool onOff);
     int toggleStrobeOut(int pin, bool onOff);
@@ -48,6 +57,17 @@ namespace surround360 {
     void commitShutterSpeedUpdate();
     void prepareGainUpdate(double gain);
     void commitGainUpdate();
+
+    bool setCameraProps(
+      const std::pair<double, bool>& exposure,
+      const std::pair<double, bool>& brightness,
+      const std::pair<double, bool>& gamma,
+      const std::pair<double, bool>& fps,
+      const std::pair<double, bool>& shutter,
+      const std::pair<double, bool>& gain);
+
+    unsigned int frameWidth() override;
+    unsigned int frameHeight() override;
 
     static void printError(int error, bool doExit = true);
     static void printError(fc::Error error, bool doExit = true);
@@ -61,26 +81,41 @@ namespace surround360 {
       FRAME_RATE,
     };
 
-    std::string getProperty(CameraProperty p);
-
+    std::pair<float, float> getPropertyMinMax(CameraProperty p);
     ~PointGreyCamera();
+    void updatePixelFormat(int bpp);
 
   private:
     std::shared_ptr<fc::Camera> m_camera;
-    bool isMaster;
-    unsigned int droppedFramesCounter;
+    unsigned int m_droppedFrames {0};
     fc::PGRGuid m_guid;
     fc::InterfaceType m_ifaceType;
 
-    double m_shutterSpeedUpdate;
-    double m_shutterSpeed;
-    double m_gainUpdate;
-    double m_gain;
+    double m_shutter{5.0};
+    double m_gain{0.0};
+
+    bool m_updateGain {false};
+    bool m_updateShutter {false};
+
+    mutable bool serialCached_ {false};
+    mutable unsigned int serial_;
+    bool m_master{false};
+
+    unsigned int m_width {2448};
+    unsigned int m_height {2048};
+
+    const uint32_t kDataFlashCtrl = 0x1240;
+    const uint32_t kDataFlashData = 0x1244;
+    char *cameraBuffers;
 
   private:
     static fc::BusManager& getBusManager();
 
-    PointGreyCamera(std::shared_ptr<fc::Camera>& camera, fc::PGRGuid& guid);
+    PointGreyCamera(
+      std::shared_ptr<fc::Camera> camera,
+      fc::PGRGuid& guid,
+      fc::InterfaceType iftype);
+
     PointGreyCamera(PointGreyCamera& camera);
 
     void setCameraTrigger(bool isMaster);
@@ -96,8 +131,6 @@ namespace surround360 {
 
     void setCameraPixelFormat(fc::PixelFormat pf);
 
-    bool setCameraProps();
-
     bool setCameraPropRel(
       fc::PropertyType propType,
       unsigned int value);
@@ -105,7 +138,6 @@ namespace surround360 {
     bool setCameraPropAbs(
       fc::PropertyType propType,
       const char* value);
-
 
     void  printAndSaveCameraProperties(bool isRaw);
 
@@ -135,6 +167,16 @@ namespace surround360 {
     void setPixelFormat(fc::PixelFormat pf);
 
     void getPixelFormatFromBitDepth(fc::PixelFormat* pf, unsigned int nBits);
+
+    uint32_t readRegister(uint32_t address);
+    void writeRegister(uint32_t address, uint32_t value);
+    bool isDataFlashSupported();
+    uint32_t getDataFlashSize();
+    uint64_t getDataFlashOffset();
+    void commitPageToDataFlash();
+    void throwError(const fc::Error& error);
+
+    void readFileAtIndex(uint32_t idx);
 
     friend std::ostream& operator<<(
       std::ostream& stream,

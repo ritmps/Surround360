@@ -65,12 +65,12 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-#include <flycapture/FlyCapture2.h>
+// #include <flycapture/FlyCapture2.h>
 #include <gflags/gflags.h>
 #include <libusb-1.0/libusb.h>
 
-using namespace std;
 using namespace surround360;
+using namespace std;
 using namespace fc;
 
 static const int kNumPreviewCams = 4;
